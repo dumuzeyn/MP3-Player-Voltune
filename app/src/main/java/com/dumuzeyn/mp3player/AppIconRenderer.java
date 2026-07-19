@@ -1,21 +1,23 @@
 package com.dumuzeyn.mp3player;
 
+import android.content.ComponentName;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 
-/** Builds the Voltune mark with the same two accents used by the active theme. */
-final class ThemeIconBitmap {
+/** Central renderer for every runtime Voltune icon used by the application UI. */
+final class AppIconRenderer {
     private static final int SOURCE_PRIMARY = 0xff8a2cc8;
     private static final int SOURCE_SECONDARY = 0xffffd000;
 
-    private ThemeIconBitmap() {
+    private AppIconRenderer() {
     }
 
-    static Bitmap createLogo(Context context, int primaryColor, int secondaryColor, int size) {
+    static Bitmap renderLogo(Context context, int primaryColor, int secondaryColor, int size) {
         int safeSize = Math.max(1, size);
         Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
         Drawable logo = context.getResources().getDrawable(R.drawable.ic_music_vector_user);
@@ -25,7 +27,7 @@ final class ThemeIconBitmap {
         return bitmap;
     }
 
-    static Bitmap createTile(Context context, int backgroundColor,
+    static Bitmap renderTile(Context context, int backgroundColor,
             int primaryColor, int secondaryColor, int size) {
         int safeSize = Math.max(1, size);
         Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
@@ -36,10 +38,35 @@ final class ThemeIconBitmap {
         canvas.drawRoundRect(0, 0, safeSize, safeSize, radius, radius, background);
 
         int inset = Math.round(safeSize * 0.08f);
-        Bitmap logo = createLogo(context, primaryColor, secondaryColor, safeSize - inset * 2);
+        Bitmap logo = renderLogo(context, primaryColor, secondaryColor, safeSize - inset * 2);
         canvas.drawBitmap(logo, inset, inset, null);
         logo.recycle();
         return bitmap;
+    }
+
+    static Bitmap renderPreview(Context context, int backgroundColor,
+            int primaryColor, int secondaryColor, int size) {
+        try {
+            return renderTile(context, backgroundColor, primaryColor, secondaryColor, size);
+        } catch (RuntimeException error) {
+            return BitmapFactory.decodeResource(context.getResources(),
+                    context.getApplicationInfo().icon);
+        }
+    }
+
+    static Bitmap renderLauncherPreview(Context context, ComponentName component,
+            int fallbackBackground, int primaryColor, int secondaryColor, int size) {
+        int safeSize = Math.max(1, size);
+        try {
+            Drawable icon = context.getPackageManager().getActivityIcon(component);
+            Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
+            icon.setBounds(0, 0, safeSize, safeSize);
+            icon.draw(new Canvas(bitmap));
+            return bitmap;
+        } catch (RuntimeException | android.content.pm.PackageManager.NameNotFoundException error) {
+            return renderPreview(context, fallbackBackground,
+                    primaryColor, secondaryColor, safeSize);
+        }
     }
 
     private static void replaceAccentColors(Bitmap bitmap, int primaryColor, int secondaryColor) {

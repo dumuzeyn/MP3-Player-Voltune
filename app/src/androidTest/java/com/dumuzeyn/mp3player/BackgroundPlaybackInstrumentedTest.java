@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.Manifest;
@@ -80,10 +81,7 @@ public class BackgroundPlaybackInstrumentedTest {
 
     @Test
     public void playbackContinuesAfterActivityIsClosedAndCanBePaused() {
-        Intent activityIntent = new Intent(context, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity = instrumentation.startActivitySync(activityIntent);
-        instrumentation.waitForIdleSync();
+        activity = launchMainActivity();
 
         ArrayList<String> queue = new ArrayList<>();
         queue.add(Uri.fromFile(waveFile).toString());
@@ -101,7 +99,6 @@ public class BackgroundPlaybackInstrumentedTest {
 
         instrumentation.runOnMainSync(() -> activity.finish());
         activity = null;
-        instrumentation.waitForIdleSync();
         InstrumentedTestSupport.waitFor(
                 "Playback stopped when Activity closed", PLAYBACK_TRANSITION_TIMEOUT_MS,
                 () -> {
@@ -129,10 +126,7 @@ public class BackgroundPlaybackInstrumentedTest {
 
     @Test
     public void repeatingPlaylistWithSleepTimerKeepsPlayingAfterTaskIsRemoved() {
-        Intent activityIntent = new Intent(context, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity = instrumentation.startActivitySync(activityIntent);
-        instrumentation.waitForIdleSync();
+        activity = launchMainActivity();
 
         ArrayList<String> queue = new ArrayList<>();
         queue.add(Uri.fromFile(waveFile).toString());
@@ -154,7 +148,6 @@ public class BackgroundPlaybackInstrumentedTest {
 
         instrumentation.runOnMainSync(() -> activity.finishAndRemoveTask());
         activity = null;
-        instrumentation.waitForIdleSync();
 
         InstrumentedTestSupport.waitFor(
                 "Playlist did not advance after the task was removed",
@@ -169,10 +162,7 @@ public class BackgroundPlaybackInstrumentedTest {
 
     @Test
     public void repeatAllKeepsCyclingWhileActivityIsInBackground() {
-        Intent activityIntent = new Intent(context, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity = instrumentation.startActivitySync(activityIntent);
-        instrumentation.waitForIdleSync();
+        activity = launchMainActivity();
 
         ArrayList<String> queue = new ArrayList<>();
         queue.add(Uri.fromFile(waveFile).toString());
@@ -187,7 +177,6 @@ public class BackgroundPlaybackInstrumentedTest {
 
         waitForPlayingUri("First repeat track did not start", queue.get(0));
         instrumentation.runOnMainSync(() -> activity.moveTaskToBack(true));
-        instrumentation.waitForIdleSync();
 
         waitForPlayingUri("Repeat queue did not reach the second track", queue.get(1));
         waitForPlayingUri("Repeat queue did not wrap to the first track", queue.get(0));
@@ -199,10 +188,7 @@ public class BackgroundPlaybackInstrumentedTest {
 
     @Test
     public void closingActivityWithFullPlayerDoesNotUseClosedCoverLoader() {
-        Intent activityIntent = new Intent(context, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity = instrumentation.startActivitySync(activityIntent);
-        instrumentation.waitForIdleSync();
+        activity = launchMainActivity();
 
         MainActivityCore host = (MainActivityCore) activity;
         instrumentation.runOnMainSync(() -> {
@@ -211,21 +197,18 @@ public class BackgroundPlaybackInstrumentedTest {
             activity.finish();
         });
         activity = null;
-        instrumentation.waitForIdleSync();
         SystemClock.sleep(1200L);
         assertFalse(PlayerService.hasPlaybackSession());
     }
 
     @Test
     public void rotatingCoverResetsAndRestartsWhenTrackChanges() {
-        Intent activityIntent = new Intent(context, MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        activity = instrumentation.startActivitySync(activityIntent);
-        instrumentation.waitForIdleSync();
+        activity = launchMainActivity();
 
         MainActivityCore host = (MainActivityCore) activity;
         RotatingCoverImageView[] coverHolder = new RotatingCoverImageView[1];
         instrumentation.runOnMainSync(() -> {
+            host.animations = true;
             host.circularCovers = true;
             host.currentIndex = 0;
             host.playing = true;
@@ -247,6 +230,23 @@ public class BackgroundPlaybackInstrumentedTest {
                 Math.abs(resetRotation[0]) < 1.0f);
         InstrumentedTestSupport.waitFor("Second cover did not start rotating", 3000L,
                 () -> coverHolder[0].getRotation() > 1.0f);
+    }
+
+    private Activity launchMainActivity() {
+        Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(
+                MainActivity.class.getName(), null, false);
+        Intent activityIntent = new Intent(context, MainActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(activityIntent);
+        Activity launched = monitor.waitForActivityWithTimeout(45000L);
+        instrumentation.removeMonitor(monitor);
+        assertNotNull("MainActivity did not start", launched);
+        InstrumentedTestSupport.waitFor("MainActivity did not finish its first layout", 10000L,
+                () -> {
+                    MainActivityCore host = (MainActivityCore) launched;
+                    return host.root != null && host.root.getWidth() > 0;
+                });
+        return launched;
     }
 
     private void startPlaybackService(Intent intent) {

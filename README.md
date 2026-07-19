@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Release_2.5.2-9b4dff?style=for-the-badge" alt="Скачать APK">
+    <img src="https://img.shields.io/badge/Скачать_APK-Release_2.5.3-9b4dff?style=for-the-badge" alt="Скачать APK">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="English version">
@@ -125,7 +125,7 @@ flowchart TD
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Release_2.5.2-9b4dff?style=for-the-badge" alt="Download APK">
+    <img src="https://img.shields.io/badge/Download_APK-Release_2.5.3-9b4dff?style=for-the-badge" alt="Download APK">
   </a>
   <a href="#mp3-player-voltune">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Russian version">

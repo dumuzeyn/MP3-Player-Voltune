@@ -1,8 +1,16 @@
-# MP3 Player Voltune 2.5.2
+# MP3 Player Voltune 2.5.3
 
 ## Русский
 
 Обновление удобства настроек и навигации по библиотеке.
+
+- Исправлена системная тема экрана запуска: splash теперь берёт палитру выбранного варианта, а не старую фиолетово-жёлтую иконку.
+- Красно-голубой вариант рабочего стола приведён к цветам пользовательской темы `#FF3545` и `#D0E8FF`.
+- Пользовательский цвет текста больше не переносится в Светлую и Тёмную темы, поэтому их подписи остаются контрастными.
+- Иконка в последних приложениях использует тот же масштаб, что и иконка на рабочем столе.
+- Чёрный текст Светлой темы получил чёткий белый контур для читаемости на любом фоне.
+- Тонкий белый контур Светлой темы одинаково применяется к заголовкам и кнопкам большого плеера, включая таймер и повтор.
+- Текст внутри карточек остаётся чистым без контура; на открытом фоне Светлая тема использует белый контур, а Тёмная — чёрный.
 
 - Окна темы, языка, памяти мини-плеера и фона больше не закрываются после каждого изменения.
 - В окне темы всегда доступны «Светлая», «Тёмная» и «Своя»; дополнительные цвета появляются только после выбора «Своя» без выхода из окна.
@@ -36,6 +44,14 @@
 ## English
 
 An update focused on stable settings and library navigation.
+
+- The Android splash screen now uses the selected launcher palette instead of the old purple-and-yellow icon.
+- The red-and-blue launcher variant now matches the custom theme colors `#FF3545` and `#D0E8FF`.
+- Custom text colors no longer leak into Light or Dark themes, keeping their labels readable.
+- The recent-apps icon now uses the same geometry and scale as the launcher icon.
+- Black text in the Light theme now has a crisp white outline for readability on any background.
+- The thin Light-theme outline is consistent across full-player labels and controls, including timer and repeat buttons.
+- Text inside cards stays outline-free; exposed Light-theme text uses white and Dark-theme text uses black outlines.
 
 - Theme, language, mini-player memory, and background dialogs remain open while values change.
 - Light, Dark, and Custom always remain available; additional color controls appear only after Custom is selected without leaving the dialog.

@@ -5,7 +5,6 @@ import android.content.ComponentName;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
@@ -100,7 +99,7 @@ final class ThemeController {
             host.yellowDark = Color.rgb(231, 185, 0);
             host.yellowSoft = Color.rgb(255, 245, 190);
         }
-        if (host.customTextColor != 0) {
+        if ("custom".equals(host.themeMode) && host.customTextColor != 0) {
             host.fg = host.customTextColor;
             host.primaryText = host.customTextColor;
             host.secondaryText = mixColor(host.customTextColor, host.bg, 0.58f);
@@ -308,9 +307,23 @@ final class ThemeController {
     void applyTextOutline(TextView text) {
         text.setShadowLayer(0.0f, 0.0f, 0.0f, Color.TRANSPARENT);
         if (text instanceof OutlinedTextView) {
-            float width = host.getResources().getDisplayMetrics().density * 0.55f;
+            boolean lightTheme = "light".equals(host.themeMode);
+            boolean darkTheme = "dark".equals(host.themeMode);
+            float width = host.getResources().getDisplayMetrics().density
+                    * (lightTheme || darkTheme ? 1.0f : 0.35f);
             ((OutlinedTextView) text).setTextOutline(
-                    host.textOutlineEnabled, effectiveOutlineColor(), width);
+                    lightTheme || darkTheme || host.textOutlineEnabled,
+                    lightTheme ? Color.WHITE
+                            : darkTheme ? Color.BLACK : effectiveOutlineColor(), width);
+        } else if (text instanceof OutlinedButton) {
+            boolean lightTheme = "light".equals(host.themeMode);
+            boolean darkTheme = "dark".equals(host.themeMode);
+            float width = host.getResources().getDisplayMetrics().density
+                    * (lightTheme || darkTheme ? 1.0f : 0.35f);
+            ((OutlinedButton) text).setTextOutline(
+                    lightTheme || darkTheme || host.textOutlineEnabled,
+                    lightTheme ? Color.WHITE
+                            : darkTheme ? Color.BLACK : effectiveOutlineColor(), width);
         }
     }
 
@@ -375,13 +388,12 @@ final class ThemeController {
     }
 
     private Bitmap launcherPreviewIcon() {
-        try {
-            int size = Math.max(1, host.dp(64));
-            return ThemeIconBitmap.createTile(
-                    host, host.bg, host.purple, host.yellow, size);
-        } catch (RuntimeException error) {
-            return BitmapFactory.decodeResource(host.getResources(), host.getApplicationInfo().icon);
-        }
+        boolean useDark = isDarkTheme(host.themeMode, host.customBg);
+        ComponentName launcher = LauncherComponents.forPalette(
+                host, host.themeMode, useDark, host.purple, host.yellow);
+        return AppIconRenderer.renderLauncherPreview(
+                host, launcher, host.bg, host.purple, host.yellow,
+                Math.max(1, host.dp(64)));
     }
 
     private String colorHex(int color) {

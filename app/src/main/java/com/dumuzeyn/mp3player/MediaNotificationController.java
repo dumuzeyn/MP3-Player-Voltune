@@ -267,7 +267,7 @@ final class MediaNotificationController {
             return appIcon;
         }
         try {
-            appIcon = ThemeIconBitmap.createTile(
+            appIcon = AppIconRenderer.renderTile(
                     context, backgroundColor, primaryColor, secondaryColor, 128);
             appIconKey = key;
             return appIcon;

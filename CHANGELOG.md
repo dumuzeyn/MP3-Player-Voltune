@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.5.3 - Launcher, splash, and theme polish
+
+- Route each custom launcher alias through an Activity with the matching Android 12+ splash theme.
+- Match the active red and light-blue custom palette in the launcher and loading screen.
+- Keep custom text colors scoped to the Custom theme so Light and Dark labels stay readable.
+- Use the launcher component itself for the recent-apps icon so both surfaces share one scale.
+- Add a crisp white outline to black text in the Light theme.
+- Use one thin Light-theme outline for labels and buttons, including full-player tools.
+- Suppress outlines inside cards; use white around Light-theme text and black around Dark-theme text only on open backgrounds.
+
 ## 2.5.2 - Stable settings and menu position
 
 - Keep theme, language, mini-player memory, and background dialogs open while their values change; close them only through an explicit user action.

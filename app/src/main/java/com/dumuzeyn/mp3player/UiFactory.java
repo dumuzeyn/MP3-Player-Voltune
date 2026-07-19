@@ -81,11 +81,13 @@ final class UiFactory {
 
     void applyCardStyle(View view) {
         view.setBackground(cardBackground());
+        TextOutlinePolicy.markCardSurface(view, true);
         view.setElevation(host.dp(1));
     }
 
     void applyCardStyle(View view, int opacity) {
         view.setBackground(cardBackground(opacity));
+        TextOutlinePolicy.markCardSurface(view, true);
         view.setElevation(host.dp(1));
     }
 
@@ -135,6 +137,7 @@ final class UiFactory {
                 ? host.cardSurfaceColor(color, opacity)
                 : color;
         view.setBackground(rounded(surfaceColor, outlined));
+        TextOutlinePolicy.markCardSurface(view, true);
     }
 
     View lineView() {

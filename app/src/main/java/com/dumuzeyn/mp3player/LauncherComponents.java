@@ -13,7 +13,7 @@ final class LauncherComponents {
             new Palette("CustomRed", 0xffff4d67, 0xffffb23e),
             new Palette("CustomGreen", 0xff25b86b, 0xffc8f04b),
             new Palette("CustomPink", 0xffe94baa, 0xff36d8d0),
-            new Palette("CustomOrange", 0xffff7a33, 0xff4d78ff)
+            new Palette("CustomOrange", 0xffff3545, 0xffd0e8ff)
     };
 
     private LauncherComponents() {

@@ -13,7 +13,7 @@ final class ButtonFactory {
     }
 
     Button button(String label) {
-        Button button = new Button(host);
+        Button button = new OutlinedButton(host);
         button.setText(label);
         button.setTextColor(host.fg);
         button.setTextSize(14.0f);
@@ -47,6 +47,7 @@ final class ButtonFactory {
     void applyPlainIcon(Button button, int color) {
         button.setTextColor(color);
         button.setBackgroundColor(Color.TRANSPARENT);
+        TextOutlinePolicy.markCardSurface(button, false);
         button.setElevation(0.0f);
         button.setTranslationZ(0.0f);
     }
@@ -54,6 +55,7 @@ final class ButtonFactory {
     void applyPrimary(Button button) {
         button.setTextColor(Color.WHITE);
         button.setBackground(background(host.purple, false));
+        TextOutlinePolicy.markCardSurface(button, true);
     }
 
     void applySecondary(Button button) {
@@ -65,6 +67,7 @@ final class ButtonFactory {
         GradientDrawable drawable = background(host.cardSurfaceColor(host.card, opacity), true);
         drawable.setStroke(host.dp(1), host.cardStroke);
         button.setBackground(drawable);
+        TextOutlinePolicy.markCardSurface(button, true);
     }
 
     void applyPlayerTool(Button button, boolean active) {
@@ -74,6 +77,7 @@ final class ButtonFactory {
         GradientDrawable drawable = background(Color.TRANSPARENT, false);
         drawable.setStroke(host.dp(1), active ? host.purple : host.cardStroke);
         button.setBackground(drawable);
+        TextOutlinePolicy.markCardSurface(button, false);
     }
 
     private GradientDrawable background(int color, boolean outlined) {

@@ -23,6 +23,56 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:exported="false"
             android:theme="@style/AppTheme.Dark" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueLight"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueLight" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueDark"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueDark" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedLight"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedLight" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedDark"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedDark" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenLight"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenLight" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenDark"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenDark" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkLight"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkLight" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkDark"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkDark" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeLight"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeLight" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeDark"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeDark" />
         <activity-alias
             android:name=".LauncherLight"
             android:enabled="true"
@@ -54,7 +104,7 @@
             android:icon="@mipmap/ic_launcher_custom_blue_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomBlueLight"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomBlueLight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -67,7 +117,7 @@
             android:icon="@mipmap/ic_launcher_custom_blue_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomBlueDark"
-            android:targetActivity=".DarkMainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomBlueDark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -80,7 +130,7 @@
             android:icon="@mipmap/ic_launcher_custom_red_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomRedLight"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomRedLight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -93,7 +143,7 @@
             android:icon="@mipmap/ic_launcher_custom_red_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomRedDark"
-            android:targetActivity=".DarkMainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomRedDark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -106,7 +156,7 @@
             android:icon="@mipmap/ic_launcher_custom_green_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomGreenLight"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomGreenLight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -119,7 +169,7 @@
             android:icon="@mipmap/ic_launcher_custom_green_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomGreenDark"
-            android:targetActivity=".DarkMainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomGreenDark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -132,7 +182,7 @@
             android:icon="@mipmap/ic_launcher_custom_pink_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomPinkLight"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomPinkLight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -145,7 +195,7 @@
             android:icon="@mipmap/ic_launcher_custom_pink_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomPinkDark"
-            android:targetActivity=".DarkMainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomPinkDark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -158,7 +208,7 @@
             android:icon="@mipmap/ic_launcher_custom_orange_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomOrangeLight"
-            android:targetActivity=".MainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeLight">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -171,7 +221,7 @@
             android:icon="@mipmap/ic_launcher_custom_orange_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomOrangeDark"
-            android:targetActivity=".DarkMainActivity">
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeDark">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

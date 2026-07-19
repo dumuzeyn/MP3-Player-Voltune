@@ -53,13 +53,25 @@ public class CompatibilityInstrumentedTest {
         int smallestWidthDp = context.getResources().getConfiguration().smallestScreenWidthDp;
         assertTrue("Tablet CI profile must report at least 600 dp", smallestWidthDp >= 600);
 
+        context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
+                .putBoolean("particlesEnabled", false)
+                .putBoolean("animations", false)
+                .commit();
+
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(
+                MainActivity.class.getName(), null, false);
         Intent activityIntent = new Intent(context, MainActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        Activity activity = instrumentation.startActivitySync(activityIntent);
+        context.startActivity(activityIntent);
+        Activity activity = monitor.waitForActivityWithTimeout(45000L);
+        instrumentation.removeMonitor(monitor);
+        assertNotNull("MainActivity must start on the tablet profile", activity);
         try {
-            instrumentation.waitForIdleSync();
             MainActivityCore host = (MainActivityCore) activity;
+            InstrumentedTestSupport.waitFor("Tablet page must finish its first layout", 10000L,
+                    () -> host.page != null && host.root != null
+                            && host.page.getWidth() > 0 && host.root.getWidth() > 0);
             assertTrue(host.responsiveLayoutController.isTablet());
             assertTrue("Tablet page must be narrower than the full display",
                     host.page.getWidth() < host.root.getWidth());
