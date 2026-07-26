@@ -7,10 +7,11 @@ import android.view.View;
 
 public class WaveformView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final int seed;
+    private int seed;
     private int color;
     private int accentColor;
     private boolean active;
+    private float progress;
     private long startedAt;
 
     public WaveformView(Context context, String key, int color, int accentColor, boolean active) {
@@ -27,6 +28,27 @@ public class WaveformView extends View {
     public void setActive(boolean active) {
         this.active = active;
         invalidate();
+    }
+
+    public void setTrackKey(String key) {
+        int nextSeed = Math.abs((key == null ? "" : key).hashCode());
+        if (seed != nextSeed) {
+            seed = nextSeed;
+            startedAt = System.currentTimeMillis();
+            progress = 0.0f;
+            invalidate();
+        }
+    }
+
+    public void setProgress(long positionMs, long durationMs) {
+        float next = durationMs <= 0L ? 0.0f
+                : Math.max(0.0f, Math.min(1.0f, (float) positionMs / durationMs));
+        if (Math.abs(progress - next) >= 0.002f) {
+            progress = next;
+            if (active) {
+                invalidate();
+            }
+        }
     }
 
     public void setState(int color, int accentColor, boolean active) {
@@ -53,7 +75,8 @@ public class WaveformView extends View {
         float time = (System.currentTimeMillis() - startedAt) / (active ? 180f : 520f);
 
         for (int i = 0; i < bars; i++) {
-            paint.setColor(active && i % 9 == 4 ? accentColor : color);
+            boolean played = active && i <= Math.round(progress * (bars - 1));
+            paint.setColor(played ? accentColor : color);
             float x = gap + i * gap * 1.48f;
             float base = 0.24f + ((seed >> (i % 12)) & 15) / 22f;
             float pulse = active ? (float) Math.sin(time + i * 0.7f) * 0.22f : 0f;

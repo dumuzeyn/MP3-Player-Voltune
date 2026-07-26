@@ -21,6 +21,9 @@ final class SwipeController {
     private boolean consuming;
     private ScrollView previewScroll;
     private LinearLayout previewList;
+    private View currentSurface;
+    private View previewSurface;
+    private boolean previewUsesSongsSurface;
     private MainRenderer.PreviewState previewState;
     private int targetIndex = -1;
     private int direction;
@@ -145,30 +148,53 @@ final class SwipeController {
         targetSearch = search == null ? "" : search;
         width = Math.max(1, host.contentHost.getWidth());
         transitionDistance = width + host.dp(12);
+        currentSurface = host.navigationState.tabIndex == 0 && host.songsView != null
+                ? host.songsView : host.contentScroll;
+        host.navigationState.tabAnimating = true;
+        host.tabsController.beginTransition(
+                host.navigationState.tabIndex, targetIndex, direction);
+        if (targetIndex == 0 && host.songsView != null) {
+            previewUsesSongsSurface = true;
+            host.songsView.prepareForTransition(
+                    host.libraryState.tracks, targetSearch);
+            previewSurface = host.songsView;
+            previewSurface.setTranslationX(direction * transitionDistance);
+            return;
+        }
+        previewUsesSongsSurface = false;
         previewList = new LinearLayout(host);
         previewList.setOrientation(LinearLayout.VERTICAL);
-        previewState = host.renderTabPreview(previewList, targetIndex, targetSearch);
         previewScroll = new ScrollView(host);
         previewScroll.addView(previewList, new FrameLayout.LayoutParams(-1, -2));
-        int previewHeight = Math.max(1, host.contentHost.getHeight());
-        previewScroll.measure(
-                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(previewHeight, View.MeasureSpec.EXACTLY));
-        previewScroll.layout(0, 0, width, previewHeight);
-        previewScroll.scrollTo(0, previewState.scrollY);
         previewScroll.setTranslationX(direction * transitionDistance);
         host.contentHost.addView(previewScroll, 0, new FrameLayout.LayoutParams(-1, -1));
-        host.navigationState.tabAnimating = true;
-        host.tabsController.beginTransition(host.navigationState.tabIndex, targetIndex, direction);
+        previewSurface = previewScroll;
+        final ScrollView expectedScroll = previewScroll;
+        final LinearLayout expectedList = previewList;
+        final int expectedTarget = targetIndex;
+        final String expectedSearch = targetSearch;
+        host.contentHost.post(() -> {
+            if (previewScroll != expectedScroll || previewList != expectedList
+                    || targetIndex != expectedTarget || previewUsesSongsSurface) {
+                return;
+            }
+            previewState = host.renderTabPreview(
+                    expectedList, expectedTarget, expectedSearch);
+            expectedScroll.post(() -> {
+                if (previewScroll == expectedScroll && previewState != null) {
+                    expectedScroll.scrollTo(0, previewState.scrollY);
+                }
+            });
+        });
     }
 
     private void updateOffset(float offset) {
         currentOffset = offset;
-        if (host.contentScroll != null) {
-            host.contentScroll.setTranslationX(offset);
+        if (currentSurface != null) {
+            currentSurface.setTranslationX(offset);
         }
-        if (previewScroll != null) {
-            previewScroll.setTranslationX(offset + (direction * transitionDistance));
+        if (previewSurface != null) {
+            previewSurface.setTranslationX(offset + (direction * transitionDistance));
         }
         host.tabsController.setTransitionProgress(Math.min(1.0f, Math.abs(offset) / Math.max(1.0f, transitionDistance)));
     }
@@ -211,6 +237,19 @@ final class SwipeController {
         int completedDirection = direction;
         boolean shouldRecord = recordHistory;
         String completedSearch = targetSearch;
+        if (previewUsesSongsSurface && previewSurface != null) {
+            previewSurface.setTranslationX(0.0f);
+            previewSurface = null;
+            previewUsesSongsSurface = false;
+            previewScroll = null;
+            previewList = null;
+            previewState = null;
+            targetIndex = -1;
+            resetCurrentContent();
+            host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                    completedTarget, completedDirection, shouldRecord, completedSearch));
+            return;
+        }
         if (previewScroll != null && previewList != null
                 && previewState != null) {
             ScrollView committedScroll = previewScroll;
@@ -219,6 +258,7 @@ final class SwipeController {
             previewScroll = null;
             previewList = null;
             previewState = null;
+            previewSurface = null;
             targetIndex = -1;
             resetCurrentContent();
             host.tabTransitionCoordinator.completeWithPreview(new TabTransitionRequest(
@@ -243,15 +283,26 @@ final class SwipeController {
         if (previewScroll != null && previewScroll.getParent() == host.contentHost) {
             host.contentHost.removeView(previewScroll);
         }
+        if (previewUsesSongsSurface && host.songsView != null
+                && host.navigationState.tabIndex != 0) {
+            host.songsView.hide();
+        }
         previewScroll = null;
         previewList = null;
         previewState = null;
+        previewSurface = null;
+        previewUsesSongsSurface = false;
         host.discardTabPreview();
         targetIndex = -1;
     }
 
     private void resetCurrentContent() {
         currentOffset = 0.0f;
+        if (currentSurface != null) {
+            currentSurface.setTranslationX(0.0f);
+            currentSurface.setAlpha(1.0f);
+        }
+        currentSurface = null;
         if (host.contentScroll != null) {
             host.contentScroll.setTranslationX(0.0f);
             host.contentScroll.setAlpha(1.0f);

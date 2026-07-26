@@ -53,6 +53,7 @@ class MainActivityCore extends Activity {
     HorizontalScrollView tabsScroll;
     FrameLayout contentHost;
     ScrollView contentScroll;
+    SongsView songsView;
     final LibraryState libraryState = new LibraryState();
     final NavigationState navigationState = new NavigationState();
     final AppearanceState appearanceState = new AppearanceState();
@@ -75,7 +76,7 @@ class MainActivityCore extends Activity {
     private final SwipeController swipeController = new SwipeController(this);
     final AudioImportController audioImportController = new AudioImportController(this);
     final UiFactory uiFactory = new UiFactory(this);
-    private final HeaderController headerController = new HeaderController(this);
+    final HeaderController headerController = new HeaderController(this);
     final OverlayController overlayController = new OverlayController(this);
     private final DialogController dialogController = new DialogController(this);
     final BackNavigationController backNavigationController = new BackNavigationController(this);
@@ -108,6 +109,9 @@ class MainActivityCore extends Activity {
     final UiPreferencesStore uiPreferencesStore = new UiPreferencesStore(this);
     final LibraryPersistenceController libraryPersistenceController =
             new LibraryPersistenceController(this);
+    final LibraryLoader libraryLoader = new LibraryLoader(this, this.uiHandler);
+    final TrackSearchController trackSearchController =
+            new TrackSearchController(this.uiHandler);
     final LibraryRepository libraryRepository = new LibraryRepository(
             this.libraryState.tracks, this.libraryState.favorites,
             this.libraryState.playlists,
@@ -260,6 +264,9 @@ class MainActivityCore extends Activity {
 
     private void refreshPlaybackChrome() {
         this.songRows.refresh(songRowStateResolver());
+        if (this.songsView != null) {
+            this.songsView.refreshPlayback();
+        }
         this.playlistController.refreshPlaybackState();
         if (this.sourcePlayButton != null) {
             this.sourcePlayButton.setText(this.playbackQueueController.isPlayingSource(
@@ -317,10 +324,30 @@ class MainActivityCore extends Activity {
         this.contentHost = views.contentHost;
         this.contentScroll = views.contentScroll;
         this.list = views.contentList;
+        if (this.songsView != null) {
+            this.songsView.close();
+        }
+        this.songsView = new SongsView(this);
+        this.contentHost.addView(this.songsView,
+                new FrameLayout.LayoutParams(-1, -1));
         this.overlayHost = views.overlayHost;
         this.particleEffectsView = views.particles;
         setContentView(this.root);
         render();
+    }
+
+    void applyLibrarySnapshot(LibraryLoader.Snapshot snapshot) {
+        this.libraryState.tracks.clear();
+        this.libraryState.tracks.addAll(snapshot.tracks);
+        this.libraryState.favorites.clear();
+        this.libraryState.favorites.addAll(snapshot.favorites);
+        this.libraryState.playlists.clear();
+        this.libraryState.playlists.addAll(snapshot.playlists);
+        this.libraryRepository.reindex();
+        this.playbackController.restorePersistedUiState();
+        this.playbackController.connect();
+        render();
+        this.songsRenderer.refreshMissingMetadataAsync();
     }
 
     void rebuildUiForTheme() {
@@ -397,6 +424,9 @@ class MainActivityCore extends Activity {
     }
 
     ArrayList<Track> currentVisibleTracks() {
+        if (this.navigationState.tabIndex == 0 && this.songsView != null) {
+            return new ArrayList<>(this.songsView.visibleTracks());
+        }
         return this.libraryListController.currentVisibleTracks();
     }
 

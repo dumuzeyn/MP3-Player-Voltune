@@ -16,7 +16,6 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 final class OverlayController {
@@ -189,18 +188,34 @@ final class OverlayController {
 
     private void openSelection(String title, HashSet<String> selected, SelectionDone done) {
         final FrameLayout shade = host.uiFactory.shade();
+        final String searchOwner = "selection-"
+                + Integer.toHexString(System.identityHashCode(shade));
+        shade.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View view) {
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View view) {
+                host.trackSearchController.cancel(searchOwner);
+            }
+        });
         LinearLayout panel = host.uiFactory.panelCard();
         LinearLayout header = host.uiFactory.row();
         header.addView(host.uiFactory.text(title, 20, true), new LinearLayout.LayoutParams(0, host.dp(58), 1.0f));
         Button complete = host.uiFactory.icon("✔");
         complete.setOnClickListener(view -> {
+            host.trackSearchController.cancel(searchOwner);
             host.overlayHost.removeView(shade);
             done.done(selected);
             host.playerUiController.updateMini();
         });
         header.addView(complete, host.uiFactory.square(52));
         Button close = host.uiFactory.icon("×");
-        close.setOnClickListener(view -> close(shade));
+        close.setOnClickListener(view -> {
+            host.trackSearchController.cancel(searchOwner);
+            close(shade);
+        });
         header.addView(close, host.uiFactory.square(52));
         panel.addView(header);
         EditText search = searchField(host.tr("Search songs", "Поиск песен"));
@@ -208,11 +223,18 @@ final class OverlayController {
         ScrollView scroll = new ScrollView(host);
         LinearLayout rows = new LinearLayout(host);
         rows.setOrientation(LinearLayout.VERTICAL);
-        renderSelectionRows(rows, selected, "");
+        renderSelectionRows(rows, selected, host.libraryState.tracks);
         search.addTextChangedListener(new SimpleTextWatcher() {
             @Override
             public void onTextChanged(CharSequence value, int start, int before, int count) {
-                renderSelectionRows(rows, selected, value == null ? "" : value.toString());
+                host.trackSearchController.filter(
+                        searchOwner, host.libraryState.tracks,
+                        value == null ? "" : value.toString(),
+                        filtered -> {
+                            if (shade.getParent() != null) {
+                                renderSelectionRows(rows, selected, filtered);
+                            }
+                        });
             }
         });
         scroll.addView(rows);
@@ -222,19 +244,17 @@ final class OverlayController {
         host.playerUiController.updateMini();
     }
 
-    private void renderSelectionRows(LinearLayout parent, HashSet<String> selected, String query) {
+    private void renderSelectionRows(LinearLayout parent, HashSet<String> selected,
+            java.util.List<Track> tracks) {
         parent.removeAllViews();
-        String normalized = query.trim().toLowerCase(Locale.ROOT);
-        for (Track track : host.libraryState.tracks) {
-            if (!normalized.isEmpty() && !host.matchesTrackSearch(track, normalized)) {
-                continue;
-            }
+        for (Track track : tracks) {
             LinearLayout row = host.uiFactory.row();
             row.setPadding(host.dp(10), host.dp(8), host.dp(10), host.dp(8));
             ImageView cover = host.uiFactory.coverView();
             int fallback = Color.rgb(host.appearanceState.dark ? 28 : 235, host.appearanceState.dark ? 28 : 235,
                     host.appearanceState.dark ? 28 : 235);
-            host.artworkUi.loadCover(cover, track, fallback);
+            host.artworkUi.loadUnregisteredCover(
+                    cover, track, fallback, CoverLoader.THUMB_SIZE);
             row.addView(cover, host.uiFactory.square(58));
             TextView title = host.uiFactory.text(track.title, 17, true);
             title.setSingleLine(true);
@@ -251,7 +271,7 @@ final class OverlayController {
                 } else {
                     host.playbackQueueController.playTrack(track, false);
                 }
-                renderSelectionRows(parent, selected, query);
+                renderSelectionRows(parent, selected, tracks);
             });
             row.addView(play, host.uiFactory.square(48));
             Runnable refreshSelection = () -> applySelectionAppearance(
@@ -436,6 +456,17 @@ final class OverlayController {
                 new LinearLayout.LayoutParams(-1, host.dp(48)));
         EditText input = searchField(host.tr("Find", "Найти"));
         input.setText(host.navigationState.search);
+        input.addTextChangedListener(new SimpleTextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence value, int start, int before, int count) {
+                if (host.navigationState.tabIndex == 0 && host.songsView != null) {
+                    host.navigationState.search =
+                            value == null ? "" : value.toString();
+                    host.songsView.show(
+                            host.libraryState.tracks, host.navigationState.search);
+                }
+            }
+        });
         panel.addView(input, searchParams());
         LinearLayout actions = host.uiFactory.row();
         Button reset = host.uiFactory.button(host.tr("Reset", "Сброс"));

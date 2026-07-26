@@ -16,16 +16,6 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
         this.host = host;
     }
 
-    void loadPlaylists() {
-        LibraryDatabase database = new LibraryDatabase(host);
-        try {
-            host.libraryState.playlists.clear();
-            host.libraryState.playlists.addAll(database.loadPlaylists());
-        } finally {
-            database.close();
-        }
-    }
-
     @Override
     public boolean needsMiniSpacer() {
         return true;

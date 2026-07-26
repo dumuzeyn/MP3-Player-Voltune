@@ -29,17 +29,30 @@ final class MainRenderer {
         this.settingsRenderer = new SettingsMenuRenderer(host);
     }
 
-    void loadMenuData() {
-        songsRenderer.loadSongs();
-        favoritesRenderer.loadFavorites();
-        playlistsRenderer.loadPlaylists();
-        host.libraryRepository.reindex();
-    }
-
     void render() {
         rememberCurrentScrollPosition();
         host.refreshTabs();
         host.navigationState.songRenderGeneration++;
+        if (host.navigationState.tabIndex == 0
+                && !host.navigationState.renderingTabPreview
+                && host.songsView != null) {
+            host.songRows.clear();
+            host.sourcePlayButton = null;
+            if (host.contentScroll != null) {
+                host.contentScroll.setVisibility(View.GONE);
+            }
+            songsRenderer.render();
+            renderedMenuKey = menuKey(
+                    host.navigationState.tabIndex, host.navigationState.search);
+            host.playerUiController.updateMini();
+            return;
+        }
+        if (host.songsView != null) {
+            host.songsView.hide();
+        }
+        if (host.contentScroll != null) {
+            host.contentScroll.setVisibility(View.VISIBLE);
+        }
         host.list.removeAllViews();
         host.songRows.clear();
         host.sourcePlayButton = null;
@@ -69,6 +82,9 @@ final class MainRenderer {
 
     private void rememberCurrentScrollPosition() {
         if (renderedMenuKey == null || host.contentScroll == null) {
+            return;
+        }
+        if (renderedMenuKey.startsWith("0\n")) {
             return;
         }
         scrollPositions.put(renderedMenuKey, Math.max(0, host.contentScroll.getScrollY()));
@@ -159,6 +175,9 @@ final class MainRenderer {
     }
 
     void adoptPreview(int targetIndex, String targetSearch, PreviewState state) {
+        if (host.songsView != null) {
+            host.songsView.hide();
+        }
         renderedMenuKey = menuKey(targetIndex, targetSearch);
         host.navigationState.songRenderGeneration = state.generation;
         host.songsRenderer.restoreBatchState(state.batchState);

@@ -90,7 +90,7 @@ final class PlaybackQueueController {
         host.libraryRepository.reindex();
         host.libraryState.favorites.remove(stored.uri);
         host.playlistController.removeTrackFromAllPlaylists(stored);
-        TrackStore.save(host, host.libraryState.tracks);
+        TrackStore.delete(host, stored);
         host.saveLibraryState();
         host.render();
     }
@@ -105,12 +105,12 @@ final class PlaybackQueueController {
 
     String loopLabel() {
         if (host.repeatMode() == 1) {
-            return "↻ 1";
+            return host.tr("Song ↻", "Песня ↻");
         }
         if (host.repeatMode() == 2) {
-            return "↻ ∞";
+            return host.tr("List ↻", "Список ↻");
         }
-        return "↻ ×";
+        return host.tr("Repeat ↻", "Повтор ↻");
     }
 
     ArrayList<Track> activeQueue() {

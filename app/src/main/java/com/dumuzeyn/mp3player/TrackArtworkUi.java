@@ -47,6 +47,13 @@ final class TrackArtworkUi implements AutoCloseable {
         }
     }
 
+    void loadUnregisteredCover(ImageView view, Track track, int fallbackColor, int maxSize) {
+        if (view instanceof RotatingCoverImageView) {
+            ((RotatingCoverImageView) view).bindTrack(track);
+        }
+        coverLoader.load(view, track, fallbackColor, maxSize);
+    }
+
     void promoteVisibleArtwork() {
         dependencies.activeRows().forEachCover((uri, cover) -> {
             Track track = dependencies.findTrack(uri);
@@ -58,6 +65,13 @@ final class TrackArtworkUi implements AutoCloseable {
 
     void seedFromView(ImageView view, Track track) {
         coverLoader.seedFromView(view, track);
+    }
+
+    void clearCover(ImageView view, int fallbackColor) {
+        coverLoader.clear(view, fallbackColor);
+        if (view instanceof RotatingCoverImageView) {
+            ((RotatingCoverImageView) view).bindTrack(null);
+        }
     }
 
     WaveformView createWaveform(Track track, boolean active) {

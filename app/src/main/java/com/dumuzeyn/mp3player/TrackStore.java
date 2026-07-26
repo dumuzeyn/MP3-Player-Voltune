@@ -77,6 +77,18 @@ public final class TrackStore {
         }
     }
 
+    public static void delete(Context context, Track track) {
+        if (track == null) {
+            return;
+        }
+        LibraryDatabase database = new LibraryDatabase(context);
+        try {
+            database.deleteTrack(track.trackId);
+        } finally {
+            database.close();
+        }
+    }
+
     public static void updateMetadata(Context context, Track track) {
         LibraryDatabase database = new LibraryDatabase(context);
         try {

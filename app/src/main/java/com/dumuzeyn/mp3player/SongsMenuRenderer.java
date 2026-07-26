@@ -7,11 +7,6 @@ final class SongsMenuRenderer implements MenuRenderer {
         this.host = host;
     }
 
-    void loadSongs() {
-        host.libraryState.tracks.clear();
-        host.libraryState.tracks.addAll(TrackStore.load(host));
-    }
-
     @Override
     public boolean needsMiniSpacer() {
         return false;
@@ -19,6 +14,7 @@ final class SongsMenuRenderer implements MenuRenderer {
 
     @Override
     public void render() {
-        host.renderSongs(host.libraryListController.filter(host.libraryState.tracks));
+        host.songsRenderer.renderLibrary(
+                host.libraryState.tracks, host.navigationState.search);
     }
 }

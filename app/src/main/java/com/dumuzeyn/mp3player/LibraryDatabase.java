@@ -10,6 +10,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +85,6 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         } finally {
             closeQuietly(cursor);
         }
-        TrackStore.sort(tracks);
         return tracks;
     }
 
@@ -108,6 +108,19 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     void upsertTrack(Track track) {
         getWritableDatabase().insertWithOnConflict("tracks", null, trackValues(track),
                 SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    void deleteTrack(String trackId) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete("favorites", "track_id=?", new String[]{trackId});
+            db.delete("playlist_tracks", "track_id=?", new String[]{trackId});
+            db.delete("tracks", "track_id=?", new String[]{trackId});
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     void updateTrackMetadata(Track track) {
@@ -164,30 +177,33 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     ArrayList<Playlist> loadPlaylists() {
         ArrayList<Playlist> playlists = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
-        Cursor playlistCursor = null;
+        Cursor cursor = null;
         try {
-            playlistCursor = db.query("playlists", new String[]{"id", "name"}, null, null,
-                    null, null, "position ASC, id ASC");
-            while (playlistCursor.moveToNext()) {
-                long playlistId = playlistCursor.getLong(0);
-                Playlist playlist = new Playlist(playlistCursor.getString(1));
-                Cursor songCursor = null;
-                try {
-                    songCursor = db.rawQuery("SELECT tracks.uri FROM playlist_tracks "
-                                    + "JOIN tracks ON tracks.track_id=playlist_tracks.track_id "
-                                    + "WHERE playlist_tracks.playlist_id=? "
-                                    + "ORDER BY playlist_tracks.position ASC",
-                            new String[]{String.valueOf(playlistId)});
-                    while (songCursor.moveToNext()) {
-                        playlist.uris.add(songCursor.getString(0));
-                    }
-                } finally {
-                    closeQuietly(songCursor);
+            cursor = db.rawQuery(
+                    "SELECT playlists.id, playlists.name, tracks.uri "
+                            + "FROM playlists "
+                            + "LEFT JOIN playlist_tracks "
+                            + "ON playlist_tracks.playlist_id=playlists.id "
+                            + "LEFT JOIN tracks "
+                            + "ON tracks.track_id=playlist_tracks.track_id "
+                            + "ORDER BY playlists.position ASC, playlists.id ASC, "
+                            + "playlist_tracks.position ASC",
+                    null);
+            LinkedHashMap<Long, Playlist> grouped = new LinkedHashMap<>();
+            while (cursor.moveToNext()) {
+                long playlistId = cursor.getLong(0);
+                Playlist playlist = grouped.get(playlistId);
+                if (playlist == null) {
+                    playlist = new Playlist(cursor.getString(1));
+                    grouped.put(playlistId, playlist);
                 }
-                playlists.add(playlist);
+                if (!cursor.isNull(2)) {
+                    playlist.uris.add(cursor.getString(2));
+                }
             }
+            playlists.addAll(grouped.values());
         } finally {
-            closeQuietly(playlistCursor);
+            closeQuietly(cursor);
         }
         return playlists;
     }
@@ -311,11 +327,47 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     }
 
     private static void saveTracks(SQLiteDatabase db, List<Track> tracks) {
-        db.delete("tracks", null, null);
-        for (Track track : tracks) {
-            db.insertWithOnConflict("tracks", null, trackValues(track),
-                    SQLiteDatabase.CONFLICT_REPLACE);
+        HashMap<String, Track> storedById = new HashMap<>();
+        Cursor cursor = db.query("tracks", null, null, null, null, null, null);
+        try {
+            while (cursor.moveToNext()) {
+                Track stored = trackFromCursor(cursor);
+                storedById.put(stored.trackId, stored);
+            }
+        } finally {
+            cursor.close();
         }
+        for (Track track : tracks) {
+            Track stored = storedById.remove(track.trackId);
+            if (stored == null) {
+                db.insertWithOnConflict("tracks", null, trackValues(track),
+                        SQLiteDatabase.CONFLICT_REPLACE);
+            } else if (!sameStoredTrack(stored, track)) {
+                db.update("tracks", trackValues(track), "track_id=?",
+                        new String[]{track.trackId});
+            }
+        }
+        for (String removedTrackId : storedById.keySet()) {
+            db.delete("favorites", "track_id=?", new String[]{removedTrackId});
+            db.delete("playlist_tracks", "track_id=?", new String[]{removedTrackId});
+            db.delete("tracks", "track_id=?", new String[]{removedTrackId});
+        }
+    }
+
+    private static boolean sameStoredTrack(Track left, Track right) {
+        return left.durationMs == right.durationMs
+                && left.fileSize == right.fileSize
+                && left.lastModified == right.lastModified
+                && equal(left.uri, right.uri)
+                && equal(left.title, right.title)
+                && equal(left.artist, right.artist)
+                && equal(left.album, right.album)
+                && equal(left.genre, right.genre)
+                && equal(left.fingerprint, right.fingerprint);
+    }
+
+    private static boolean equal(String left, String right) {
+        return left == null ? right == null : left.equals(right);
     }
 
     private static ContentValues trackValues(Track track) {
