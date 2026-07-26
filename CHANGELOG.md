@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.0.1 - Faster library and stable release startup
+
+- Replaced the manually rendered Songs list with `RecyclerView`, `ListAdapter`, stable track IDs, and targeted payload updates.
+- Moved library loading and debounced search filtering off the UI thread.
+- Added normalized search data so track metadata is not repeatedly converted for every entered character.
+- Reduced SQLite work with grouped playlist reads and differential track persistence.
+- Added memory and disk artwork caching while loading covers only for visible song rows.
+- Fixed two release-only startup crashes caused by accessing the Activity context before it was attached.
+- Removed the redundant favorite button from song rows; favorites remain available in track properties.
+- Simplified the full-player repeat control to `Repeat`, `Song`, and `List` states without numeric or infinity symbols.
+- Added unit coverage for normalized track search and retained Android 8, Android 16, and tablet compatibility checks.
+
 ## 3.0 - Media3 playback and responsive library
 
 - Migrated playback to Media3 `ExoPlayer`, `MediaSessionService`, and `MediaController` while preserving background playback, queues, repeat, notifications, and sleep timer behavior.
