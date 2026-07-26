@@ -17,28 +17,28 @@ final class ParticleSettingsController {
     }
 
     void openDialog() {
-        FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(host.tr("Particle settings", "Настройка частиц"), 22, true),
+        panel.addView(host.uiFactory.text(host.tr("Particle settings", "Настройка частиц"), 22, true),
                 new LinearLayout.LayoutParams(-1, host.dp(48)));
-        addSlider(panel, host.tr("Frequency", "Частота"), 10, 100, host.particleFrequency,
-                value -> host.particleFrequency = value);
-        addSlider(panel, host.tr("Size", "Размер"), 60, 150, host.particleSize,
-                value -> host.particleSize = value);
-        addSlider(panel, host.tr("Lifetime", "Время существования"), 50, 180, host.particleLifetime,
-                value -> host.particleLifetime = value);
+        addSlider(panel, host.tr("Frequency", "Частота"), 10, 100, host.appearanceState.particleFrequency,
+                value -> host.appearanceState.particleFrequency = value);
+        addSlider(panel, host.tr("Size", "Размер"), 60, 150, host.appearanceState.particleSize,
+                value -> host.appearanceState.particleSize = value);
+        addSlider(panel, host.tr("Lifetime", "Время существования"), 50, 180, host.appearanceState.particleLifetime,
+                value -> host.appearanceState.particleLifetime = value);
         addColorButton(panel, true);
         addColorButton(panel, false);
 
-        Button reset = host.button(host.tr("Restore defaults", "По умолчанию"));
-        host.applySecondaryButtonStyle(reset);
+        Button reset = host.uiFactory.button(host.tr("Restore defaults", "По умолчанию"));
+        host.uiFactory.applySecondaryButtonStyle(reset);
         reset.setOnClickListener(view -> {
-            host.particleFrequency = 45;
-            host.particleSize = 100;
-            host.particleLifetime = 100;
-            host.particlePrimaryColor = 0;
-            host.particleSecondaryColor = 0;
+            host.appearanceState.particleFrequency = 45;
+            host.appearanceState.particleSize = 100;
+            host.appearanceState.particleLifetime = 100;
+            host.appearanceState.particlePrimaryColor = 0;
+            host.appearanceState.particleSecondaryColor = 0;
             host.saveState();
             host.refreshParticleSettings();
             host.overlayHost.removeView(shade);
@@ -48,20 +48,20 @@ final class ParticleSettingsController {
         resetParams.setMargins(0, host.dp(8), 0, 0);
         panel.addView(reset, resetParams);
 
-        Button close = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(close);
+        Button close = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(close);
         close.setOnClickListener(view -> {
             host.saveState();
             host.refreshParticleSettings();
             host.overlayHost.removeView(shade);
-            host.render();
+            host.refreshSettingsLabels();
         });
         LinearLayout.LayoutParams closeParams = new LinearLayout.LayoutParams(-1, host.dp(50));
         closeParams.setMargins(0, host.dp(10), 0, 0);
         panel.addView(close, closeParams);
         shade.addView(panel, host.centerParams(host.dp(340), -2));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     private void addColorButton(LinearLayout panel, boolean primary) {
@@ -69,9 +69,9 @@ final class ParticleSettingsController {
         String name = primary
                 ? host.tr("Primary color", "Основной цвет")
                 : host.tr("Secondary color", "Дополнительный цвет");
-        Button button = host.button(name + ": " + colorHex(color));
+        Button button = host.uiFactory.button(name + ": " + colorHex(color));
         button.setTextColor(ThemeManager.readableOn(color));
-        host.setSurface(button, color, false);
+        host.uiFactory.setSurface(button, color, false);
         button.setOnClickListener(view -> {
             host.overlayHost.removeAllViews();
             openColorPicker(primary);
@@ -82,11 +82,11 @@ final class ParticleSettingsController {
     }
 
     private void openColorPicker(boolean primary) {
-        int originalColor = primary ? host.particlePrimaryColor : host.particleSecondaryColor;
-        FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        int originalColor = primary ? host.appearanceState.particlePrimaryColor : host.appearanceState.particleSecondaryColor;
+        FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(primary
+        panel.addView(host.uiFactory.text(primary
                         ? host.tr("Primary particle color", "Основной цвет частиц")
                         : host.tr("Secondary particle color", "Дополнительный цвет частиц"),
                 21, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
@@ -97,9 +97,9 @@ final class ParticleSettingsController {
 
         ThemeColorWheelView wheel = new ThemeColorWheelView(host, selectedColor(primary), color -> {
             if (primary) {
-                host.particlePrimaryColor = color;
+                host.appearanceState.particlePrimaryColor = color;
             } else {
-                host.particleSecondaryColor = color;
+                host.appearanceState.particleSecondaryColor = color;
             }
             preview.setBackgroundColor(color);
             host.refreshParticleSettings();
@@ -108,13 +108,13 @@ final class ParticleSettingsController {
         wheelParams.setMargins(0, host.dp(10), 0, host.dp(10));
         panel.addView(wheel, wheelParams);
 
-        LinearLayout actions = host.row();
-        Button cancel = host.button(host.tr("Cancel", "Отмена"));
+        LinearLayout actions = host.uiFactory.row();
+        Button cancel = host.uiFactory.button(host.tr("Cancel", "Отмена"));
         cancel.setOnClickListener(view -> {
             if (primary) {
-                host.particlePrimaryColor = originalColor;
+                host.appearanceState.particlePrimaryColor = originalColor;
             } else {
-                host.particleSecondaryColor = originalColor;
+                host.appearanceState.particleSecondaryColor = originalColor;
             }
             host.refreshParticleSettings();
             host.overlayHost.removeView(shade);
@@ -122,8 +122,8 @@ final class ParticleSettingsController {
         });
         actions.addView(cancel, new LinearLayout.LayoutParams(0, host.dp(50), 1.0f));
 
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> {
             host.saveState();
             host.refreshParticleSettings();
@@ -138,7 +138,7 @@ final class ParticleSettingsController {
     }
 
     private int selectedColor(boolean primary) {
-        int configured = primary ? host.particlePrimaryColor : host.particleSecondaryColor;
+        int configured = primary ? host.appearanceState.particlePrimaryColor : host.appearanceState.particleSecondaryColor;
         if (configured != 0) {
             return configured;
         }
@@ -153,12 +153,12 @@ final class ParticleSettingsController {
     private void addSlider(LinearLayout panel, String name, int minimum, int maximum, int initial,
             ValueChanged listener) {
         int value = Math.max(minimum, Math.min(maximum, initial));
-        TextView label = host.text(name + ": " + value + "%", 15, false);
+        TextView label = host.uiFactory.text(name + ": " + value + "%", 15, false);
         panel.addView(label, new LinearLayout.LayoutParams(-1, host.dp(34)));
         SeekBar seek = new SeekBar(host);
         seek.setMax(maximum - minimum);
         seek.setProgress(value - minimum);
-        host.applySeekBarColors(seek);
+        host.uiFactory.applySeekBarColors(seek);
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {

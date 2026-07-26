@@ -34,7 +34,7 @@ final class RotatingCoverImageView extends ImageView {
         setOutlineProvider(new ViewOutlineProvider() {
             @Override
             public void getOutline(View view, Outline outline) {
-                float radius = host.circularCovers
+                float radius = host.appearanceState.circularCovers
                         ? Math.min(view.getWidth(), view.getHeight()) * 0.5f
                         : host.dp(8);
                 outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
@@ -100,10 +100,10 @@ final class RotatingCoverImageView extends ImageView {
         invalidateOutline();
         String currentUri = "";
         int currentIndex = host.currentTrackIndex();
-        if (currentIndex >= 0 && currentIndex < host.tracks.size()
-                && host.tracks.get(currentIndex) != null
-                && host.tracks.get(currentIndex).uri != null) {
-            currentUri = host.tracks.get(currentIndex).uri;
+        if (currentIndex >= 0 && currentIndex < host.libraryState.tracks.size()
+                && host.libraryState.tracks.get(currentIndex) != null
+                && host.libraryState.tracks.get(currentIndex).uri != null) {
+            currentUri = host.libraryState.tracks.get(currentIndex).uri;
         }
         if (!currentUri.isEmpty() && !currentUri.equals(this.lastObservedTrackUri)) {
             if (!this.lastObservedTrackUri.isEmpty()) {
@@ -111,22 +111,22 @@ final class RotatingCoverImageView extends ImageView {
             }
             this.lastObservedTrackUri = currentUri;
         }
-        boolean shouldRotate = host.circularCovers && host.isPlaybackPlaying()
-                && currentIndex >= 0 && currentIndex < host.tracks.size()
-                && trackUris.contains(host.tracks.get(currentIndex).uri)
-                && (!requireActiveQueue || host.isCurrentCollection(sourceTracks));
+        boolean shouldRotate = host.appearanceState.circularCovers && host.isPlaybackPlaying()
+                && currentIndex >= 0 && currentIndex < host.libraryState.tracks.size()
+                && trackUris.contains(host.libraryState.tracks.get(currentIndex).uri)
+                && (!requireActiveQueue || host.playbackQueueController.isCurrentCollection(sourceTracks));
         if (seeking) {
             return;
         }
         if (shouldRotate && isAttachedToWindow()) {
             startRotation();
         } else {
-            stopRotation(!host.circularCovers);
+            stopRotation(!host.appearanceState.circularCovers);
         }
     }
 
     void beginSeekSpin(int positionMs) {
-        if (!host.circularCovers) {
+        if (!host.appearanceState.circularCovers) {
             return;
         }
         seeking = true;
@@ -136,7 +136,7 @@ final class RotatingCoverImageView extends ImageView {
     }
 
     void updateSeekSpin(int positionMs) {
-        if (!seeking || !host.circularCovers) {
+        if (!seeking || !host.appearanceState.circularCovers) {
             return;
         }
         int deltaMs = positionMs - seekStartPosition;
@@ -152,7 +152,7 @@ final class RotatingCoverImageView extends ImageView {
             return;
         }
         seeking = false;
-        if (!host.circularCovers) {
+        if (!host.appearanceState.circularCovers) {
             updatePlaybackState();
             return;
         }
@@ -163,7 +163,7 @@ final class RotatingCoverImageView extends ImageView {
             return;
         }
         float target = seekStartRotation + degreesForSeekDelta(totalDeltaMs);
-        if (!animateTap || !host.animations) {
+        if (!animateTap || !host.appearanceState.animations) {
             setRotation(target % 360.0f);
             updatePlaybackState();
             return;

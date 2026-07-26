@@ -7,6 +7,8 @@ import android.graphics.ImageDecoder;
 import android.graphics.Movie;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
@@ -34,19 +36,22 @@ final class BackgroundMediaView extends ImageView {
                 }
             };
 
-    private final MainActivityCore host;
+    private final android.content.Context context;
+    private final Handler mainHandler;
     private final String mediaUri;
     private final int blurPercent;
     private Movie legacyMovie;
     private long movieStartedAt;
 
-    BackgroundMediaView(MainActivityCore host, String mediaUri, int blurPercent) {
-        super(host);
-        this.host = host;
+    BackgroundMediaView(android.content.Context context, String mediaUri, int blurPercent,
+            int fallbackColor) {
+        super(context);
+        this.context = context.getApplicationContext();
+        this.mainHandler = new Handler(Looper.getMainLooper());
         this.mediaUri = mediaUri;
         this.blurPercent = Math.max(0, Math.min(100, blurPercent));
         setScaleType(ScaleType.CENTER_CROP);
-        setBackgroundColor(host.bg);
+        setBackgroundColor(fallbackColor);
         load();
     }
 
@@ -66,7 +71,7 @@ final class BackgroundMediaView extends ImageView {
                 if (target == null || decoded == null) {
                     return;
                 }
-                host.uiHandler.post(() -> {
+                mainHandler.post(() -> {
                     BackgroundMediaView liveTarget = reference.get();
                     if (liveTarget == null || !liveTarget.mediaUri.equals(mediaUri)) {
                         return;
@@ -81,9 +86,9 @@ final class BackgroundMediaView extends ImageView {
 
     private DecodedMedia decode(String cacheKey) throws Exception {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            return Api28Decoder.decode(host, mediaUri, blurPercent, cacheKey);
+            return Api28Decoder.decode(context, mediaUri, blurPercent, cacheKey);
         }
-        try (InputStream input = host.getContentResolver()
+        try (InputStream input = context.getContentResolver()
                 .openInputStream(android.net.Uri.parse(mediaUri))) {
             byte[] data = readBounded(input);
             if (blurPercent == 0 && isGif(data)) {
@@ -97,7 +102,7 @@ final class BackgroundMediaView extends ImageView {
                 return null;
             }
             bitmap = scaleDown(bitmap);
-            bitmap = blurLegacy(host.getApplicationContext(), bitmap, blurPercent);
+            bitmap = blurLegacy(context, bitmap, blurPercent);
             BITMAP_CACHE.put(cacheKey, bitmap);
             return DecodedMedia.bitmap(bitmap);
         }
@@ -235,9 +240,10 @@ final class BackgroundMediaView extends ImageView {
 
     @TargetApi(Build.VERSION_CODES.P)
     private static final class Api28Decoder {
-        static DecodedMedia decode(MainActivityCore host, String mediaUri, int blurPercent,
+        static DecodedMedia decode(android.content.Context context, String mediaUri,
+                int blurPercent,
                 String cacheKey) throws Exception {
-            ImageDecoder.Source source = ImageDecoder.createSource(host.getContentResolver(),
+            ImageDecoder.Source source = ImageDecoder.createSource(context.getContentResolver(),
                     android.net.Uri.parse(mediaUri));
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && blurPercent > 0) {
                 Bitmap bitmap = ImageDecoder.decodeBitmap(source, (decoder, info, src) -> {
@@ -245,7 +251,7 @@ final class BackgroundMediaView extends ImageView {
                     setTargetSize(decoder, info);
                 });
                 bitmap = scaleDown(bitmap);
-                bitmap = blurLegacy(host.getApplicationContext(), bitmap, blurPercent);
+                bitmap = blurLegacy(context, bitmap, blurPercent);
                 BITMAP_CACHE.put(cacheKey, bitmap);
                 return DecodedMedia.bitmap(bitmap);
             }

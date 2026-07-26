@@ -10,8 +10,8 @@ final class FavoritesMenuRenderer implements MenuRenderer {
     void loadFavorites() {
         LibraryDatabase database = new LibraryDatabase(host);
         try {
-            host.favorites.clear();
-            host.favorites.addAll(database.loadFavorites());
+            host.libraryState.favorites.clear();
+            host.libraryState.favorites.addAll(database.loadFavorites());
         } finally {
             database.close();
         }

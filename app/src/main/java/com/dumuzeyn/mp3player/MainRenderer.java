@@ -33,23 +33,29 @@ final class MainRenderer {
         songsRenderer.loadSongs();
         favoritesRenderer.loadFavorites();
         playlistsRenderer.loadPlaylists();
+        host.libraryRepository.reindex();
     }
 
     void render() {
         rememberCurrentScrollPosition();
         host.refreshTabs();
-        host.songRenderGeneration++;
+        host.navigationState.songRenderGeneration++;
         host.list.removeAllViews();
         host.songRows.clear();
         host.sourcePlayButton = null;
         host.renderSectionHeader();
         MenuRenderer renderer = rendererForTab();
+        int scrollY = scrollPositionFor(
+                host.navigationState.tabIndex, host.navigationState.search);
+        if (host.navigationState.tabIndex <= 1) {
+            host.songsRenderer.prepareNextRenderForScroll(scrollY);
+        }
         renderer.render();
         if (renderer.needsMiniSpacer()) {
             host.addMiniSpacerIfNeeded();
         }
         restoreCurrentScrollPosition();
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     void captureScrollBeforeUiRebuild() {
@@ -69,16 +75,13 @@ final class MainRenderer {
     }
 
     private void restoreCurrentScrollPosition() {
-        renderedMenuKey = menuKey(host.tabIndex, host.search);
+        renderedMenuKey = menuKey(host.navigationState.tabIndex, host.navigationState.search);
         final String targetKey = renderedMenuKey;
         if (host.contentScroll == null) {
             return;
         }
         int scrollY = scrollPositions.containsKey(renderedMenuKey)
                 ? scrollPositions.get(renderedMenuKey) : 0;
-        if (host.tabIndex <= 1) {
-            host.songsRenderer.prepareForScrollRestore(scrollY);
-        }
         final ScrollView targetScroll = host.contentScroll;
         if (scrollY <= 0) {
             targetScroll.scrollTo(0, 0);
@@ -95,7 +98,7 @@ final class MainRenderer {
                             observer.removeOnPreDrawListener(this);
                         }
                         if (host.contentScroll != targetScroll
-                                || !targetKey.equals(menuKey(host.tabIndex, host.search))) {
+                                || !targetKey.equals(menuKey(host.navigationState.tabIndex, host.navigationState.search))) {
                             targetScroll.setVisibility(View.VISIBLE);
                             return true;
                         }
@@ -114,37 +117,41 @@ final class MainRenderer {
         android.widget.LinearLayout previousList = host.list;
         ButtonState previousButton = new ButtonState(host.sourcePlayButton);
         SongsRenderer.BatchState previousBatchState = host.songsRenderer.captureBatchState();
-        int previousTab = host.tabIndex;
-        String previousSearch = host.search;
-        boolean previousPreview = host.renderingTabPreview;
+        int previousTab = host.navigationState.tabIndex;
+        int previousGeneration = host.navigationState.songRenderGeneration;
+        String previousSearch = host.navigationState.search;
+        boolean previousPreview = host.navigationState.renderingTabPreview;
         int scrollY = scrollPositionFor(targetIndex, targetSearch);
         PreviewState previewState;
         try {
             host.previewSongRows.clear();
             host.list = target;
-            host.tabIndex = targetIndex;
-            host.search = targetSearch == null ? "" : targetSearch;
-            host.renderingTabPreview = true;
+            host.navigationState.tabIndex = targetIndex;
+            host.navigationState.songRenderGeneration = previousGeneration + 1;
+            host.navigationState.search = targetSearch == null ? "" : targetSearch;
+            host.navigationState.renderingTabPreview = true;
             host.sourcePlayButton = null;
             target.removeAllViews();
             host.renderSectionHeader();
             MenuRenderer renderer = rendererForTab(targetIndex);
-            renderer.render();
             if (targetIndex <= 1) {
-                host.songsRenderer.prepareForScrollRestore(scrollY);
+                host.songsRenderer.prepareNextRenderForScroll(scrollY);
             }
+            renderer.render();
             if (renderer.needsMiniSpacer()) {
                 host.addMiniSpacerIfNeeded();
             }
             previewState = new PreviewState(
                     scrollY,
+                    host.navigationState.songRenderGeneration,
                     host.songsRenderer.captureBatchState(),
                     host.sourcePlayButton);
         } finally {
             host.list = previousList;
-            host.tabIndex = previousTab;
-            host.search = previousSearch;
-            host.renderingTabPreview = previousPreview;
+            host.navigationState.tabIndex = previousTab;
+            host.navigationState.songRenderGeneration = previousGeneration;
+            host.navigationState.search = previousSearch;
+            host.navigationState.renderingTabPreview = previousPreview;
             host.sourcePlayButton = previousButton.button;
             host.songsRenderer.restoreBatchState(previousBatchState);
         }
@@ -153,13 +160,14 @@ final class MainRenderer {
 
     void adoptPreview(int targetIndex, String targetSearch, PreviewState state) {
         renderedMenuKey = menuKey(targetIndex, targetSearch);
+        host.navigationState.songRenderGeneration = state.generation;
         host.songsRenderer.restoreBatchState(state.batchState);
         host.songRows.replaceWith(host.previewSongRows);
         host.previewSongRows.clear();
         host.sourcePlayButton = state.sourcePlayButton;
         host.songRows.refresh(host.songRowStateResolver());
-        host.loadPromotedCovers();
-        host.updateMini();
+        host.artworkUi.promoteVisibleArtwork();
+        host.playerUiController.updateMini();
     }
 
     void discardPreview() {
@@ -172,7 +180,7 @@ final class MainRenderer {
     }
 
     private MenuRenderer rendererForTab() {
-        return rendererForTab(host.tabIndex);
+        return rendererForTab(host.navigationState.tabIndex);
     }
 
     private MenuRenderer rendererForTab(int tabIndex) {
@@ -210,12 +218,14 @@ final class MainRenderer {
 
     static final class PreviewState {
         final int scrollY;
+        final int generation;
         final SongsRenderer.BatchState batchState;
         final android.widget.Button sourcePlayButton;
 
-        PreviewState(int scrollY, SongsRenderer.BatchState batchState,
+        PreviewState(int scrollY, int generation, SongsRenderer.BatchState batchState,
                 android.widget.Button sourcePlayButton) {
             this.scrollY = scrollY;
+            this.generation = generation;
             this.batchState = batchState;
             this.sourcePlayButton = sourcePlayButton;
         }

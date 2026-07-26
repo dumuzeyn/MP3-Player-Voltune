@@ -17,6 +17,6 @@ final class ArtistsMenuRenderer extends TrackGroupMenuRenderer {
 
     @Override
     int cardOpacity() {
-        return host.artistCardOpacity;
+        return host.appearanceState.artistCardOpacity;
     }
 }

@@ -65,7 +65,7 @@ final class ButtonFactory {
     }
 
     void applySecondary(Button button) {
-        applySecondary(button, host.cardOpacity);
+        applySecondary(button, host.appearanceState.cardOpacity);
     }
 
     void applySecondary(Button button, int opacity) {
@@ -78,12 +78,13 @@ final class ButtonFactory {
 
     void applyPlayerTool(Button button, boolean active) {
         button.setSingleLine(true);
-        button.setTextSize(13.0f);
+        button.setTextSize(14.0f);
         button.setTextColor(active ? host.yellow : host.primaryText);
-        GradientDrawable drawable = background(Color.TRANSPARENT, false);
+        GradientDrawable drawable = background(
+                host.cardSurfaceColor(host.card, Math.max(68, host.appearanceState.cardOpacity)), false);
         drawable.setStroke(host.dp(1), active ? host.purple : host.cardStroke);
         button.setBackground(drawable);
-        TextOutlinePolicy.markCardSurface(button, false);
+        TextOutlinePolicy.markCardSurface(button, true);
     }
 
     private GradientDrawable background(int color, boolean outlined) {

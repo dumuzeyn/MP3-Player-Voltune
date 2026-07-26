@@ -25,14 +25,14 @@ final class BackNavigationController {
     }
 
     boolean handleBack() {
-        if (host.tabAnimating) {
+        if (host.navigationState.tabAnimating) {
             return true;
         }
         if (host.overlayHost != null && host.overlayHost.getChildCount() > 0) {
             View top = host.overlayHost.getChildAt(host.overlayHost.getChildCount() - 1);
             if (!host.playerUiController.closeFullPlayerIfTop(top)) {
                 host.overlayHost.removeView(top);
-                host.updateMini();
+                host.playerUiController.updateMini();
             }
             return true;
         }

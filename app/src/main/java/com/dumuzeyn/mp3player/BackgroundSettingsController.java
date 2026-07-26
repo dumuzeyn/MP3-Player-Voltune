@@ -37,17 +37,17 @@ final class BackgroundSettingsController {
     }
 
     void openDialog() {
-        FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(14), host.dp(12), host.dp(14), host.dp(12));
-        panel.addView(host.text(host.tr("Background", "Фон"), 22, true),
+        panel.addView(host.uiFactory.text(host.tr("Background", "Фон"), 22, true),
                 new LinearLayout.LayoutParams(-1, host.dp(44)));
 
         ScrollView scroll = new ScrollView(host);
         LinearLayout rows = new LinearLayout(host);
         rows.setOrientation(LinearLayout.VERTICAL);
         addTarget(rows, true, shade);
-        View divider = host.lineView();
+        View divider = host.uiFactory.lineView();
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, host.dp(1));
         dividerParams.setMargins(0, host.dp(10), 0, host.dp(10));
         rows.addView(divider, dividerParams);
@@ -55,8 +55,8 @@ final class BackgroundSettingsController {
         scroll.addView(rows, new ScrollView.LayoutParams(-1, -2));
         panel.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> {
             host.saveState();
             host.overlayHost.removeView(shade);
@@ -76,7 +76,7 @@ final class BackgroundSettingsController {
                 + host.dp(44) + rows.getMeasuredHeight() + host.dp(56);
         shade.addView(panel, host.centerParams(host.dp(360), Math.min(maxHeight, desiredHeight)));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
@@ -125,11 +125,11 @@ final class BackgroundSettingsController {
 
     private void applyMedia(boolean main, Uri uri) {
         if (main) {
-            host.mainBackgroundMediaUri = uri.toString();
-            host.mainBackgroundMode = MODE_MEDIA;
+            host.appearanceState.mainBackgroundMediaUri = uri.toString();
+            host.appearanceState.mainBackgroundMode = MODE_MEDIA;
         } else {
-            host.playerBackgroundMediaUri = uri.toString();
-            host.playerBackgroundMode = MODE_MEDIA;
+            host.appearanceState.playerBackgroundMediaUri = uri.toString();
+            host.appearanceState.playerBackgroundMode = MODE_MEDIA;
         }
         host.saveState();
         host.rebuildUi();
@@ -141,26 +141,26 @@ final class BackgroundSettingsController {
     }
 
     private void addTarget(LinearLayout rows, boolean main, FrameLayout shade) {
-        rows.addView(host.text(main
+        rows.addView(host.uiFactory.text(main
                         ? host.tr("Main application", "Основное приложение")
                         : host.tr("Full player", "Большой плеер"), 18, true),
                 new LinearLayout.LayoutParams(-1, host.dp(38)));
-        int mode = main ? host.mainBackgroundMode : host.playerBackgroundMode;
+        int mode = main ? host.appearanceState.mainBackgroundMode : host.appearanceState.playerBackgroundMode;
         addAction(rows, host.tr("Type: ", "Тип: ") + modeName(mode), () -> {
             setMode(main, (mode + 1) % 3);
             saveAndReopen(shade);
         });
         if (mode == MODE_SOLID) {
-            int color = main ? resolvedSolid(host.mainSolidBackground) : resolvedSolid(host.playerSolidBackground);
+            int color = main ? resolvedSolid(host.appearanceState.mainSolidBackground) : resolvedSolid(host.appearanceState.playerSolidBackground);
             addColor(rows, host.tr("Color", "Цвет"), main ? MAIN_SOLID : PLAYER_SOLID,
                     color, shade);
         } else if (mode == MODE_GRADIENT) {
             addColor(rows, host.tr("Color 1", "Цвет 1"), main ? MAIN_START : PLAYER_START,
-                    main ? host.mainGradientStart : host.playerGradientStart, shade);
+                    main ? host.appearanceState.mainGradientStart : host.appearanceState.playerGradientStart, shade);
             addColor(rows, host.tr("Color 2", "Цвет 2"), main ? MAIN_END : PLAYER_END,
-                    main ? host.mainGradientEnd : host.playerGradientEnd, shade);
+                    main ? host.appearanceState.mainGradientEnd : host.appearanceState.playerGradientEnd, shade);
         } else {
-            String uri = main ? host.mainBackgroundMediaUri : host.playerBackgroundMediaUri;
+            String uri = main ? host.appearanceState.mainBackgroundMediaUri : host.appearanceState.playerBackgroundMediaUri;
             addAction(rows, uri.isEmpty()
                     ? host.tr("Choose visual media", "Выбрать медиафон")
                     : host.tr("Replace visual media", "Заменить медиафон"),
@@ -170,20 +170,20 @@ final class BackgroundSettingsController {
     }
 
     private void addBlur(LinearLayout rows, boolean main) {
-        int blur = main ? host.mainBackgroundBlur : host.playerBackgroundBlur;
-        TextView label = host.text(host.tr("Blur: ", "Размытие: ") + blur + "%", 15, false);
+        int blur = main ? host.appearanceState.mainBackgroundBlur : host.appearanceState.playerBackgroundBlur;
+        TextView label = host.uiFactory.text(host.tr("Blur: ", "Размытие: ") + blur + "%", 15, false);
         rows.addView(label, new LinearLayout.LayoutParams(-1, host.dp(30)));
         SeekBar seek = new SeekBar(host);
         seek.setMax(100);
         seek.setProgress(blur);
-        host.applySeekBarColors(seek);
+        host.uiFactory.applySeekBarColors(seek);
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (!fromUser) return;
                 label.setText(host.tr("Blur: ", "Размытие: ") + progress + "%");
-                if (main) host.mainBackgroundBlur = progress;
-                else host.playerBackgroundBlur = progress;
+                if (main) host.appearanceState.mainBackgroundBlur = progress;
+                else host.appearanceState.playerBackgroundBlur = progress;
             }
 
             @Override public void onStartTrackingTouch(SeekBar seekBar) { }
@@ -207,9 +207,9 @@ final class BackgroundSettingsController {
 
     private void addColor(LinearLayout parent, String label, int target, int color,
             FrameLayout parentShade) {
-        Button button = host.button(label + "  " + colorHex(color));
+        Button button = host.uiFactory.button(label + "  " + colorHex(color));
         button.setTextColor(ThemeManager.readableOn(color));
-        host.setSurface(button, color, false);
+        host.uiFactory.setSurface(button, color, false);
         button.setOnClickListener(view -> {
             host.overlayHost.removeView(parentShade);
             openColorPicker(label, target, color);
@@ -220,10 +220,10 @@ final class BackgroundSettingsController {
     }
 
     private void openColorPicker(String title, int target, int initialColor) {
-        FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(title, 21, true), new LinearLayout.LayoutParams(-1, host.dp(44)));
+        panel.addView(host.uiFactory.text(title, 21, true), new LinearLayout.LayoutParams(-1, host.dp(44)));
         View preview = new View(host);
         preview.setBackgroundColor(initialColor);
         panel.addView(preview, new LinearLayout.LayoutParams(-1, host.dp(34)));
@@ -232,8 +232,8 @@ final class BackgroundSettingsController {
             preview.setBackgroundColor(color);
         });
         panel.addView(wheel, new LinearLayout.LayoutParams(-1, host.dp(280)));
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> {
             host.saveState();
             host.overlayHost.removeView(shade);
@@ -245,8 +245,8 @@ final class BackgroundSettingsController {
     }
 
     private void addAction(LinearLayout parent, String label, Runnable action) {
-        Button button = host.button(label);
-        host.applySecondaryButtonStyle(button);
+        Button button = host.uiFactory.button(label);
+        host.uiFactory.applySecondaryButtonStyle(button);
         button.setOnClickListener(view -> action.run());
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(46));
         params.setMargins(0, host.dp(2), 0, host.dp(2));
@@ -260,17 +260,17 @@ final class BackgroundSettingsController {
     }
 
     private void setMode(boolean main, int mode) {
-        if (main) host.mainBackgroundMode = mode;
-        else host.playerBackgroundMode = mode;
+        if (main) host.appearanceState.mainBackgroundMode = mode;
+        else host.appearanceState.playerBackgroundMode = mode;
     }
 
     private void setColor(int target, int color) {
-        if (target == MAIN_SOLID) host.mainSolidBackground = color;
-        else if (target == MAIN_START) host.mainGradientStart = color;
-        else if (target == MAIN_END) host.mainGradientEnd = color;
-        else if (target == PLAYER_SOLID) host.playerSolidBackground = color;
-        else if (target == PLAYER_START) host.playerGradientStart = color;
-        else host.playerGradientEnd = color;
+        if (target == MAIN_SOLID) host.appearanceState.mainSolidBackground = color;
+        else if (target == MAIN_START) host.appearanceState.mainGradientStart = color;
+        else if (target == MAIN_END) host.appearanceState.mainGradientEnd = color;
+        else if (target == PLAYER_SOLID) host.appearanceState.playerSolidBackground = color;
+        else if (target == PLAYER_START) host.appearanceState.playerGradientStart = color;
+        else host.appearanceState.playerGradientEnd = color;
     }
 
     private int resolvedSolid(int color) {

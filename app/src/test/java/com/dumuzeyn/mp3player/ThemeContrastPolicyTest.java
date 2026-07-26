@@ -14,4 +14,9 @@ public class ThemeContrastPolicyTest {
         assertFalse(ThemeContrastPolicy.requiresOutline(0xff000000, 0xffffffff));
         assertFalse(ThemeContrastPolicy.requiresOutline(0xffffffff, 0xff000000));
     }
+
+    @Test public void similarOutlineColorIsSuppressed() {
+        assertFalse(ThemeContrastPolicy.outlineIsDistinct(0xff101010, 0xff181818));
+        assertTrue(ThemeContrastPolicy.outlineIsDistinct(0xff101010, 0xffffffff));
+    }
 }

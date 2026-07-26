@@ -46,15 +46,16 @@ final class PlaybackController implements Player.Listener {
 
     void restorePersistedUiState() {
         PlaybackStateManager.State state = new PlaybackStateManager(host).load();
-        long resumeWindowMs = Math.max(0L, host.resumeWindowMinutes) * 60000L;
-        boolean expired = state.savedAt <= 0L || resumeWindowMs <= 0L
-                || System.currentTimeMillis() - state.savedAt > resumeWindowMs;
-        if (!state.playing && expired) {
+        long resumeWindowMs = Math.max(0L, host.appearanceState.resumeWindowMinutes) * 60000L;
+        boolean expired = MiniPlayerRetentionPolicy.isExpired(
+                state.playing, state.inactiveSince, state.savedAt,
+                System.currentTimeMillis(), resumeWindowMs);
+        if (expired) {
             return;
         }
         Track current = host.findTrack(state.uri);
         ArrayList<Track> restoredQueue = PlaybackQueueResolver.restore(
-                host.tracks, state.queueUris, current);
+                host.libraryState.tracks, state.queueUris, current);
         if (restoredQueue.isEmpty()) {
             return;
         }
@@ -71,8 +72,8 @@ final class PlaybackController implements Player.Listener {
         for (Track track : restoredQueue) {
             mediaIds.add(mapper.mediaId(track));
         }
-        host.playbackQueue.clear();
-        host.playbackQueue.addAll(restoredQueue);
+        host.playbackUiState.queue.clear();
+        host.playbackUiState.queue.addAll(restoredQueue);
         host.updatePlaybackSnapshot(new PlaybackSnapshot(mediaIds, mapper.mediaId(current),
                 index, state.position, Math.max(current.durationMs, state.duration),
                 state.playing, Player.STATE_READY, RepeatModeMapper.toMedia3(state.loopMode),
@@ -265,14 +266,14 @@ final class PlaybackController implements Player.Listener {
             return;
         }
         int previousIndex = host.currentTrackIndex();
-        Track previous = previousIndex >= 0 && previousIndex < host.tracks.size()
-                ? host.tracks.get(previousIndex) : null;
+        Track previous = previousIndex >= 0 && previousIndex < host.libraryState.tracks.size()
+                ? host.libraryState.tracks.get(previousIndex) : null;
         Track current = currentTrack();
         host.updatePlaybackSnapshot(snapshotFromController());
         synchronizeQueueProjection();
         boolean trackChanged = previous == null ? current != null
                 : current == null || !previous.uri.equals(current.uri);
-        host.updateMini();
+        host.playerUiController.updateMini();
         if (trackChanged || refreshRows) {
             host.refreshAfterTrackChange();
         }
@@ -282,11 +283,11 @@ final class PlaybackController implements Player.Listener {
     private void synchronizeQueueProjection() {
         Map<String, Track> tracksById = new HashMap<>();
         Map<String, Track> tracksByUri = new HashMap<>();
-        for (Track track : host.tracks) {
+        for (Track track : host.libraryState.tracks) {
             tracksById.put(mapper.mediaId(track), track);
             tracksByUri.put(track.uri, track);
         }
-        host.playbackQueue.clear();
+        host.playbackUiState.queue.clear();
         for (int itemIndex = 0; itemIndex < controller.getMediaItemCount(); itemIndex++) {
             MediaItem item = controller.getMediaItemAt(itemIndex);
             Track track = tracksById.get(item.mediaId);
@@ -294,7 +295,7 @@ final class PlaybackController implements Player.Listener {
                 track = tracksByUri.get(item.localConfiguration.uri.toString());
             }
             if (track != null) {
-                host.playbackQueue.add(track);
+                host.playbackUiState.queue.add(track);
             }
         }
     }

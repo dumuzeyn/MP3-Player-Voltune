@@ -25,10 +25,10 @@ final class TabsController {
         this.host = host;
     }
 
-    void buildTabs() {
+    void buildTabs(LinearLayout page) {
         LinearLayout container = new LinearLayout(host);
         container.setOrientation(LinearLayout.VERTICAL);
-        container.addView(host.lineView(), new LinearLayout.LayoutParams(-1, 1));
+        container.addView(host.uiFactory.lineView(), new LinearLayout.LayoutParams(-1, 1));
 
         HorizontalScrollView scrollView = new HorizontalScrollView(host);
         host.tabsScroll = scrollView;
@@ -46,8 +46,8 @@ final class TabsController {
         tabTrack.addView(host.tabRow, new FrameLayout.LayoutParams(-2, host.dp(48)));
         scrollView.addView(tabTrack, new HorizontalScrollView.LayoutParams(-2, host.dp(48)));
         container.addView(scrollView, new LinearLayout.LayoutParams(-1, host.dp(48)));
-        container.addView(host.lineView(), new LinearLayout.LayoutParams(-1, 1));
-        host.page.addView(container, new LinearLayout.LayoutParams(-1, host.dp(50)));
+        container.addView(host.uiFactory.lineView(), new LinearLayout.LayoutParams(-1, 1));
+        page.addView(container, new LinearLayout.LayoutParams(-1, host.dp(50)));
 
         addTabButtons();
         scrollView.post(new Runnable() {
@@ -113,12 +113,12 @@ final class TabsController {
     }
 
     int directionTo(int targetIndex) {
-        if (host.tabs == null || host.tabs.length == 0 || targetIndex == host.tabIndex) {
+        if (host.tabs == null || host.tabs.length == 0 || targetIndex == host.navigationState.tabIndex) {
             return 1;
         }
         int length = host.tabs.length;
-        int forward = (targetIndex - host.tabIndex + length) % length;
-        int backward = (host.tabIndex - targetIndex + length) % length;
+        int forward = (targetIndex - host.navigationState.tabIndex + length) % length;
+        int backward = (host.navigationState.tabIndex - targetIndex + length) % length;
         return forward <= backward ? 1 : -1;
     }
 
@@ -160,7 +160,7 @@ final class TabsController {
         for (int cycle = 0; cycle < MainActivityCore.TAB_CYCLES; cycle++) {
             for (int index = 0; index < host.tabs.length; index++) {
                 final int tabIndex = index;
-                Button button = host.button(host.tabs[index]);
+                Button button = host.uiFactory.button(host.tabs[index]);
                 button.setTag(Integer.valueOf(index));
                 styleTab(button, index);
                 button.setOnClickListener(new View.OnClickListener() {
@@ -176,7 +176,7 @@ final class TabsController {
 
     private void attachInfiniteScrollLoop() {
         int cycleWidth = Math.max(1, host.tabRow.getWidth() / MainActivityCore.TAB_CYCLES);
-        scrollToActiveNow(false, host.tabIndex);
+        scrollToActiveNow(false, host.navigationState.tabIndex);
         positionIndicatorToActive();
         host.tabsScroll.setOnScrollChangeListener(new View.OnScrollChangeListener() {
             @Override
@@ -210,11 +210,11 @@ final class TabsController {
         }
 
         button.setBackgroundColor(Color.TRANSPARENT);
-        button.setTextColor(index == host.tabIndex ? Color.WHITE : host.secondaryText);
+        button.setTextColor(index == host.navigationState.tabIndex ? Color.WHITE : host.secondaryText);
     }
 
     private void positionIndicatorToActive() {
-        Button active = findNearestButton(host.tabIndex);
+        Button active = findNearestButton(host.navigationState.tabIndex);
         if (active != null && indicator != null) {
             indicator.setTranslationX(active.getLeft());
         }
@@ -297,8 +297,8 @@ final class TabsController {
             }
             int childCenter = child.getLeft() + (child.getWidth() / 2);
             int childLeft = child.getLeft() - Math.max(0, (host.tabsScroll.getWidth() - child.getWidth()) / 2);
-            if ((host.preferredTabDirection > 0 && childCenter < scrollCenter)
-                    || (host.preferredTabDirection < 0 && childCenter > scrollCenter)) {
+            if ((host.navigationState.preferredTabDirection > 0 && childCenter < scrollCenter)
+                    || (host.navigationState.preferredTabDirection < 0 && childCenter > scrollCenter)) {
                 continue;
             }
             int distance = Math.abs(childCenter - scrollCenter);
@@ -325,7 +325,7 @@ final class TabsController {
         }
         cancelScrollAnimation();
         int scrollX = host.tabsScroll.getScrollX();
-        if (Math.abs(left - scrollX) < 2 || !host.animations) {
+        if (Math.abs(left - scrollX) < 2 || !host.appearanceState.animations) {
             host.tabsScroll.scrollTo(left, 0);
             return;
         }

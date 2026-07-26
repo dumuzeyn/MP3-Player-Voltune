@@ -27,7 +27,9 @@ final class OutlinedTextView extends TextView {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (outlineEnabled && getLayout() != null && !TextOutlinePolicy.isInsideCard(this)) {
+        if (outlineEnabled && getLayout() != null && !TextOutlinePolicy.isInsideCard(this)
+                && ThemeContrastPolicy.outlineIsDistinct(
+                getCurrentTextColor(), outlineColor)) {
             drawOutline(canvas, getLayout());
         }
         super.onDraw(canvas);

@@ -25,7 +25,7 @@ final class VolumeLevelingController {
     }
 
     Button createPlayerButton() {
-        Button button = host.button(buttonText());
+        Button button = host.uiFactory.button(buttonText());
         button.setSingleLine(true);
         button.setTextSize(13.0f);
         button.setOnClickListener(view -> toggle());
@@ -36,10 +36,10 @@ final class VolumeLevelingController {
 
     void openDialog() {
         TrackLoudnessNormalizer normalizer = analyzer();
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(14), host.dp(16), host.dp(14));
-        panel.addView(host.text(host.tr("Volume leveling", "Единая громкость"), 22, true),
+        panel.addView(host.uiFactory.text(host.tr("Volume leveling", "Единая громкость"), 22, true),
                 new LinearLayout.LayoutParams(-1, host.dp(44)));
 
         Button enabledButton = dialogButton(settingLabel());
@@ -58,12 +58,12 @@ final class VolumeLevelingController {
         });
         panel.addView(reduceOnly, rowParams());
 
-        TextView targetLabel = host.text(targetLabel(), 14, false);
+        TextView targetLabel = host.uiFactory.text(targetLabel(), 14, false);
         panel.addView(targetLabel, new LinearLayout.LayoutParams(-1, host.dp(28)));
         SeekBar target = new SeekBar(host);
         target.setMax(14);
         target.setProgress(targetLufs() + 24);
-        host.applySeekBarColors(target);
+        host.uiFactory.applySeekBarColors(target);
         target.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -86,11 +86,11 @@ final class VolumeLevelingController {
         });
         panel.addView(target, new LinearLayout.LayoutParams(-1, host.dp(36)));
 
-        TextView status = host.text(statusText(normalizer), 14, false);
+        TextView status = host.uiFactory.text(statusText(normalizer), 14, false);
         panel.addView(status, new LinearLayout.LayoutParams(-1, host.dp(50)));
 
         Button analyze = dialogButton(host.tr("Analyze library", "Анализировать медиатеку"));
-        analyze.setOnClickListener(view -> normalizer.analyzeLibrary(host.tracks,
+        analyze.setOnClickListener(view -> normalizer.analyzeLibrary(host.libraryState.tracks,
                 progressListener(normalizer, status)));
         panel.addView(analyze, rowParams());
 
@@ -105,7 +105,7 @@ final class VolumeLevelingController {
         retry.setOnClickListener(view -> {
             Set<String> failed = normalizer.failedTrackIds();
             ArrayList<Track> retryTracks = new ArrayList<>();
-            for (Track track : host.tracks) {
+            for (Track track : host.libraryState.tracks) {
                 if (failed.contains(track.trackId)) {
                     retryTracks.add(track);
                 }
@@ -122,8 +122,8 @@ final class VolumeLevelingController {
         });
         panel.addView(clear, rowParams());
 
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> host.overlayHost.removeView(shade));
         LinearLayout.LayoutParams doneParams = new LinearLayout.LayoutParams(-1, host.dp(46));
         doneParams.setMargins(0, host.dp(6), 0, 0);
@@ -131,7 +131,7 @@ final class VolumeLevelingController {
 
         shade.addView(panel, host.centerParams(host.dp(350), -2));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     void release() {
@@ -156,9 +156,9 @@ final class VolumeLevelingController {
     }
 
     private Button dialogButton(String text) {
-        Button button = host.button(text);
+        Button button = host.uiFactory.button(text);
         button.setTextSize(15.0f);
-        host.applySecondaryButtonStyle(button);
+        host.uiFactory.applySecondaryButtonStyle(button);
         return button;
     }
 
@@ -170,10 +170,10 @@ final class VolumeLevelingController {
 
     private String statusText(TrackLoudnessNormalizer normalizer) {
         return host.tr("Analyzed: ", "Проанализировано: ")
-                + normalizer.analyzedCount(host.tracks)
-                + "/" + host.tracks.size()
+                + normalizer.analyzedCount(host.libraryState.tracks)
+                + "/" + host.libraryState.tracks.size()
                 + host.tr(" · file errors: ", " · ошибок файлов: ")
-                + normalizer.errorCount(host.tracks);
+                + normalizer.errorCount(host.libraryState.tracks);
     }
 
     private String reduceOnlyLabel() {
@@ -206,8 +206,8 @@ final class VolumeLevelingController {
     }
 
     private String buttonText() {
-        return host.tr(enabled() ? "Level volume ●" : "Level volume ○",
-                enabled() ? "Единая громкость ●" : "Единая громкость ○");
+        return host.tr(enabled() ? "Level ●" : "Level ○",
+                enabled() ? "Уровень ●" : "Уровень ○");
     }
 
     private void refreshButton() {
@@ -215,7 +215,7 @@ final class VolumeLevelingController {
             return;
         }
         playerButton.setText(buttonText());
-        host.applyPlayerToolStyle(playerButton, enabled());
+        host.uiFactory.applyPlayerToolStyle(playerButton, enabled());
     }
 
     private SharedPreferences prefs() {

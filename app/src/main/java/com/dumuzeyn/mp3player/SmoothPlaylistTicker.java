@@ -52,7 +52,10 @@ final class SmoothPlaylistTicker extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
         lineHeight = Math.max(1, (metrics.descent - metrics.ascent) + host.dp(3));
-        int desiredHeight = (lineHeight * VISIBLE_LINES) + getPaddingTop() + getPaddingBottom();
+        int visibleLines = PlaylistTickerLayoutPolicy.visibleLineCount(
+                titles.size(), VISIBLE_LINES);
+        int desiredHeight = (lineHeight * visibleLines)
+                + getPaddingTop() + getPaddingBottom();
         setMeasuredDimension(resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec),
                 resolveSize(desiredHeight, heightMeasureSpec));
     }
@@ -65,8 +68,8 @@ final class SmoothPlaylistTicker extends View {
         }
         paint.setColor(host.primaryText);
         boolean scrolling = titles.size() > VISIBLE_LINES
-                && host.animations
-                && host.playlistTickerSpeed > 0
+                && host.appearanceState.animations
+                && host.appearanceState.playlistTickerSpeed > 0
                 && isVisibleToUser();
         if (scrolling) {
             advanceScroll();
@@ -79,7 +82,10 @@ final class SmoothPlaylistTicker extends View {
         float remainder = scrolling ? scrollOffset % lineHeight : 0.0f;
         float top = getPaddingTop() - remainder;
         Paint.FontMetrics metrics = paint.getFontMetrics();
-        int linesToDraw = VISIBLE_LINES + (scrolling ? 2 : 0);
+        int linesToDraw = scrolling
+                ? VISIBLE_LINES + 2
+                : PlaylistTickerLayoutPolicy.staticLinesToDraw(
+                        titles.size(), VISIBLE_LINES);
         for (int line = 0; line < linesToDraw; line++) {
             if (top >= getHeight() - getPaddingBottom()) {
                 break;
@@ -105,7 +111,7 @@ final class SmoothPlaylistTicker extends View {
         long now = System.nanoTime();
         if (lastFrameNanos != 0L) {
             float seconds = Math.min(0.05f, (now - lastFrameNanos) / 1_000_000_000.0f);
-            scrollOffset += host.dp(13) * seconds * (host.playlistTickerSpeed / 100.0f);
+            scrollOffset += host.dp(13) * seconds * (host.appearanceState.playlistTickerSpeed / 100.0f);
             float loopHeight = lineHeight * titles.size();
             if (scrollOffset >= loopHeight) {
                 scrollOffset %= loopHeight;

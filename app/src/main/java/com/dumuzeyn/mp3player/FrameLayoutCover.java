@@ -16,8 +16,8 @@ final class FrameLayoutCover extends FrameLayout {
     FrameLayoutCover(MainActivityCore host) {
         super(host);
         this.host = host;
-        this.front = host.coverView();
-        this.back = host.coverView();
+        this.front = host.uiFactory.coverView();
+        this.back = host.uiFactory.coverView();
         this.back.setAlpha(0.0f);
         addView(this.front, new FrameLayout.LayoutParams(-1, -1));
         addView(this.back, new FrameLayout.LayoutParams(-1, -1));
@@ -44,7 +44,7 @@ final class FrameLayoutCover extends FrameLayout {
             this.frontVisible = true;
             this.front.setAlpha(1.0f);
             this.back.setAlpha(0.0f);
-            host.loadCover(this.front, track, this.fallback);
+            host.artworkUi.loadCover(this.front, track, this.fallback);
             applyPlaylistTracks(this.front);
             return;
         }
@@ -54,15 +54,15 @@ final class FrameLayoutCover extends FrameLayout {
         incoming.animate().cancel();
         visible.animate().cancel();
         incoming.setAlpha(0.0f);
-        host.loadCover(incoming, track, this.fallback);
+        host.artworkUi.loadCover(incoming, track, this.fallback);
         applyPlaylistTracks(incoming);
-        incoming.animate().alpha(1.0f).setDuration(host.animations ? 520L : 0L).withEndAction(new Runnable() {
+        incoming.animate().alpha(1.0f).setDuration(host.appearanceState.animations ? 520L : 0L).withEndAction(new Runnable() {
             @Override
             public void run() {
                 frontVisible = !frontVisible;
             }
         }).start();
-        visible.animate().alpha(0.0f).setDuration(host.animations ? 520L : 0L).start();
+        visible.animate().alpha(0.0f).setDuration(host.appearanceState.animations ? 520L : 0L).start();
     }
 
     private void applyPlaylistTracks(ImageView cover) {

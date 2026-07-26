@@ -37,7 +37,7 @@ final class EqualizerController {
     }
 
     Button createPlayerButton() {
-        Button button = host.button(host.tr("Equalizer ≋", "Эквалайзер ≋"));
+        Button button = host.uiFactory.button(host.tr("Equalizer ≋", "Эквалайзер ≋"));
         button.setSingleLine(true);
         button.setTextSize(14.0f);
         button.setOnClickListener(view -> openDialog());
@@ -47,13 +47,13 @@ final class EqualizerController {
     }
 
     void openDialog() {
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(host.tr("Equalizer", "Эквалайзер"), 22, true),
+        panel.addView(host.uiFactory.text(host.tr("Equalizer", "Эквалайзер"), 22, true),
                 new LinearLayout.LayoutParams(-1, host.dp(46)));
 
-        Button enabled = host.button(enabled()
+        Button enabled = host.uiFactory.button(enabled()
                 ? host.tr("Enabled", "Включён")
                 : host.tr("Disabled", "Выключен"));
         styleToggle(enabled);
@@ -66,8 +66,8 @@ final class EqualizerController {
         });
         panel.addView(enabled, new LinearLayout.LayoutParams(-1, host.dp(48)));
 
-        Button preset = host.button(host.tr("Profile: ", "Профиль: ") + presetName(activePreset()));
-        host.applySecondaryButtonStyle(preset);
+        Button preset = host.uiFactory.button(host.tr("Profile: ", "Профиль: ") + presetName(activePreset()));
+        host.uiFactory.applySecondaryButtonStyle(preset);
         preset.setOnClickListener(view -> {
             host.overlayHost.removeView(shade);
             openPresetDialog();
@@ -80,8 +80,8 @@ final class EqualizerController {
             addBandControl(panel, band);
         }
 
-        Button reset = host.button(host.tr("Reset bands", "Сбросить полосы"));
-        host.applySecondaryButtonStyle(reset);
+        Button reset = host.uiFactory.button(host.tr("Reset bands", "Сбросить полосы"));
+        host.uiFactory.applySecondaryButtonStyle(reset);
         reset.setOnClickListener(view -> {
             SharedPreferences.Editor editor = prefs().edit();
             for (int band = 0; band < BAND_COUNT; band++) {
@@ -100,17 +100,17 @@ final class EqualizerController {
 
         shade.addView(panel, host.centerParams(host.dp(340), -2));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     private void addBandControl(LinearLayout panel, int band) {
         int value = bandLevel(band);
-        TextView label = host.text(bandLabel(band, value), 14, false);
+        TextView label = host.uiFactory.text(bandLabel(band, value), 14, false);
         panel.addView(label, new LinearLayout.LayoutParams(-1, host.dp(28)));
         SeekBar seek = new SeekBar(host);
         seek.setMax(MAX_DB - MIN_DB);
         seek.setProgress(value - MIN_DB);
-        host.applySeekBarColors(seek);
+        host.uiFactory.applySeekBarColors(seek);
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -143,18 +143,18 @@ final class EqualizerController {
     }
 
     private void openPresetDialog() {
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(host.tr("Equalizer profile", "Профиль эквалайзера"), 21, true),
+        panel.addView(host.uiFactory.text(host.tr("Equalizer profile", "Профиль эквалайзера"), 21, true),
                 new LinearLayout.LayoutParams(-1, host.dp(46)));
         String selected = activePreset();
         for (String presetId : PRESET_IDS) {
-            Button choice = host.button(presetName(presetId));
+            Button choice = host.uiFactory.button(presetName(presetId));
             if (presetId.equals(selected)) {
-                host.applyPrimaryButtonStyle(choice);
+                host.uiFactory.applyPrimaryButtonStyle(choice);
             } else {
-                host.applySecondaryButtonStyle(choice);
+                host.uiFactory.applySecondaryButtonStyle(choice);
             }
             choice.setOnClickListener(view -> {
                 applyPreset(presetId);
@@ -233,17 +233,17 @@ final class EqualizerController {
             return;
         }
         if (enabled()) {
-            host.applyPlayerToolStyle(this.playerButton, true);
+            host.uiFactory.applyPlayerToolStyle(this.playerButton, true);
         } else {
-            host.applyPlayerToolStyle(this.playerButton, false);
+            host.uiFactory.applyPlayerToolStyle(this.playerButton, false);
         }
     }
 
     private void styleToggle(Button button) {
         if (enabled()) {
-            host.applyPrimaryButtonStyle(button);
+            host.uiFactory.applyPrimaryButtonStyle(button);
         } else {
-            host.applySecondaryButtonStyle(button);
+            host.uiFactory.applySecondaryButtonStyle(button);
         }
     }
 

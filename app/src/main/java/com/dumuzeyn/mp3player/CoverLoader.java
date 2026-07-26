@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaMetadataRetriever;
+import android.content.Context;
+import android.os.Handler;
 import android.util.LruCache;
 import android.widget.ImageView;
 import java.lang.ref.WeakReference;
@@ -18,14 +20,16 @@ final class CoverLoader {
     private static final int MAX_COVER_BYTES = 8 * 1024 * 1024;
     static final int THUMB_SIZE = 160;
 
-    private final MainActivityCore host;
+    private final Context context;
+    private final Handler mainHandler;
     private final LruCache<String, Bitmap> cache;
     private final Map<String, ArrayList<WeakReference<ImageView>>> pendingTargets = new LinkedHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private volatile boolean closed;
 
-    CoverLoader(MainActivityCore host) {
-        this.host = host;
+    CoverLoader(Context context, Handler mainHandler) {
+        this.context = context;
+        this.mainHandler = mainHandler;
         int maxKb = (int) Math.min(16L * 1024L,
                 Math.max(6L * 1024L, Runtime.getRuntime().maxMemory() / 1024L / 16L));
         cache = new LruCache<String, Bitmap>(maxKb) {
@@ -102,7 +106,7 @@ final class CoverLoader {
                 synchronized (pendingTargets) {
                     targets = pendingTargets.remove(key);
                 }
-                host.uiHandler.post(() -> {
+                mainHandler.post(() -> {
                     if (closed || bitmap == null || targets == null) {
                         return;
                     }
@@ -173,7 +177,7 @@ final class CoverLoader {
     private Bitmap read(Track track, int maxSize) {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
-            retriever.setDataSource(host, track.asUri());
+            retriever.setDataSource(context, track.asUri());
             byte[] picture = retriever.getEmbeddedPicture();
             if (picture == null || picture.length > MAX_COVER_BYTES) {
                 return null;

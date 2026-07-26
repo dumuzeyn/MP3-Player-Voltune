@@ -72,8 +72,8 @@ final class AudioImportController {
         }
         final int permissionFlags = data.getFlags();
         final HashSet<String> knownUris = new HashSet<>();
-        final ArrayList<Track> existingTracks = new ArrayList<>(host.tracks);
-        for (Track track : host.tracks) {
+        final ArrayList<Track> existingTracks = new ArrayList<>(host.libraryState.tracks);
+        for (Track track : host.libraryState.tracks) {
             knownUris.add(track.uri);
         }
         try {
@@ -112,14 +112,15 @@ final class AudioImportController {
                 return;
             }
             for (Track track : imported) {
-                int existingIndex = indexOfTrackId(host.tracks, track.trackId);
+                int existingIndex = indexOfTrackId(host.libraryState.tracks, track.trackId);
                 if (existingIndex >= 0) {
-                    host.tracks.set(existingIndex, track);
+                    host.libraryState.tracks.set(existingIndex, track);
                 } else if (host.findTrack(track.uri) == null) {
-                    host.tracks.add(track);
+                    host.libraryState.tracks.add(track);
                 }
             }
-            TrackStore.sort(host.tracks);
+            TrackStore.sort(host.libraryState.tracks);
+            host.libraryRepository.reindex();
             host.render();
         });
     }
@@ -258,7 +259,7 @@ final class AudioImportController {
             return;
         }
         HashSet<String> knownUris = new HashSet<>();
-        ArrayList<Track> existing = new ArrayList<>(host.tracks);
+        ArrayList<Track> existing = new ArrayList<>(host.libraryState.tracks);
         for (Track track : existing) {
             knownUris.add(track.uri);
         }
@@ -295,8 +296,8 @@ final class AudioImportController {
                 () -> {
                     TrackStore.upsert(host, track);
                     if (host.findTrack(track.uri) == null) {
-                        host.tracks.add(track);
-                        TrackStore.sort(host.tracks);
+                        host.libraryState.tracks.add(track);
+                        TrackStore.sort(host.libraryState.tracks);
                     }
                     host.render();
                 });

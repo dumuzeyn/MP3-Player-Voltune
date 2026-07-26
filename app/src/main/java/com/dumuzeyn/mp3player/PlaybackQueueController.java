@@ -18,7 +18,7 @@ final class PlaybackQueueController {
     }
 
     void playTrack(Track track, boolean refreshList) {
-        if (track == null || host.tracks.indexOf(track) < 0) {
+        if (track == null || host.libraryState.tracks.indexOf(track) < 0) {
             return;
         }
         ArrayList<Track> queue = new ArrayList<>();
@@ -43,15 +43,15 @@ final class PlaybackQueueController {
     void toggleOrStart() {
         if (playback.hasPlaybackSession()) {
             playback.toggle();
-        } else if (!host.tracks.isEmpty()) {
-            playList(host.tracks, false);
+        } else if (!host.libraryState.tracks.isEmpty()) {
+            playList(host.libraryState.tracks, false);
         }
     }
 
     void restore(PlaybackStateManager.State state) {
         Track current = host.findTrack(state.uri);
         ArrayList<Track> queue = PlaybackQueueResolver.restore(
-                host.tracks, state.queueUris, current);
+                host.libraryState.tracks, state.queueUris, current);
         if (!queue.isEmpty()) {
             playback.submitQueue(queue, Math.min(state.index, queue.size() - 1),
                     state.position, state.loopMode, state.playing);
@@ -86,11 +86,12 @@ final class PlaybackQueueController {
             return;
         }
         remove(stored);
-        host.tracks.remove(stored);
-        host.favorites.remove(stored.uri);
+        host.libraryState.tracks.remove(stored);
+        host.libraryRepository.reindex();
+        host.libraryState.favorites.remove(stored.uri);
         host.playlistController.removeTrackFromAllPlaylists(stored);
-        TrackStore.save(host, host.tracks);
-        host.saveState();
+        TrackStore.save(host, host.libraryState.tracks);
+        host.saveLibraryState();
         host.render();
     }
 
@@ -104,16 +105,16 @@ final class PlaybackQueueController {
 
     String loopLabel() {
         if (host.repeatMode() == 1) {
-            return host.tr("Track repeat", "Повтор песни");
+            return "↻ 1";
         }
         if (host.repeatMode() == 2) {
-            return host.tr("Queue repeat", "Повтор очереди");
+            return "↻ ∞";
         }
-        return host.tr("Repeat off", "Повтор выключен");
+        return "↻ ×";
     }
 
     ArrayList<Track> activeQueue() {
-        return host.playbackQueue.isEmpty() ? host.tracks : host.playbackQueue;
+        return host.playbackUiState.queue.isEmpty() ? host.libraryState.tracks : host.playbackUiState.queue;
     }
 
     ArrayList<String> queueUris() {
@@ -127,7 +128,7 @@ final class PlaybackQueueController {
 
     boolean isPlayingSource(ArrayList<Track> source) {
         return host.isPlaybackPlaying() && source != null
-                && sameOrderedQueue(source, host.playbackQueue);
+                && sameOrderedQueue(source, host.playbackUiState.queue);
     }
 
     boolean isPlayingCollection(ArrayList<Track> source) {
@@ -135,7 +136,7 @@ final class PlaybackQueueController {
     }
 
     boolean isCurrentCollection(ArrayList<Track> source) {
-        if (source == null || source.isEmpty() || host.playbackQueue.size() != source.size()) {
+        if (source == null || source.isEmpty() || host.playbackUiState.queue.size() != source.size()) {
             return false;
         }
         HashSet<String> expected = new HashSet<>();
@@ -143,7 +144,7 @@ final class PlaybackQueueController {
         for (Track track : source) {
             expected.add(track.uri);
         }
-        for (Track track : host.playbackQueue) {
+        for (Track track : host.playbackUiState.queue) {
             active.add(track.uri);
         }
         return expected.size() == source.size() && expected.equals(active);
@@ -151,7 +152,7 @@ final class PlaybackQueueController {
 
     int indexOf(Track track) {
         int index = indexOfUri(activeQueue(), track.uri);
-        return index >= 0 ? index : Math.max(0, host.tracks.indexOf(track));
+        return index >= 0 ? index : Math.max(0, host.libraryState.tracks.indexOf(track));
     }
 
     private static boolean sameOrderedQueue(ArrayList<Track> first, ArrayList<Track> second) {

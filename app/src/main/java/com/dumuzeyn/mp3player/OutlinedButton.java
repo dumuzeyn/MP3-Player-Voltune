@@ -26,7 +26,9 @@ final class OutlinedButton extends Button {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (!outlineEnabled || TextOutlinePolicy.isInsideCard(this)) {
+        if (!outlineEnabled || TextOutlinePolicy.isInsideCard(this)
+                || !ThemeContrastPolicy.outlineIsDistinct(
+                getCurrentTextColor(), outlineColor)) {
             super.onDraw(canvas);
             return;
         }

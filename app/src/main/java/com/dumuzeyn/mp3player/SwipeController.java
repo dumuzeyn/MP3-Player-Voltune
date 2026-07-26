@@ -35,7 +35,7 @@ final class SwipeController {
     }
 
     boolean handle(MotionEvent event) {
-        if (host.tabs == null || host.tabs.length == 0 || (host.tabAnimating && !consuming)) {
+        if (host.tabs == null || host.tabs.length == 0 || (host.navigationState.tabAnimating && !consuming)) {
             return false;
         }
         if (host.overlayHost != null && host.overlayHost.getChildCount() > 0) {
@@ -64,14 +64,14 @@ final class SwipeController {
                 if (host.root != null && host.root.getParent() != null) {
                     host.root.getParent().requestDisallowInterceptTouchEvent(true);
                 }
-                if (host.animations) {
+                if (host.appearanceState.animations) {
                     prepareAdjacentTransition(deltaX < 0.0f ? 1 : -1);
                 }
             }
             if (!consuming) {
                 return false;
             }
-            if (host.animations) {
+            if (host.appearanceState.animations) {
                 int requestedDirection = deltaX < 0.0f ? 1 : -1;
                 if (requestedDirection != direction && Math.abs(deltaX) > host.dp(36)) {
                     cleanupPreview();
@@ -98,10 +98,11 @@ final class SwipeController {
         boolean commit = action == MotionEvent.ACTION_UP
                 && Math.abs(deltaX) > host.dp(SWIPE_COMMIT_DP)
                 && Math.abs(deltaX) > Math.abs(deltaY);
-        if (!host.animations) {
+        if (!host.appearanceState.animations) {
             if (commit) {
                 int target = adjacentIndex(deltaX < 0.0f ? 1 : -1);
-                host.completeTabTransition(target, deltaX < 0.0f ? 1 : -1, true, "");
+                host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                        target, deltaX < 0.0f ? 1 : -1, true, ""));
             }
             return true;
         }
@@ -117,13 +118,14 @@ final class SwipeController {
         if (host.tabs == null || target < 0 || target >= host.tabs.length) {
             return;
         }
-        if (target == host.tabIndex) {
-            host.search = search == null ? "" : search;
+        if (target == host.navigationState.tabIndex) {
+            host.navigationState.search = search == null ? "" : search;
             host.render();
             return;
         }
-        if (!host.animations || host.contentHost == null || host.contentHost.getWidth() <= 0) {
-            host.completeTabTransition(target, requestedDirection, saveHistory, search);
+        if (!host.appearanceState.animations || host.contentHost == null || host.contentHost.getWidth() <= 0) {
+            host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                    target, requestedDirection, saveHistory, search));
             return;
         }
         prepareTransition(target, requestedDirection, saveHistory, search);
@@ -156,8 +158,8 @@ final class SwipeController {
         previewScroll.scrollTo(0, previewState.scrollY);
         previewScroll.setTranslationX(direction * transitionDistance);
         host.contentHost.addView(previewScroll, 0, new FrameLayout.LayoutParams(-1, -1));
-        host.tabAnimating = true;
-        host.tabsController.beginTransition(host.tabIndex, targetIndex, direction);
+        host.navigationState.tabAnimating = true;
+        host.tabsController.beginTransition(host.navigationState.tabIndex, targetIndex, direction);
     }
 
     private void updateOffset(float offset) {
@@ -209,7 +211,7 @@ final class SwipeController {
         int completedDirection = direction;
         boolean shouldRecord = recordHistory;
         String completedSearch = targetSearch;
-        if (completedTarget <= 1 && previewScroll != null && previewList != null
+        if (previewScroll != null && previewList != null
                 && previewState != null) {
             ScrollView committedScroll = previewScroll;
             LinearLayout committedList = previewList;
@@ -219,25 +221,21 @@ final class SwipeController {
             previewState = null;
             targetIndex = -1;
             resetCurrentContent();
-            host.completeTabTransitionWithPreview(
-                    completedTarget,
-                    completedDirection,
-                    shouldRecord,
-                    completedSearch,
-                    committedScroll,
-                    committedList,
-                    committedState);
+            host.tabTransitionCoordinator.completeWithPreview(new TabTransitionRequest(
+                    completedTarget, completedDirection, shouldRecord, completedSearch,
+                    committedScroll, committedList, committedState));
             return;
         }
         cleanupPreview();
         resetCurrentContent();
-        host.completeTabTransition(completedTarget, completedDirection, shouldRecord, completedSearch);
+        host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                completedTarget, completedDirection, shouldRecord, completedSearch));
     }
 
     private void finishCancelledTransition() {
         cleanupPreview();
         resetCurrentContent();
-        host.tabAnimating = false;
+        host.navigationState.tabAnimating = false;
         host.tabsController.cancelTransition();
     }
 
@@ -267,7 +265,7 @@ final class SwipeController {
     private int adjacentIndex(int requestedDirection) {
         int count = host.tabs.length;
         return requestedDirection > 0
-                ? (host.tabIndex + 1) % count
-                : (host.tabIndex - 1 + count) % count;
+                ? (host.navigationState.tabIndex + 1) % count
+                : (host.navigationState.tabIndex - 1 + count) % count;
     }
 }

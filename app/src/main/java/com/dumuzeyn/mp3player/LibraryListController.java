@@ -11,13 +11,13 @@ final class LibraryListController {
     }
 
     ArrayList<Track> currentVisibleTracks() {
-        return host.tabIndex == 1 ? filter(favoriteTracks()) : filter(host.tracks);
+        return host.navigationState.tabIndex == 1 ? filter(favoriteTracks()) : filter(host.libraryState.tracks);
     }
 
     ArrayList<Track> favoriteTracks() {
         ArrayList<Track> result = new ArrayList<>();
-        for (Track track : host.tracks) {
-            if (host.favorites.contains(track.uri)) {
+        for (Track track : host.libraryState.tracks) {
+            if (host.libraryState.favorites.contains(track.uri)) {
                 result.add(track);
             }
         }
@@ -25,11 +25,11 @@ final class LibraryListController {
     }
 
     ArrayList<Track> filter(ArrayList<Track> source) {
-        if (host.search.trim().isEmpty()) {
+        if (host.navigationState.search.trim().isEmpty()) {
             return source;
         }
         ArrayList<Track> result = new ArrayList<>();
-        String query = host.search.toLowerCase(Locale.ROOT);
+        String query = host.navigationState.search.toLowerCase(Locale.ROOT);
         for (Track track : source) {
             if (matchesTrackSearch(track, query)) {
                 result.add(track);

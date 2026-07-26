@@ -11,6 +11,10 @@ public final class ThemeContrastPolicy {
         return contrastRatio(textColor, backgroundColor) < MINIMUM_BODY_TEXT_CONTRAST;
     }
 
+    public static boolean outlineIsDistinct(int textColor, int outlineColor) {
+        return contrastRatio(textColor, outlineColor) >= 1.35;
+    }
+
     public static double contrastRatio(int first, int second) {
         double lighter = Math.max(luminance(first), luminance(second));
         double darker = Math.min(luminance(first), luminance(second));

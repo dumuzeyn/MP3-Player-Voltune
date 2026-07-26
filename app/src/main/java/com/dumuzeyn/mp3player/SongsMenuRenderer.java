@@ -8,8 +8,8 @@ final class SongsMenuRenderer implements MenuRenderer {
     }
 
     void loadSongs() {
-        host.tracks.clear();
-        host.tracks.addAll(TrackStore.load(host));
+        host.libraryState.tracks.clear();
+        host.libraryState.tracks.addAll(TrackStore.load(host));
     }
 
     @Override
@@ -19,6 +19,6 @@ final class SongsMenuRenderer implements MenuRenderer {
 
     @Override
     public void render() {
-        host.renderSongs(host.libraryListController.filter(host.tracks));
+        host.renderSongs(host.libraryListController.filter(host.libraryState.tracks));
     }
 }

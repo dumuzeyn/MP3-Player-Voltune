@@ -67,8 +67,13 @@ final class UiFactory {
         buttons.applyPlainIcon(button, color);
     }
 
+    void applyPlainIconStyle(Button button) {
+        buttons.applyPlainIcon(button,
+                host.appearanceState.dark ? Color.rgb(230, 226, 236) : host.primaryText);
+    }
+
     GradientDrawable cardBackground() {
-        return cardBackground(host.dialogCardOpacity);
+        return cardBackground(host.appearanceState.dialogCardOpacity);
     }
 
     GradientDrawable cardBackground(int opacity) {
@@ -129,7 +134,7 @@ final class UiFactory {
     }
 
     void setSurface(View view, int color, boolean outlined) {
-        setSurface(view, color, outlined, host.dialogCardOpacity);
+        setSurface(view, color, outlined, host.appearanceState.dialogCardOpacity);
     }
 
     void setSurface(View view, int color, boolean outlined, int opacity) {
@@ -154,13 +159,13 @@ final class UiFactory {
 
     FrameLayout shade() {
         SwipeDismissFrameLayout shade = new SwipeDismissFrameLayout(host);
-        int channel = host.dark ? 0 : 255;
+        int channel = host.appearanceState.dark ? 0 : 255;
         shade.setBackgroundColor(Color.argb(190, channel, channel, channel));
         Runnable dismiss = () -> {
             if (shade.getParent() != null) {
                 host.overlayHost.removeView(shade);
             }
-            host.updateMini();
+            host.playerUiController.updateMini();
         };
         shade.setDismissAction(dismiss);
         shade.setOnClickListener(view -> dismiss.run());

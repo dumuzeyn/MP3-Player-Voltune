@@ -66,8 +66,8 @@ final class BackgroundPlaybackSettingsController {
             return true;
         }
         if (requestCode == REQUEST_APP_SETTINGS) {
-            if (host.tabIndex == 6) {
-                host.render();
+            if (host.navigationState.tabIndex == 6) {
+                host.refreshSettingsLabels();
             }
             return true;
         }

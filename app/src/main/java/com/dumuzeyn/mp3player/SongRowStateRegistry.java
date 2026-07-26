@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player;
 
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -20,12 +21,16 @@ final class SongRowStateRegistry {
     private final HashMap<String, View> currentMarkers = new HashMap<>();
     private final HashMap<String, WaveformView> waveforms = new HashMap<>();
     private final HashMap<String, ArrayList<RotatingCoverImageView>> covers = new HashMap<>();
+    private final HashMap<String, TextView> titles = new HashMap<>();
+    private final HashMap<String, TextView> durations = new HashMap<>();
 
     void clear() {
         playButtons.clear();
         currentMarkers.clear();
         waveforms.clear();
         covers.clear();
+        titles.clear();
+        durations.clear();
     }
 
     void replaceWith(SongRowStateRegistry source) {
@@ -33,6 +38,8 @@ final class SongRowStateRegistry {
         playButtons.putAll(source.playButtons);
         currentMarkers.putAll(source.currentMarkers);
         waveforms.putAll(source.waveforms);
+        titles.putAll(source.titles);
+        durations.putAll(source.durations);
         for (Map.Entry<String, ArrayList<RotatingCoverImageView>> entry : source.covers.entrySet()) {
             covers.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
@@ -70,6 +77,22 @@ final class SongRowStateRegistry {
         }
         if (!registered.contains(cover)) {
             registered.add(cover);
+        }
+    }
+
+    void registerMetadata(String uri, TextView title, TextView duration) {
+        titles.put(uri, title);
+        durations.put(uri, duration);
+    }
+
+    void refreshMetadata(String uri, Track track, String durationText) {
+        TextView title = titles.get(uri);
+        if (title != null) {
+            title.setText(track.title);
+        }
+        TextView duration = durations.get(uri);
+        if (duration != null) {
+            duration.setText(durationText);
         }
     }
 

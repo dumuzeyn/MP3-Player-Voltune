@@ -19,28 +19,28 @@ final class CoverRotationSettingsController {
 
     String settingLabel() {
         return host.tr("Full-player disc speed: ", "Скорость диска в плеере: ")
-                + host.fullPlayerRotationSpeed + "%";
+                + host.appearanceState.fullPlayerRotationSpeed + "%";
     }
 
     void openDialog() {
-        FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
 
-        TextView label = host.text(settingLabel(), 17, true);
+        TextView label = host.uiFactory.text(settingLabel(), 17, true);
         panel.addView(label, new LinearLayout.LayoutParams(-1, host.dp(52)));
 
         SeekBar seek = new SeekBar(host);
         seek.setMax(MAX_SPEED - MIN_SPEED);
-        seek.setProgress(host.fullPlayerRotationSpeed - MIN_SPEED);
-        host.applySeekBarColors(seek);
+        seek.setProgress(host.appearanceState.fullPlayerRotationSpeed - MIN_SPEED);
+        host.uiFactory.applySeekBarColors(seek);
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (!fromUser) {
                     return;
                 }
-                host.fullPlayerRotationSpeed = MIN_SPEED + progress;
+                host.appearanceState.fullPlayerRotationSpeed = MIN_SPEED + progress;
                 label.setText(settingLabel());
             }
 
@@ -55,17 +55,17 @@ final class CoverRotationSettingsController {
         });
         panel.addView(seek, new LinearLayout.LayoutParams(-1, host.dp(48)));
 
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> {
             host.saveState();
             host.overlayHost.removeView(shade);
-            host.render();
+            host.refreshSettingsLabels();
         });
         panel.addView(done, new LinearLayout.LayoutParams(-1, host.dp(50)));
 
         shade.addView(panel, host.centerParams(host.dp(340), -2));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 }

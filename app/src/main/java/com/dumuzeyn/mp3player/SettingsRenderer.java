@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player;
 
 import android.graphics.Color;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -11,31 +12,65 @@ final class SettingsRenderer {
     private static final String PREFS = "mp3_player_ui";
     private static final String ADVANCED = "advancedSettingsVisible";
     private final MainActivityCore host;
+    private Button memoryButton;
+    private Button backgroundPlaybackButton;
+    private Button volumeButton;
+    private Button coverStyleButton;
+    private Button rotationButton;
+    private Button animationsButton;
+    private Button particlesButton;
+    private Button tickerButton;
+    private LinearLayout cachedContent;
+    private String cachedAppearanceKey = "";
 
     SettingsRenderer(MainActivityCore host) {
         this.host = host;
     }
 
     void render() {
+        boolean advanced = host.getSharedPreferences(PREFS, 0).getBoolean(ADVANCED, false);
+        String appearanceKey = appearanceKey(advanced);
+        if (cachedContent == null || !appearanceKey.equals(cachedAppearanceKey)) {
+            rebuildCachedContent(advanced, appearanceKey);
+        }
+        ViewGroup parent = (ViewGroup) cachedContent.getParent();
+        if (parent != null) {
+            parent.removeView(cachedContent);
+        }
+        host.list.addView(cachedContent);
+        refreshDynamicLabels();
+    }
+
+    private void rebuildCachedContent(boolean advanced, String appearanceKey) {
+        LinearLayout previousTarget = host.list;
+        cachedContent = new LinearLayout(host);
+        cachedContent.setOrientation(LinearLayout.VERTICAL);
+        host.list = cachedContent;
+        try {
+            renderContent(advanced);
+        } finally {
+            host.list = previousTarget;
+        }
+        cachedAppearanceKey = appearanceKey;
+    }
+
+    private void renderContent(boolean advanced) {
         section(host.tr("General", "Основные"));
         addButton(host.tr("Language: ", "Язык: ") + host.languageName(),
                 view -> host.settingsController.openLanguageDialog());
-        addButton(host.tr("Mini-player memory: ", "Память мини-плеера: ")
+        memoryButton = addButton(host.tr("Mini-player memory: ", "Память мини-плеера: ")
                         + host.settingsController.resumeWindowText(),
                 view -> host.settingsController.openResumeWindowDialog());
 
         section(host.tr("Playback", "Воспроизведение"));
         addButton(host.uninterruptedPlaybackController.settingLabel(),
                 view -> host.uninterruptedPlaybackController.toggle());
-        addButton(host.backgroundPlaybackSettingsController.settingLabel(),
+        backgroundPlaybackButton = addButton(
+                host.backgroundPlaybackSettingsController.settingLabel(),
                 view -> host.backgroundPlaybackSettingsController.openDialog());
 
-        if (host.renderingTabPreview) {
-            return;
-        }
-
         section(host.tr("Sound", "Звук"));
-        addButton(host.volumeLevelingController.settingLabel(),
+        volumeButton = addButton(host.volumeLevelingController.settingLabel(),
                 view -> host.volumeLevelingController.openDialog());
         addButton(host.tr("Equalizer", "Эквалайзер"),
                 view -> host.equalizerController.openDialog());
@@ -56,27 +91,27 @@ final class SettingsRenderer {
         subsection(host.tr("Cards and artwork", "Карточки и обложки"));
         addButton(host.cardTransparencyController.settingLabel(),
                 view -> host.cardTransparencyController.openDialog());
-        addButton(host.tr("Cover style: ", "Стиль обложек: ")
-                        + host.tr(host.circularCovers ? "spinning circles" : "rounded squares",
-                        host.circularCovers ? "вращающиеся круги" : "скруглённые квадраты"),
+        coverStyleButton = addButton(host.tr("Cover style: ", "Стиль обложек: ")
+                        + host.tr(host.appearanceState.circularCovers ? "spinning circles" : "rounded squares",
+                        host.appearanceState.circularCovers ? "вращающиеся круги" : "скруглённые квадраты"),
                 view -> toggleCoverStyle());
         defaults(SettingsSectionResetter.Section.APPEARANCE);
 
         section(host.tr("Full player", "Большой плеер"));
-        addButton(host.coverRotationSettingsController.settingLabel(),
+        rotationButton = addButton(host.coverRotationSettingsController.settingLabel(),
                 view -> host.coverRotationSettingsController.openDialog());
         defaults(SettingsSectionResetter.Section.FULL_PLAYER);
 
         section(host.tr("Animations", "Анимации"));
-        addButton(host.tr("Animations: ", "Анимации: ")
-                        + host.tr(host.animations ? "on" : "off",
-                        host.animations ? "вкл" : "выкл"), view -> toggleAnimations());
-        addButton(host.tr("Particles: ", "Частицы: ")
-                        + host.tr(host.particlesEnabled ? "on" : "off",
-                        host.particlesEnabled ? "вкл" : "выкл"), view -> toggleParticles());
+        animationsButton = addButton(host.tr("Animations: ", "Анимации: ")
+                        + host.tr(host.appearanceState.animations ? "on" : "off",
+                        host.appearanceState.animations ? "вкл" : "выкл"), view -> toggleAnimations());
+        particlesButton = addButton(host.tr("Particles: ", "Частицы: ")
+                        + host.tr(host.appearanceState.particlesEnabled ? "on" : "off",
+                        host.appearanceState.particlesEnabled ? "вкл" : "выкл"), view -> toggleParticles());
         addButton(host.tr("Particle settings", "Настройка частиц"),
                 view -> host.particleSettingsController.openDialog());
-        addButton(host.playlistTickerSettingsController.settingLabel(),
+        tickerButton = addButton(host.playlistTickerSettingsController.settingLabel(),
                 view -> host.playlistTickerSettingsController.openDialog());
         defaults(SettingsSectionResetter.Section.ANIMATIONS);
 
@@ -84,13 +119,12 @@ final class SettingsRenderer {
         addButton(host.tr("Check songs", "Проверить песни"),
                 view -> host.openSongDiagnostics());
         addButton(host.tr("Rescan music folders", "Повторно сканировать папки"),
-                view -> host.rescanMusicFolders());
+                view -> host.audioImportController.rescanPersistedFolders());
         addButton(host.tr("Export playlists and settings", "Экспорт плейлистов и настроек"),
                 view -> host.settingsController.exportLibraryBackup());
         addButton(host.tr("Import playlists and settings", "Импорт плейлистов и настроек"),
                 view -> host.settingsController.importLibraryBackup());
 
-        boolean advanced = host.getSharedPreferences(PREFS, 0).getBoolean(ADVANCED, false);
         addPrimaryButton(host.tr(advanced ? "Hide advanced settings" : "Advanced settings",
                         advanced ? "Скрыть расширенные настройки" : "Расширенные настройки"),
                 view -> {
@@ -107,6 +141,15 @@ final class SettingsRenderer {
                 view -> host.settingsController.openGithub());
         addButton(host.tr("Support the author", "Поддержка автора"),
                 view -> host.settingsController.openAuthorSupport());
+    }
+
+    private String appearanceKey(boolean advanced) {
+        return host.appearanceState.language + '|' + advanced
+                + '|' + host.bg + '|' + host.fg + '|' + host.panel
+                + '|' + host.cardStroke
+                + '|' + host.appearanceState.settingsCardOpacity
+                + '|' + host.appearanceState.textOutlineEnabled
+                + '|' + host.appearanceState.textOutlineColor;
     }
 
     private void renderAdvanced() {
@@ -127,40 +170,40 @@ final class SettingsRenderer {
     }
 
     private void toggleAnimations() {
-        host.animations = !host.animations;
-        host.tabAnimating = false;
-        if (!host.animations && host.list != null) {
+        host.appearanceState.animations = !host.appearanceState.animations;
+        host.navigationState.tabAnimating = false;
+        if (!host.appearanceState.animations && host.list != null) {
             host.list.animate().cancel();
             host.list.setTranslationX(0.0f);
             host.list.setAlpha(1.0f);
         }
         host.saveState();
-        host.render();
+        refreshDynamicLabels();
     }
 
     private void toggleParticles() {
-        host.particlesEnabled = !host.particlesEnabled;
+        host.appearanceState.particlesEnabled = !host.appearanceState.particlesEnabled;
         host.saveState();
         host.refreshParticleSettings();
-        host.render();
+        refreshDynamicLabels();
     }
 
     private void toggleCoverStyle() {
-        host.circularCovers = !host.circularCovers;
+        host.appearanceState.circularCovers = !host.appearanceState.circularCovers;
         host.saveState();
         host.refreshPlaybackAppearance();
-        host.rebuildUi();
+        refreshDynamicLabels();
     }
 
     private void section(String label) {
-        TextView title = host.text(label, 20, true);
+        TextView title = host.uiFactory.text(label, 20, true);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(42));
         params.setMargins(host.dp(4), host.dp(12), host.dp(4), 0);
         host.list.addView(title, params);
     }
 
     private void subsection(String label) {
-        TextView title = host.text(label, 14, true);
+        TextView title = host.uiFactory.text(label, 14, true);
         title.setTextColor(host.secondaryText);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(32));
         params.setMargins(host.dp(10), host.dp(4), host.dp(10), 0);
@@ -172,12 +215,47 @@ final class SettingsRenderer {
                 view -> SettingsSectionResetter.reset(host, section));
     }
 
-    private void addButton(String label, View.OnClickListener listener) {
-        Button button = host.button(label);
+    void refreshDynamicLabels() {
+        if (memoryButton != null) {
+            memoryButton.setText(host.tr("Mini-player memory: ", "Память мини-плеера: ")
+                    + host.settingsController.resumeWindowText());
+        }
+        if (backgroundPlaybackButton != null) {
+            backgroundPlaybackButton.setText(
+                    host.backgroundPlaybackSettingsController.settingLabel());
+        }
+        if (volumeButton != null) {
+            volumeButton.setText(host.volumeLevelingController.settingLabel());
+        }
+        if (rotationButton != null) {
+            rotationButton.setText(host.coverRotationSettingsController.settingLabel());
+        }
+        if (coverStyleButton != null) {
+            coverStyleButton.setText(host.tr("Cover style: ", "Стиль обложек: ")
+                    + host.tr(host.appearanceState.circularCovers ? "spinning circles" : "rounded squares",
+                    host.appearanceState.circularCovers ? "вращающиеся круги" : "скруглённые квадраты"));
+        }
+        if (animationsButton != null) {
+            animationsButton.setText(host.tr("Animations: ", "Анимации: ")
+                    + host.tr(host.appearanceState.animations ? "on" : "off",
+                    host.appearanceState.animations ? "вкл" : "выкл"));
+        }
+        if (particlesButton != null) {
+            particlesButton.setText(host.tr("Particles: ", "Частицы: ")
+                    + host.tr(host.appearanceState.particlesEnabled ? "on" : "off",
+                    host.appearanceState.particlesEnabled ? "вкл" : "выкл"));
+        }
+        if (tickerButton != null) {
+            tickerButton.setText(host.playlistTickerSettingsController.settingLabel());
+        }
+    }
+
+    private Button addButton(String label, View.OnClickListener listener) {
+        Button button = host.uiFactory.button(label);
         button.setTextSize(17.0f);
         button.setGravity(8388627);
         button.setPadding(host.dp(18), 0, host.dp(12), 0);
-        host.applySecondaryButtonStyle(button, host.settingsCardOpacity);
+        host.uiFactory.applySecondaryButtonStyle(button, host.appearanceState.settingsCardOpacity);
         String lower = label.toLowerCase(Locale.ROOT);
         if (lower.contains("delete") || lower.contains("удал")) {
             button.setTextColor(Color.rgb(190, 45, 45));
@@ -186,11 +264,12 @@ final class SettingsRenderer {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(54));
         params.setMargins(0, host.dp(2), 0, host.dp(2));
         host.list.addView(button, params);
+        return button;
     }
 
     private void addPrimaryButton(String label, View.OnClickListener listener) {
-        Button button = host.button(label);
-        host.applyPrimaryButtonStyle(button);
+        Button button = host.uiFactory.button(label);
+        host.uiFactory.applyPrimaryButtonStyle(button);
         button.setOnClickListener(listener);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(50));
         params.setMargins(0, host.dp(12), 0, host.dp(4));
