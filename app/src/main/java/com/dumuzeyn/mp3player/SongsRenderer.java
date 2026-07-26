@@ -67,9 +67,16 @@ final class SongsRenderer {
                                     host.songRows.refreshMetadata(
                                             updated.uri, updated,
                                             host.formatTrackDuration(updated));
+                                    if (host.songsView != null) {
+                                        host.songsView.refreshMetadata(updated);
+                                    }
                                 }
                             }
                             host.libraryRepository.reindex();
+                            if (host.songsView != null) {
+                                host.songsView.refreshFilteredSource(
+                                        host.libraryState.tracks);
+                            }
                         }
                     });
                 }
@@ -104,6 +111,14 @@ final class SongsRenderer {
 
     void render(ArrayList<Track> tracks) {
         renderSongsState(tracks);
+    }
+
+    void renderLibrary(ArrayList<Track> tracks, String query) {
+        if (!host.navigationState.renderingTabPreview && host.songsView != null) {
+            host.songsView.show(tracks, query);
+            return;
+        }
+        renderSongsState(host.libraryListController.filter(tracks));
     }
 
     void renderSongsState(ArrayList<Track> tracks) {

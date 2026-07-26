@@ -23,6 +23,7 @@ final class CoverLoader {
     private final Context context;
     private final Handler mainHandler;
     private final LruCache<String, Bitmap> cache;
+    private volatile ArtworkDiskCache diskCache;
     private final Map<String, ArrayList<WeakReference<ImageView>>> pendingTargets = new LinkedHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private volatile boolean closed;
@@ -92,7 +93,15 @@ final class CoverLoader {
         }
         try {
             executor.execute(() -> {
-                final Bitmap bitmap = read(track, maxSize);
+                ArtworkDiskCache persistentCache = diskCache();
+                Bitmap loaded = persistentCache.read(key);
+                if (loaded == null) {
+                    loaded = read(track, maxSize);
+                    if (loaded != null) {
+                        persistentCache.write(key, loaded);
+                    }
+                }
+                final Bitmap bitmap = loaded;
                 if (closed) {
                     return;
                 }
@@ -133,6 +142,15 @@ final class CoverLoader {
         if (bitmap != null && !bitmap.isRecycled()) {
             cache.put(key(track, THUMB_SIZE), bitmap);
         }
+    }
+
+    void clear(ImageView view, int fallbackColor) {
+        if (view == null) {
+            return;
+        }
+        view.setTag(null);
+        view.setImageDrawable(null);
+        view.setBackgroundColor(fallbackColor);
     }
 
     void trimMemory(int level) {
@@ -218,6 +236,20 @@ final class CoverLoader {
     }
 
     private String key(Track track, int maxSize) {
-        return track.uri + "#" + maxSize;
+        return track.trackId + "|" + track.uri + "|" + track.fileSize + "|"
+                + track.lastModified + "|" + track.fingerprint + "#" + maxSize;
+    }
+
+    private ArtworkDiskCache diskCache() {
+        ArtworkDiskCache current = diskCache;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            if (diskCache == null) {
+                diskCache = new ArtworkDiskCache(context);
+            }
+            return diskCache;
+        }
     }
 }

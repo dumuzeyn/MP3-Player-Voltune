@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import android.net.Uri;
+import java.util.Locale;
 
 public class Track {
     public final String album;
@@ -13,6 +14,7 @@ public class Track {
     public final long fileSize;
     public final long lastModified;
     public final String fingerprint;
+    public final String normalizedSearchText;
 
     public Track(String uri, String title, String artist) {
         this(uri, title, artist, "Unknown album", "Unknown genre", 0);
@@ -40,6 +42,8 @@ public class Track {
         this.fileSize = fileSize;
         this.lastModified = Math.max(0L, lastModified);
         this.fingerprint = fingerprint == null ? "" : fingerprint;
+        this.normalizedSearchText = normalizeSearchText(
+                this.title + " " + this.artist + " " + this.album + " " + this.genre);
     }
 
     public Track withLocation(String newUri, long newSize, long newLastModified,
@@ -50,5 +54,12 @@ public class Track {
 
     public Uri asUri() {
         return Uri.parse(this.uri);
+    }
+
+    static String normalizeSearchText(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
     }
 }

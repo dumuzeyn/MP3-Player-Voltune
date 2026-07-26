@@ -12,6 +12,13 @@ final class MainActivityCoordinator {
     MainActivityCoordinator(MainActivityCore host) {
         this.host = host;
         closeables.add(host.libraryPersistenceController::close);
+        closeables.add(host.libraryLoader);
+        closeables.add(host.trackSearchController);
+        closeables.add(() -> {
+            if (host.songsView != null) {
+                host.songsView.close();
+            }
+        });
         closeables.add(host.artworkUi::close);
         closeables.add(host.volumeLevelingController::release);
         closeables.add(host.playbackController::release);
@@ -26,16 +33,13 @@ final class MainActivityCoordinator {
     void onCreate(Bundle savedInstanceState) {
         SettingsDefaults.resetForVersion243(host);
         host.uiPreferencesStore.load();
-        BenchmarkLibrarySeeder.seedIfRequested(host,
-                host.getIntent().getIntExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 0));
         host.playbackUiState.sleepTimerEndsAt = PlaybackSleepTimer.readEndsAt(host);
         NotificationPermissionController.requestIfNeeded(host);
-        host.mainRenderer.loadMenuData();
-        host.playbackController.restorePersistedUiState();
-        host.playbackController.connect();
         host.themeController.applyPalette();
         host.buildUi();
-        host.songsRenderer.refreshMissingMetadataAsync();
+        host.libraryLoader.load(
+                host.getIntent().getIntExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 0),
+                host::applyLibrarySnapshot);
         host.uiHandler.postDelayed(
                 host.backgroundPlaybackSettingsController::maybePromptOnce, 900L);
     }

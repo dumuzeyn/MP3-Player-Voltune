@@ -1,5 +1,6 @@
 package com.dumuzeyn.mp3player;
 
+import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -43,43 +44,82 @@ final class HeaderController {
     }
 
     void renderSectionHeader() {
+        host.list.addView(createSectionHeader());
+    }
+
+    View createSectionHeader() {
+        return createSectionHeader(host.navigationState.tabIndex);
+    }
+
+    View createSongsSectionHeader() {
+        return createSectionHeader(0);
+    }
+
+    private View createSectionHeader(int tabIndex) {
         LinearLayout section = new LinearLayout(host);
         section.setOrientation(LinearLayout.VERTICAL);
-        String title = host.tabs[host.navigationState.tabIndex];
-        if (host.navigationState.tabIndex == 0) {
-            title = host.tr("Songs ", "Песни ") + host.libraryState.tracks.size();
-        }
-        TextView titleView = host.uiFactory.text(title, 22, true);
+        TextView titleView = host.uiFactory.text(sectionTitle(tabIndex), 22, true);
+        titleView.setId(R.id.section_title);
         titleView.setSingleLine(true);
         section.addView(titleView, new LinearLayout.LayoutParams(-1, host.dp(48)));
-        if (host.navigationState.tabIndex == 0 || host.navigationState.tabIndex == 1) {
-            section.addView(libraryActions(), new LinearLayout.LayoutParams(-1, host.dp(62)));
-        } else if (host.navigationState.tabIndex == 2) {
+        if (tabIndex == 0 || tabIndex == 1) {
+            section.addView(libraryActions(tabIndex),
+                    new LinearLayout.LayoutParams(-1, host.dp(62)));
+        } else if (tabIndex == 2) {
             LinearLayout actions = host.uiFactory.row();
             actions.addView(actionButton("+", view -> host.overlayController.createPlaylist()), host.uiFactory.square(52));
             actions.addView(actionButton("⌕", view -> host.overlayController.openSearch()), host.uiFactory.square(52));
             section.addView(actions, new LinearLayout.LayoutParams(-1, host.dp(62)));
         }
-        host.list.addView(section);
+        return section;
     }
 
-    private LinearLayout libraryActions() {
+    void refreshSongsSectionHeader(View section) {
+        refreshSectionHeader(section, 0);
+    }
+
+    private void refreshSectionHeader(View section, int tabIndex) {
+        if (section == null) {
+            return;
+        }
+        TextView title = section.findViewById(R.id.section_title);
+        if (title != null) {
+            title.setText(sectionTitle(tabIndex));
+        }
+        Button play = section.findViewById(R.id.section_play);
+        if (play != null) {
+            play.setText(host.playbackQueueController.isPlayingSource(
+                    host.currentVisibleTracks()) ? "Ⅱ" : "▶");
+            host.sourcePlayButton = play;
+        }
+    }
+
+    private String sectionTitle(int tabIndex) {
+        if (tabIndex == 0) {
+            return host.tr("Songs ", "Песни ") + host.libraryState.tracks.size();
+        }
+        return host.tabs[tabIndex];
+    }
+
+    private LinearLayout libraryActions(int tabIndex) {
         LinearLayout actions = host.uiFactory.row();
-        if (host.navigationState.tabIndex == 0) {
+        if (tabIndex == 0) {
             actions.addView(actionButton("+", view -> host.audioImportController.openFiles()), host.uiFactory.square(52));
             actions.addView(actionButton("▣", view -> host.audioImportController.openFolder()), host.uiFactory.square(52));
         } else {
             actions.addView(actionButton("+", view -> host.overlayController.openAddFavorites()), host.uiFactory.square(52));
         }
         actions.addView(actionButton("⌕", view -> host.overlayController.openSearch()), host.uiFactory.square(52));
-        final ArrayList<Track> visible = host.currentVisibleTracks();
+        ArrayList<Track> visible = host.currentVisibleTracks();
         Button play = actionButton(host.playbackQueueController.isPlayingSource(visible) ? "Ⅱ" : "▶", view -> {
-            if (host.playbackQueueController.isPlayingSource(visible)) {
+            ArrayList<Track> currentVisible = host.currentVisibleTracks();
+            if (host.playbackQueueController.isPlayingSource(currentVisible)) {
                 host.playbackQueueController.toggleOrStart();
             } else {
-                host.playbackQueueController.playList(visible, false);
+                host.playbackQueueController.playList(currentVisible, false);
             }
         });
+        play.setId(R.id.section_play);
         host.sourcePlayButton = play;
         actions.addView(play, host.uiFactory.square(52));
         Button shuffle = host.uiFactory.shuffleButton();
