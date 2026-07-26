@@ -1,33 +1,31 @@
-# MP3 Player Voltune 3.0
+# MP3 Player Voltune 3.0.1
 
 ## Русский
 
-Версия 3.0 обновляет основу воспроизведения и ускоряет работу с большой библиотекой.
+Версия 3.0.1 ускоряет библиотеку и исправляет запуск релизной сборки.
 
-- Воспроизведение переведено на Media3 `ExoPlayer`, `MediaSessionService` и `MediaController`.
-- Очередь, текущая песня, позиция, повтор и мини-плеер восстанавливаются надёжнее после возврата в приложение.
-- Исправлено определение активной песни после перехода на Media3: снова работают гистограмма, кнопка паузы и вращение обложки.
-- Переход в «Песни» больше не создаёт один и тот же список дважды.
-- Для «Песен», «Избранного», жанров, исполнителей и альбомов заранее готовятся 15 карточек, поэтому пользователь не видит поэтапную загрузку первых элементов.
-- Сохранение плейлистов и избранного выполняется вне главного потока и одной атомарной операцией.
-- Фоновое сохранение состояния больше не перечитывает всю музыкальную библиотеку каждые несколько секунд.
-- Добавлены проверки миграции библиотеки из 165 песен и производительности на библиотеке из 1 000 треков.
-- При чистой установке интерфейс по умолчанию открывается на русском языке.
+- Раздел «Песни» переведён на `RecyclerView`: создаются только видимые карточки, а изменения воспроизведения обновляют отдельные строки.
+- Загрузка библиотеки и поиск выполняются вне основного потока, поиск запускается с небольшой задержкой после ввода.
+- Оптимизированы запросы SQLite, сохранение треков и загрузка обложек.
+- Добавлен кэш обложек в памяти и на диске; невидимые карточки больше не загружают полноразмерные изображения.
+- Исправлены два падения при открытии release-версии, вызванные слишком ранним обращением к контексту Android.
+- Из строки песни убрана отдельная кнопка избранного: действие осталось в свойствах песни.
+- Режим повтора в большом плеере теперь подписан «Повтор», «Песня» и «Список» без `1` и знака бесконечности.
+- Сборка проверена unit-тестами, lint и тестами совместимости на Android 8, Android 16 и планшетном интерфейсе.
 
-Все существующие возможности Voltune сохранены: фоновое воспроизведение, повтор, таймер сна, плейлисты, избранное, темы, эквалайзер, выравнивание громкости, системная медиапанель и адаптивный интерфейс для планшетов.
+Все функции версии 3.0 сохранены, включая Media3, фоновое воспроизведение, очередь, повтор, таймер сна, плейлисты, темы, эквалайзер и адаптивный планшетный интерфейс.
 
 ## English
 
-Version 3.0 modernizes playback and improves responsiveness with large music libraries.
+Version 3.0.1 improves library responsiveness and fixes release startup.
 
-- Playback now uses Media3 `ExoPlayer`, `MediaSessionService`, and `MediaController`.
-- Queue, current track, position, repeat mode, and mini-player state restore more reliably after returning to the app.
-- Active-track matching was corrected after the Media3 migration, restoring waveform animation, pause state, and rotating artwork.
-- Entering Songs no longer builds the same list twice.
-- Songs, Favorites, Genres, Artists, and Albums prepare 15 cards before a transition, avoiding visibly staged initial loading.
-- Playlist and favorite changes are persisted off the main thread in one atomic operation.
-- Periodic playback persistence no longer reloads the complete library every few seconds.
-- Coverage now includes a 165-track database migration and a 1,000-track startup/navigation benchmark.
-- Clean installations default to Russian while existing language preferences remain unchanged.
+- Songs now uses `RecyclerView`, creating only visible rows and applying targeted playback-state updates.
+- Library loading and debounced search filtering run outside the UI thread.
+- SQLite reads, track persistence, and artwork loading have been optimized.
+- Artwork uses memory and disk caching, and off-screen rows no longer decode full-size images.
+- Fixed two release startup crashes caused by accessing Android context before the Activity was attached.
+- Removed the redundant favorite button from song rows; the action remains available in track properties.
+- The full-player repeat control now uses `Repeat`, `Song`, and `List` labels without numeric or infinity symbols.
+- The build passed unit tests, lint, and compatibility checks for Android 8, Android 16, and tablet layouts.
 
-All established Voltune features remain available, including background playback, repeat, sleep timer, playlists, favorites, themes, equalizer, volume leveling, system media controls, and adaptive tablet layouts.
+All 3.0 features remain available, including Media3 playback, background audio, queues, repeat, sleep timer, playlists, themes, equalizer, and adaptive tablet layouts.
