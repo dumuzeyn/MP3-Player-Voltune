@@ -184,7 +184,7 @@ public class BackgroundPlaybackInstrumentedTest {
         MainActivityCore host = (MainActivityCore) activity;
         instrumentation.runOnMainSync(() -> {
             setUiSnapshot(host, 0, false);
-            host.openFullPlayer();
+            host.playerUiController.openFullPlayer();
             activity.finish();
         });
         activity = null;
