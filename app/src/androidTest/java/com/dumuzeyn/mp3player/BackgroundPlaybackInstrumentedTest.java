@@ -198,19 +198,19 @@ public class BackgroundPlaybackInstrumentedTest {
         MainActivityCore host = (MainActivityCore) activity;
         RotatingCoverImageView[] holder = new RotatingCoverImageView[1];
         instrumentation.runOnMainSync(() -> {
-            host.animations = true;
-            host.circularCovers = true;
+            host.appearanceState.animations = true;
+            host.appearanceState.circularCovers = true;
             setUiSnapshot(host, 0, true);
             holder[0] = new RotatingCoverImageView(host);
             host.root.addView(holder[0], new android.widget.FrameLayout.LayoutParams(200, 200));
-            holder[0].bindTrack(host.tracks.get(0));
+            holder[0].bindTrack(host.libraryState.tracks.get(0));
         });
         InstrumentedTestSupport.waitFor("First cover did not rotate", 3000L,
                 () -> holder[0].getRotation() > 1.0f);
         float[] reset = new float[1];
         instrumentation.runOnMainSync(() -> {
             setUiSnapshot(host, 1, true);
-            holder[0].bindTrack(host.tracks.get(1));
+            holder[0].bindTrack(host.libraryState.tracks.get(1));
             reset[0] = holder[0].getRotation();
         });
         assertTrue(Math.abs(reset[0]) < 1.0f);
@@ -234,7 +234,7 @@ public class BackgroundPlaybackInstrumentedTest {
     }
 
     private static void setUiSnapshot(MainActivityCore host, int trackIndex, boolean playing) {
-        Track track = host.tracks.get(trackIndex);
+        Track track = host.libraryState.tracks.get(trackIndex);
         String mediaId = MediaItemMapper.stableHash(track.uri);
         host.updatePlaybackSnapshot(new PlaybackSnapshot(
                 Collections.singletonList(mediaId), mediaId, 0, 0L, track.durationMs,
