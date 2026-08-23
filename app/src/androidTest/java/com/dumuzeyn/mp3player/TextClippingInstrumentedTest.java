@@ -41,6 +41,7 @@ public class TextClippingInstrumentedTest {
     public void russianScreensAndDialogsDoNotClipText() {
         MainActivityCore host = launchRussianActivity();
         assertNoClipping("main screen", host.root);
+        checkAllLibrarySections(host);
 
         String longTitle = "Защитить фоновое воспроизведение";
         String longMessage = "Voltune запросит работу без ограничений батареи, затем откроет "
@@ -70,6 +71,18 @@ public class TextClippingInstrumentedTest {
         checkDialog(host, "text input", () -> host.overlayController.showInput(
                 "Название нового плейлиста", "Название плейлиста", "", false,
                 value -> { }));
+    }
+
+    @Test
+    public void homeTabStartsCenteredWithoutDuplicateContentTitle() {
+        MainActivityCore host = launchRussianActivity();
+        InstrumentedTestSupport.waitFor("Home tab was not centered", 5000L,
+                () -> activeTabCenterOffset(host) <= 2);
+        List<String> duplicates = new ArrayList<>();
+        instrumentation.runOnMainSync(() -> collectExactText(
+                host.list, host.tabs[LibraryTabs.HOME], duplicates));
+        assertTrue("Active tab title is duplicated in content: " + duplicates,
+                duplicates.isEmpty());
     }
 
     private MainActivityCore launchRussianActivity() {
@@ -110,6 +123,46 @@ public class TextClippingInstrumentedTest {
         });
         instrumentation.waitForIdleSync();
         assertNoClipping(name, host.overlayHost);
+    }
+
+    private void checkAllLibrarySections(MainActivityCore host) {
+        for (int index = 0; index < host.tabs.length; index++) {
+            int tabIndex = index;
+            instrumentation.runOnMainSync(() -> {
+                host.navigationState.tabIndex = tabIndex;
+                host.render();
+            });
+            instrumentation.waitForIdleSync();
+            assertNoClipping("tab " + host.tabs[index], host.root);
+        }
+    }
+
+    private static int activeTabCenterOffset(MainActivityCore host) {
+        if (host.tabsScroll == null || host.tabRow == null || host.tabsScroll.getWidth() == 0) {
+            return Integer.MAX_VALUE;
+        }
+        int viewportCenter = host.tabsScroll.getScrollX() + host.tabsScroll.getWidth() / 2;
+        int closest = Integer.MAX_VALUE;
+        for (int index = 0; index < host.tabRow.getChildCount(); index++) {
+            View child = host.tabRow.getChildAt(index);
+            if (Integer.valueOf(LibraryTabs.HOME).equals(child.getTag())) {
+                closest = Math.min(closest,
+                        Math.abs(child.getLeft() + child.getWidth() / 2 - viewportCenter));
+            }
+        }
+        return closest;
+    }
+
+    private static void collectExactText(View view, String expected, List<String> found) {
+        if (view instanceof TextView && expected.contentEquals(((TextView) view).getText())) {
+            found.add(expected);
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                collectExactText(group.getChildAt(index), expected, found);
+            }
+        }
     }
 
     private void assertNoClipping(String screen, View root) {

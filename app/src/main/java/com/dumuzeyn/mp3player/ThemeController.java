@@ -322,7 +322,7 @@ final class ThemeController {
             boolean lightTheme = "light".equals(host.appearanceState.themeMode);
             boolean darkTheme = "dark".equals(host.appearanceState.themeMode);
             float width = host.getResources().getDisplayMetrics().density
-                    * (lightTheme || darkTheme ? 1.0f : 0.35f);
+                    * (lightTheme || darkTheme ? 0.65f : 0.25f);
             ((OutlinedTextView) text).setTextOutline(
                     lightTheme || darkTheme || host.appearanceState.textOutlineEnabled,
                     lightTheme ? Color.WHITE
@@ -331,7 +331,7 @@ final class ThemeController {
             boolean lightTheme = "light".equals(host.appearanceState.themeMode);
             boolean darkTheme = "dark".equals(host.appearanceState.themeMode);
             float width = host.getResources().getDisplayMetrics().density
-                    * (lightTheme || darkTheme ? 1.0f : 0.35f);
+                    * (lightTheme || darkTheme ? 0.65f : 0.25f);
             ((OutlinedButton) text).setTextOutline(
                     lightTheme || darkTheme || host.appearanceState.textOutlineEnabled,
                     lightTheme ? Color.WHITE

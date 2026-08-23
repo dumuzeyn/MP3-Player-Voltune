@@ -20,7 +20,7 @@ final class OutlinedTextView extends TextView {
     void setTextOutline(boolean enabled, int color, float width) {
         outlineEnabled = enabled;
         outlineColor = color;
-        outlineWidth = Math.max(1.0f, width);
+        outlineWidth = Math.max(0.5f, width);
         setShadowLayer(0.0f, 0.0f, 0.0f, 0);
         invalidate();
     }

@@ -175,7 +175,6 @@ final class ParticleEffectsView extends View {
                 ? host.appearanceState.particleSecondaryColor : host.yellow;
         particle.color = random.nextBoolean() ? primaryColor : secondaryColor;
         particle.maxAlpha = touchParticle ? 145 + random.nextInt(56) : 55 + random.nextInt(41);
-        particle.lightning = random.nextBoolean();
         particle.filled = random.nextBoolean();
         particles.add(particle);
         lastFrameTime = SystemClock.uptimeMillis();
@@ -190,24 +189,12 @@ final class ParticleEffectsView extends View {
         paint.setStyle(particle.filled ? Paint.Style.FILL : Paint.Style.STROKE);
         paint.setStrokeWidth(Math.max(host.dp(1), particle.size * 0.1f));
         path.reset();
-        if (particle.lightning) {
-            buildLightningPath(particle.size);
-        } else {
-            buildTrianglePath(particle.size);
-        }
+        buildLightningPath(particle.size);
         canvas.save();
         canvas.translate(particle.x, particle.y);
         canvas.rotate(particle.rotation);
         canvas.drawPath(path, paint);
         canvas.restore();
-    }
-
-    private void buildTrianglePath(float size) {
-        float half = size * 0.5f;
-        path.moveTo(0.0f, -half);
-        path.lineTo(half, half);
-        path.lineTo(-half, half);
-        path.close();
     }
 
     private void buildLightningPath(float size) {
@@ -243,7 +230,6 @@ final class ParticleEffectsView extends View {
         long lifeMs;
         int color;
         int maxAlpha;
-        boolean lightning;
         boolean filled;
     }
 }
