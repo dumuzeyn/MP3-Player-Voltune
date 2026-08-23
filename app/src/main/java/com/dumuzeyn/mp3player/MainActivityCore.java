@@ -75,6 +75,8 @@ class MainActivityCore extends Activity {
     final TabsController tabsController = new TabsController(this);
     private final SwipeController swipeController = new SwipeController(this);
     final AudioImportController audioImportController = new AudioImportController(this);
+    final LibraryMaintenanceController libraryMaintenanceController =
+            new LibraryMaintenanceController(this, this.uiHandler);
     final UiFactory uiFactory = new UiFactory(this);
     final HeaderController headerController = new HeaderController(this);
     final OverlayController overlayController = new OverlayController(this);
@@ -414,6 +416,7 @@ class MainActivityCore extends Activity {
 
     void toggleFavorite(Track track) {
         this.libraryRepository.toggleFavorite(track);
+        this.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     boolean isCurrent(Track track) {

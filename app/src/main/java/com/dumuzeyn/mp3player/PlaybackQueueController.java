@@ -117,7 +117,7 @@ final class PlaybackQueueController {
         host.playlistController.removeTrackFromAllPlaylists(stored);
         TrackStore.delete(host, stored);
         host.saveLibraryState();
-        host.render();
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     void playIndex(int index, int position) {

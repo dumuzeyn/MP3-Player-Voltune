@@ -70,6 +70,7 @@ final class PlaybackHistoryRecorder implements AutoCloseable {
                 LibraryDatabase database = new LibraryDatabase(context);
                 try {
                     action.run(database);
+                    LibraryContentVersion.bump(context);
                 } finally {
                     database.close();
                 }

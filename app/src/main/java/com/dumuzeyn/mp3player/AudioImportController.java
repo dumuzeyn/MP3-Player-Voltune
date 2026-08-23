@@ -160,10 +160,7 @@ final class AudioImportController {
             }
             TrackStore.sort(host.libraryState.tracks);
             host.libraryRepository.reindex();
-            host.libraryState.homeContent = new HomeContentBuilder().build(
-                    host.libraryState.tracks, host.libraryState.favorites,
-                    host.libraryState.playlists);
-            host.render();
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
         });
     }
 
@@ -336,7 +333,8 @@ final class AudioImportController {
                         host.libraryState.tracks.add(track);
                         TrackStore.sort(host.libraryState.tracks);
                     }
-                    host.render();
+                    host.libraryRepository.reindex();
+                    host.librarySnapshotApplier.rebuildDerivedAndRender();
                 });
     }
 

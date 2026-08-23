@@ -129,4 +129,44 @@ public class LibraryDatabaseMigrationInstrumentedTest {
         assertEquals(1234L, tracks.get(0).dateAdded);
         assertEquals("Artist", tracks.get(0).albumArtist);
     }
+
+    @Test
+    public void versionThreeMigrationSchedulesOneMetadataRepair() {
+        SQLiteDatabase old = context.openOrCreateDatabase(LibraryDatabase.DB_NAME, 0, null);
+        old.execSQL("CREATE TABLE tracks (track_id TEXT PRIMARY KEY NOT NULL, "
+                + "uri TEXT UNIQUE NOT NULL, title TEXT NOT NULL, artist TEXT NOT NULL, "
+                + "album TEXT NOT NULL, album_artist TEXT NOT NULL DEFAULT '', "
+                + "genre TEXT NOT NULL, year INTEGER NOT NULL DEFAULT 0, "
+                + "track_number INTEGER NOT NULL DEFAULT 0, disc_number INTEGER NOT NULL DEFAULT 0, "
+                + "duration_ms INTEGER NOT NULL DEFAULT 0, file_size INTEGER NOT NULL DEFAULT -1, "
+                + "last_modified INTEGER NOT NULL DEFAULT 0, fingerprint TEXT NOT NULL DEFAULT '', "
+                + "availability_reason TEXT NOT NULL DEFAULT '', play_count INTEGER NOT NULL DEFAULT 0, "
+                + "skip_count INTEGER NOT NULL DEFAULT 0, date_added INTEGER NOT NULL DEFAULT 0, "
+                + "last_played_at INTEGER NOT NULL DEFAULT 0, last_completed_at INTEGER NOT NULL DEFAULT 0)");
+        old.execSQL("CREATE TABLE favorites (track_id TEXT PRIMARY KEY NOT NULL)");
+        old.execSQL("CREATE TABLE playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "name TEXT NOT NULL, position INTEGER NOT NULL)");
+        old.execSQL("CREATE TABLE playlist_tracks (playlist_id INTEGER NOT NULL, "
+                + "track_id TEXT NOT NULL, position INTEGER NOT NULL, "
+                + "PRIMARY KEY (playlist_id, track_id))");
+        ContentValues values = new ContentValues();
+        values.put("track_id", "stable-v3");
+        values.put("uri", "content://migration/v3");
+        values.put("title", "Song");
+        values.put("artist", "Artist");
+        values.put("album", "Album");
+        values.put("album_artist", "Artist");
+        values.put("genre", "Unknown genre");
+        old.insertOrThrow("tracks", null, values);
+        old.setVersion(3);
+        old.close();
+
+        LibraryDatabase migrated = new LibraryDatabase(context);
+        ArrayList<Track> candidates = migrated.loadTracksNeedingMetadataRefresh(1);
+        assertEquals(1, candidates.size());
+        migrated.updateTrackMetadata(candidates.get(0).withMetadata(
+                "Song", "Artist", "Album", "Artist", "Rock", 0, 0, 0));
+        assertEquals(0, migrated.loadTracksNeedingMetadataRefresh(1).size());
+        migrated.close();
+    }
 }

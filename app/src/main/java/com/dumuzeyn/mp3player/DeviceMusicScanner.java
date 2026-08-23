@@ -21,20 +21,29 @@ final class DeviceMusicScanner {
         ArrayList<Track> tracks = new ArrayList<>();
         ContentResolver resolver = context.getContentResolver();
         Uri collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        String[] projection = projection();
+        boolean requestGenre = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
+        String[] projection = projection(requestGenre);
         String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0 AND "
                 + MediaStore.Audio.Media.DURATION + " >= ?";
         Cursor cursor = null;
         try {
-            cursor = resolver.query(collection, projection, selection,
-                    new String[]{"20000"}, MediaStore.Audio.Media.DATE_ADDED + " DESC");
+            try {
+                cursor = resolver.query(collection, projection, selection,
+                        new String[]{"20000"}, MediaStore.Audio.Media.DATE_ADDED + " DESC");
+            } catch (IllegalArgumentException unsupportedGenreColumn) {
+                if (!requestGenre) {
+                    throw unsupportedGenreColumn;
+                }
+                cursor = resolver.query(collection, projection(false), selection,
+                        new String[]{"20000"}, MediaStore.Audio.Media.DATE_ADDED + " DESC");
+            }
             while (cursor != null && cursor.moveToNext()) {
                 long id = longValue(cursor, MediaStore.Audio.Media._ID);
                 Uri uri = ContentUris.withAppendedId(collection, id);
                 if (knownUris.contains(uri.toString())) {
                     continue;
                 }
-                Track track = trackFromCursor(cursor, uri);
+                Track track = trackFromCursor(context, cursor, uri);
                 if (track != null) {
                     knownUris.add(uri.toString());
                     tracks.add(track);
@@ -51,7 +60,7 @@ final class DeviceMusicScanner {
         return tracks;
     }
 
-    private static Track trackFromCursor(Cursor cursor, Uri uri) {
+    private static Track trackFromCursor(Context context, Cursor cursor, Uri uri) {
         String title = textValue(cursor, MediaStore.Audio.Media.TITLE);
         String displayName = textValue(cursor, MediaStore.Audio.Media.DISPLAY_NAME);
         String artist = cleanUnknown(textValue(cursor, MediaStore.Audio.Media.ARTIST),
@@ -80,14 +89,16 @@ final class DeviceMusicScanner {
         long modified = longValue(cursor, MediaStore.Audio.Media.DATE_MODIFIED) * 1000L;
         int trackNumber = (int) (longValue(cursor, MediaStore.Audio.Media.TRACK) % 1000L);
         int year = (int) longValue(cursor, MediaStore.Audio.Media.YEAR);
-        return new Track(TrackIdentity.fromLegacyUri(uri.toString()), uri.toString(), title,
-                artist, album, artist, "Unknown genre", year, trackNumber, 0,
+        Track indexed = new Track(TrackIdentity.fromLegacyUri(uri.toString()), uri.toString(), title,
+                artist, album, artist, textValue(cursor, "genre"), year, trackNumber, 0,
                 (int) Math.min(Integer.MAX_VALUE, duration),
                 longValue(cursor, MediaStore.Audio.Media.SIZE), modified, "", 0, 0,
                 dateAdded > 0L ? dateAdded : System.currentTimeMillis(), 0L, 0L);
+        return GenreNormalizer.isUnknown(indexed.genre)
+                ? TrackStore.refreshMetadata(context, indexed) : indexed;
     }
 
-    private static String[] projection() {
+    private static String[] projection(boolean includeGenre) {
         List<String> columns = new ArrayList<>();
         columns.add(MediaStore.Audio.Media._ID);
         columns.add(MediaStore.Audio.Media.TITLE);
@@ -105,6 +116,9 @@ final class DeviceMusicScanner {
         columns.add(MediaStore.Audio.Media.IS_RINGTONE);
         columns.add(MediaStore.Audio.Media.IS_ALARM);
         columns.add(MediaStore.Audio.Media.IS_NOTIFICATION);
+        if (includeGenre) {
+            columns.add("genre");
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             columns.add("relative_path");
         }

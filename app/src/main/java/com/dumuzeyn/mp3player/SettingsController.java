@@ -170,7 +170,8 @@ final class SettingsController {
                     }
                     TrackStore.save(host, host.libraryState.tracks);
                     host.saveState();
-                    host.render();
+                    host.libraryRepository.reindex();
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
                 });
     }
 
@@ -294,6 +295,7 @@ final class SettingsController {
                     host.libraryState.playlists.clear();
                     host.libraryState.playlists.addAll(imported.playlists);
                     host.saveState();
+                    host.librarySnapshotApplier.rebuildDerivedAndRender();
                     host.rebuildUi();
                 } else {
                     ThemePresetCodec.decodeInto(encoded,
@@ -313,9 +315,12 @@ final class SettingsController {
     }
 
     void confirmRemoveUnavailableSongs() {
-        LibraryFileAccessManager.Result result = LibraryFileAccessManager.inspect(host,
-                host.libraryState.tracks);
-        if (result.unavailable.isEmpty()) {
+        host.libraryMaintenanceController.inspectUnavailable(host.libraryState.tracks,
+                this::showUnavailableResult);
+    }
+
+    private void showUnavailableResult(java.util.List<Track> unavailable) {
+        if (unavailable.isEmpty()) {
             host.showConfirmPanel(
                     host.tr("File access", "Доступ к файлам"),
                     host.tr("All library files are available.",
@@ -327,14 +332,12 @@ final class SettingsController {
         host.showConfirmPanel(
                 host.tr("Remove unavailable songs?", "Удалить недоступные песни?"),
                 host.tr("Unavailable records: ", "Недоступных записей: ")
-                        + result.unavailable.size() + "\n\n"
+                        + unavailable.size() + "\n\n"
                         + host.tr("The audio files themselves will not be deleted.",
                                 "Сами аудиофайлы удалены не будут."),
                 () -> {
-                    LibraryFileAccessManager.removeUnavailable(host, host.libraryState.tracks,
-                            host.libraryState.favorites, host.libraryState.playlists);
-                    host.saveState();
-                    host.render();
+                    host.libraryMaintenanceController.removeUnavailable(unavailable, () ->
+                            host.librarySnapshotApplier.applyRemovedRecords(unavailable));
                 });
     }
 
@@ -345,7 +348,7 @@ final class SettingsController {
                 () -> {
                     host.libraryState.playlists.clear();
                     host.saveState();
-                    host.render();
+                    host.librarySnapshotApplier.rebuildDerivedAndRender();
                 });
     }
 

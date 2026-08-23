@@ -57,7 +57,7 @@ public class Track {
         this.album = album;
         this.albumArtist = albumArtist == null || albumArtist.trim().isEmpty()
                 ? artist : albumArtist;
-        this.genre = genre;
+        this.genre = GenreNormalizer.normalize(genre);
         this.year = Math.max(0, year);
         this.trackNumber = Math.max(0, trackNumber);
         this.discNumber = Math.max(0, discNumber);

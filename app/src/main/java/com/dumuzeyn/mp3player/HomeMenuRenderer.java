@@ -82,15 +82,11 @@ final class HomeMenuRenderer implements MenuRenderer {
     }
 
     private ArrayList<Track> matchingTracks(String value, boolean artist) {
-        ArrayList<Track> result = new ArrayList<>();
-        String normalized = Track.normalizeSearchText(value);
-        for (Track track : host.libraryState.tracks) {
-            String candidate = artist ? track.artist : track.album;
-            if (normalized.equals(Track.normalizeSearchText(candidate))) {
-                result.add(track);
-            }
-        }
-        return result;
+        java.util.Map<String, ArrayList<Track>> groups = artist
+                ? host.libraryState.homeContent.artistTracks
+                : host.libraryState.homeContent.albumTracks;
+        ArrayList<Track> result = groups.get(value);
+        return result == null ? new ArrayList<>() : new ArrayList<>(result);
     }
 
     private void addHeading(String value) {

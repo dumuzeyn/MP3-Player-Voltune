@@ -14,6 +14,7 @@ final class MainActivityCoordinator {
         this.host = host;
         closeables.add(host.libraryPersistenceController::close);
         closeables.add(host.libraryLoader);
+        closeables.add(host.libraryMaintenanceController);
         closeables.add(host.trackSearchController);
         closeables.add(host.globalSearchController);
         closeables.add(host.lyricsRepository);

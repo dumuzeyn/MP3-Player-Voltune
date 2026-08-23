@@ -124,7 +124,7 @@ final class MetadataEditorController implements AutoCloseable {
             return;
         }
         host.libraryRepository.reindex();
-        host.render();
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
         try {
             executor.execute(() -> TrackStore.updateMetadata(
                     host.getApplicationContext(), persisted));

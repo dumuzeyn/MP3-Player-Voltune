@@ -121,9 +121,7 @@ final class OverlayController {
                 new HashSet<>(), selected -> {
                     host.libraryState.favorites.addAll(selected);
                     host.saveLibraryState();
-                    if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
-                        host.render();
-                    }
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
                 });
     }
 
@@ -158,9 +156,6 @@ final class OverlayController {
                 : host.tr("Add to favorites", "Добавить в избранное"), () -> {
             host.toggleFavorite(track);
             close(shade);
-            if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
-                host.render();
-            }
         });
         addCompactPanelButton(panel, host.tr("Add to playlist", "Добавить в плейлист"), () -> {
             host.overlayHost.removeView(shade);

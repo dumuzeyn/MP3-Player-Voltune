@@ -105,6 +105,25 @@ public final class TrackStore {
         }
     }
 
+    static ArrayList<Track> loadMetadataRefreshCandidates(Context context, int revision) {
+        LibraryDatabase database = new LibraryDatabase(context);
+        try {
+            return database.loadTracksNeedingMetadataRefresh(revision);
+        } finally {
+            database.close();
+        }
+    }
+
+    static void applyMaintenance(Context context, List<Track> refreshed,
+            java.util.Set<String> checkedTrackIds, List<Track> unavailable, int revision) {
+        LibraryDatabase database = new LibraryDatabase(context);
+        try {
+            database.applyMaintenance(refreshed, checkedTrackIds, unavailable, revision);
+        } finally {
+            database.close();
+        }
+    }
+
     public static Track fromUri(Context context, Uri uri) {
         boolean canOpen = canOpenForRead(context, uri);
         if (!canOpen) {
@@ -121,7 +140,7 @@ public final class TrackStore {
         String artist = isBlank(metadata.artist) ? "Unknown artist" : metadata.artist;
         String album = isBlank(metadata.album) ? "Unknown album" : metadata.album;
         String albumArtist = isBlank(metadata.albumArtist) ? artist : metadata.albumArtist;
-        String genre = isBlank(metadata.genre) ? "Unknown genre" : metadata.genre;
+        String genre = GenreNormalizer.normalize(metadata.genre);
 
         FileIdentity file = readFileIdentity(context, uri);
         Track track = new Track(TrackIdentity.create(), uri.toString(), cleanText(title),
@@ -143,7 +162,7 @@ public final class TrackStore {
         String title = oldTrack.title;
         String artist = isBlank(fresh.artist) ? oldTrack.artist : fresh.artist;
         String album = isBlank(fresh.album) ? oldTrack.album : fresh.album;
-        String genre = isBlank(fresh.genre) ? oldTrack.genre : fresh.genre;
+        String genre = GenreNormalizer.isUnknown(fresh.genre) ? oldTrack.genre : fresh.genre;
         int durationMs = fresh.durationMs > 0 ? fresh.durationMs : oldTrack.durationMs;
         String albumArtist = isBlank(fresh.albumArtist)
                 ? oldTrack.albumArtist : fresh.albumArtist;

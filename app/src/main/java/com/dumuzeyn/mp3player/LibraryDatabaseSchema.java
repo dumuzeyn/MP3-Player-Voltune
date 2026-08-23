@@ -18,7 +18,8 @@ final class LibraryDatabaseSchema {
                 + "track_number INTEGER NOT NULL DEFAULT 0, disc_number INTEGER NOT NULL DEFAULT 0, "
                 + "duration_ms INTEGER NOT NULL DEFAULT 0, file_size INTEGER NOT NULL DEFAULT -1, "
                 + "last_modified INTEGER NOT NULL DEFAULT 0, fingerprint TEXT NOT NULL DEFAULT '', "
-                + "availability_reason TEXT NOT NULL DEFAULT '', play_count INTEGER NOT NULL DEFAULT 0, "
+                + "availability_reason TEXT NOT NULL DEFAULT '', metadata_revision INTEGER NOT NULL DEFAULT 0, "
+                + "play_count INTEGER NOT NULL DEFAULT 0, "
                 + "skip_count INTEGER NOT NULL DEFAULT 0, date_added INTEGER NOT NULL DEFAULT 0, "
                 + "last_played_at INTEGER NOT NULL DEFAULT 0, last_completed_at INTEGER NOT NULL DEFAULT 0)");
         db.execSQL("CREATE INDEX index_tracks_last_played ON tracks(last_played_at DESC)");
@@ -40,6 +41,10 @@ final class LibraryDatabaseSchema {
         }
         if (version < 3 && newVersion >= 3) {
             migrateVersion2To3(db);
+            version = 3;
+        }
+        if (version < 4 && newVersion >= 4) {
+            addColumn(db, "metadata_revision INTEGER NOT NULL DEFAULT 0");
         }
     }
 

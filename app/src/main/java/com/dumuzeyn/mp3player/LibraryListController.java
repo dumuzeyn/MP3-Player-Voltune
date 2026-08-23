@@ -15,13 +15,7 @@ final class LibraryListController {
     }
 
     ArrayList<Track> favoriteTracks() {
-        ArrayList<Track> result = new ArrayList<>();
-        for (Track track : host.libraryState.tracks) {
-            if (host.libraryState.favorites.contains(track.uri)) {
-                result.add(track);
-            }
-        }
-        return result;
+        return new ArrayList<>(host.libraryState.homeContent.allFavorites);
     }
 
     ArrayList<Track> filter(ArrayList<Track> source) {

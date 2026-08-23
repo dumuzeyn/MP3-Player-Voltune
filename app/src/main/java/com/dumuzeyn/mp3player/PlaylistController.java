@@ -200,6 +200,7 @@ final class PlaylistController {
             }
         }
         host.saveLibraryState();
+        host.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     void addTrackToPlaylist(Playlist playlist, Track track) {
@@ -207,6 +208,7 @@ final class PlaylistController {
             playlist.uris.add(track.uri);
         }
         host.saveLibraryState();
+        host.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     Playlist createPlaylist(String rawName) {
@@ -214,6 +216,7 @@ final class PlaylistController {
         Playlist playlist = new Playlist(name);
         host.libraryState.playlists.add(playlist);
         host.saveLibraryState();
+        host.librarySnapshotApplier.rebuildDerivedAndRender();
         return playlist;
     }
 
@@ -222,6 +225,7 @@ final class PlaylistController {
         if (!playlist.uris.contains(track.uri)) {
             playlist.uris.add(track.uri);
             host.saveLibraryState();
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
         }
         return playlist;
     }
@@ -229,11 +233,13 @@ final class PlaylistController {
     void renamePlaylist(Playlist playlist, String rawName) {
         playlist.name = cleanPlaylistName(rawName);
         host.saveLibraryState();
+        host.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     void deletePlaylist(Playlist playlist) {
         host.libraryState.playlists.remove(playlist);
         host.saveLibraryState();
+        host.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     void removeTrackFromAllPlaylists(Track track) {
@@ -241,6 +247,7 @@ final class PlaylistController {
             playlist.uris.remove(track.uri);
         }
         host.saveLibraryState();
+        host.librarySnapshotApplier.rebuildDerivedAndRender();
     }
 
     private String cleanPlaylistName(String rawName) {

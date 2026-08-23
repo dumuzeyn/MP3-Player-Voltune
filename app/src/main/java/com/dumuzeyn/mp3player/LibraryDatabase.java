@@ -16,7 +16,7 @@ import java.util.Set;
 
 final class LibraryDatabase extends SQLiteOpenHelper {
     static final String DB_NAME = "mp3_player_library.db";
-    static final int DB_VERSION = 3;
+    static final int DB_VERSION = 4;
     private static final String PREFS_STORE = "mp3_player_store";
     private static final String PREFS_UI = "mp3_player_ui";
     private static final String PREFS_MIGRATED = "sqlite_migrated";
@@ -84,6 +84,22 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         return tracks;
     }
 
+    ArrayList<Track> loadTracksNeedingMetadataRefresh(int revision) {
+        ArrayList<Track> tracks = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = getReadableDatabase().query("tracks", null,
+                    "metadata_revision<?", new String[]{String.valueOf(revision)},
+                    null, null, "title COLLATE NOCASE ASC");
+            while (cursor.moveToNext()) {
+                tracks.add(trackFromCursor(cursor));
+            }
+        } finally {
+            closeQuietly(cursor);
+        }
+        return tracks;
+    }
+
     void saveTracks(List<Track> tracks) {
         SQLiteDatabase db = getWritableDatabase();
         db.beginTransaction();
@@ -102,7 +118,9 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     }
 
     void upsertTrack(Track track) {
-        getWritableDatabase().insertWithOnConflict("tracks", null, trackValues(track),
+        ContentValues values = trackValues(track);
+        values.put("metadata_revision", LibraryMaintenanceController.METADATA_REVISION);
+        getWritableDatabase().insertWithOnConflict("tracks", null, values,
                 SQLiteDatabase.CONFLICT_REPLACE);
     }
 
@@ -122,6 +140,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     void updateTrackMetadata(Track track) {
         ContentValues values = trackValues(track);
         values.remove("track_id");
+        values.put("metadata_revision", LibraryMaintenanceController.METADATA_REVISION);
         getWritableDatabase().update("tracks", values, "track_id=?",
                 new String[]{track.trackId});
     }
@@ -133,6 +152,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
             for (Track track : tracks) {
                 ContentValues values = trackValues(track);
                 values.remove("track_id");
+                values.put("metadata_revision", LibraryMaintenanceController.METADATA_REVISION);
                 db.update("tracks", values, "track_id=?", new String[]{track.trackId});
             }
             db.setTransactionSuccessful();
@@ -156,6 +176,33 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put("availability_reason", reason == null ? "" : reason);
         getWritableDatabase().update("tracks", values, "track_id=?", new String[]{trackId});
+    }
+
+    void applyMaintenance(List<Track> refreshed, Set<String> checkedTrackIds,
+            List<Track> unavailable, int revision) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            for (Track track : refreshed) {
+                ContentValues values = trackValues(track);
+                values.remove("track_id");
+                values.put("metadata_revision", revision);
+                db.update("tracks", values, "track_id=?", new String[]{track.trackId});
+            }
+            ContentValues checked = new ContentValues();
+            checked.put("metadata_revision", revision);
+            for (String trackId : checkedTrackIds) {
+                db.update("tracks", checked, "track_id=?", new String[]{trackId});
+            }
+            for (Track track : unavailable) {
+                db.delete("favorites", "track_id=?", new String[]{track.trackId});
+                db.delete("playlist_tracks", "track_id=?", new String[]{track.trackId});
+                db.delete("tracks", "track_id=?", new String[]{track.trackId});
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     void recordPlayed(String trackId, boolean completed, long timestamp) {
