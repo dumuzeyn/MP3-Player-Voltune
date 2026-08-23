@@ -18,6 +18,7 @@ final class SmoothPlaylistTicker extends View {
     private long lastFrameNanos;
     private int lineHeight;
     private String contentKey = "";
+    private boolean uiActive = true;
 
     SmoothPlaylistTicker(MainActivityCore host) {
         super(host);
@@ -48,6 +49,12 @@ final class SmoothPlaylistTicker extends View {
         invalidate();
     }
 
+    void setUiActive(boolean active) {
+        uiActive = active;
+        lastFrameNanos = 0L;
+        if (active) invalidate();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
@@ -67,7 +74,7 @@ final class SmoothPlaylistTicker extends View {
             return;
         }
         paint.setColor(host.primaryText);
-        boolean scrolling = titles.size() > VISIBLE_LINES
+        boolean scrolling = uiActive && titles.size() > VISIBLE_LINES
                 && host.appearanceState.animations
                 && host.appearanceState.playlistTickerSpeed > 0
                 && isVisibleToUser();

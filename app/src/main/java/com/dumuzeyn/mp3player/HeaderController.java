@@ -31,12 +31,6 @@ final class HeaderController {
         TextView title = host.uiFactory.text("MP3 Player Voltune", 20, true);
         title.setTextColor(host.primaryText);
         row.addView(title, new LinearLayout.LayoutParams(0, host.dp(52), 1.0f));
-        TriangleDecorView artwork = new TriangleDecorView(host);
-        artwork.setMode(TriangleDecorView.HEADER);
-        artwork.setColors(host.purple, host.yellow);
-        artwork.setDecorAlpha(host.appearanceState.dark ? 0.78f : 0.9f);
-        artwork.setStrokeWidth(host.dp(2));
-        row.addView(artwork, new LinearLayout.LayoutParams(host.dp(68), host.dp(46)));
         header.addView(row, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(60));
         params.setMargins(0, 0, 0, host.dp(8));
@@ -52,20 +46,16 @@ final class HeaderController {
     }
 
     View createSongsSectionHeader() {
-        return createSectionHeader(0);
+        return createSectionHeader(LibraryTabs.SONGS);
     }
 
     private View createSectionHeader(int tabIndex) {
         LinearLayout section = new LinearLayout(host);
         section.setOrientation(LinearLayout.VERTICAL);
-        TextView titleView = host.uiFactory.text(sectionTitle(tabIndex), 22, true);
-        titleView.setId(R.id.section_title);
-        titleView.setSingleLine(true);
-        section.addView(titleView, new LinearLayout.LayoutParams(-1, host.dp(48)));
-        if (tabIndex == 0 || tabIndex == 1) {
+        if (tabIndex == LibraryTabs.SONGS || tabIndex == LibraryTabs.FAVORITES) {
             section.addView(libraryActions(tabIndex),
                     new LinearLayout.LayoutParams(-1, host.dp(62)));
-        } else if (tabIndex == 2) {
+        } else if (tabIndex == LibraryTabs.PLAYLISTS) {
             LinearLayout actions = host.uiFactory.row();
             actions.addView(actionButton("+", view -> host.overlayController.createPlaylist()), host.uiFactory.square(52));
             actions.addView(actionButton("⌕", view -> host.overlayController.openSearch()), host.uiFactory.square(52));
@@ -82,10 +72,6 @@ final class HeaderController {
         if (section == null) {
             return;
         }
-        TextView title = section.findViewById(R.id.section_title);
-        if (title != null) {
-            title.setText(sectionTitle(tabIndex));
-        }
         Button play = section.findViewById(R.id.section_play);
         if (play != null) {
             play.setText(host.playbackQueueController.isPlayingSource(
@@ -94,16 +80,9 @@ final class HeaderController {
         }
     }
 
-    private String sectionTitle(int tabIndex) {
-        if (tabIndex == 0) {
-            return host.tr("Songs ", "Песни ") + host.libraryState.tracks.size();
-        }
-        return host.tabs[tabIndex];
-    }
-
     private LinearLayout libraryActions(int tabIndex) {
         LinearLayout actions = host.uiFactory.row();
-        if (tabIndex == 0) {
+        if (tabIndex == LibraryTabs.SONGS) {
             actions.addView(actionButton("+", view -> host.audioImportController.openFiles()), host.uiFactory.square(52));
             actions.addView(actionButton("▣", view -> host.audioImportController.openFolder()), host.uiFactory.square(52));
         } else {

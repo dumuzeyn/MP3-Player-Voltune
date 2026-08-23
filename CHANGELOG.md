@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.0 - Library Experience
+
+- Added a Home start screen, persisted listening statistics, history, and six query-based smart playlists.
+- Added debounced global search across songs, artists, albums, genres, and playlists plus safe folder browsing.
+- Reworked the Media3-owned queue with drag/reorder, swipe removal, play-next, append, clear, and playlist saving.
+- Added offline synchronized LRC, plain sidecar text, bounded embedded ID3 lyrics, and line-to-seek behavior.
+- Added safe library metadata editing with album artist, year, track, and disc fields; source audio remains read-only.
+- Added a Media3-backed home-screen widget and migrated the existing playback service to `MediaLibraryService` for Android Auto browsing and search.
+- Replaced every launcher/theme/splash surface with the high-resolution Voltune 3.1 icon and added deterministic mask previews and safe-zone checks.
+- Added the non-destructive v2-to-v3 database migration, privacy-safe debug logging, and debug StrictMode checks.
+- Split large controllers by responsibility and added `checkSourceFileSize`, `checkArchitecture`, and `qualityCheck` CI gates.
+
 ## 3.0.1 - Faster library and stable release startup
 
 - Replaced the manually rendered Songs list with `RecyclerView`, `ListAdapter`, stable track IDs, and targeted payload updates.

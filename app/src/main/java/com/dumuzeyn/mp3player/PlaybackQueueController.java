@@ -5,16 +5,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 /** Owns library-facing queue decisions; ExoPlayer remains the active queue owner. */
 final class PlaybackQueueController {
     private final MainActivityCore host;
     private final PlaybackController playback;
+    private final LibraryMutationController mutations;
 
     PlaybackQueueController(MainActivityCore host, PlaybackController playback) {
         this.host = host;
         this.playback = playback;
+        this.mutations = new LibraryMutationController(host);
     }
 
     void playTrack(Track track, boolean refreshList) {
@@ -70,6 +73,30 @@ final class PlaybackQueueController {
         playback.addQueueItem(track);
     }
 
+    void addAll(List<Track> tracks) {
+        ArrayList<Track> additions = new ArrayList<>();
+        HashSet<String> seen = new HashSet<>();
+        for (Track queued : activeQueue()) {
+            seen.add(queued.uri);
+        }
+        for (Track track : tracks) {
+            if (track != null && seen.add(track.uri)) {
+                additions.add(track);
+            }
+        }
+        playback.addQueueItems(additions);
+    }
+
+    void playNext(Track track) {
+        if (track != null) {
+            playback.playNext(track);
+        }
+    }
+
+    void move(int from, int to) {
+        playback.moveQueueItem(from, to);
+    }
+
     void remove(Track track) {
         if (track == null) {
             return;
@@ -85,14 +112,39 @@ final class PlaybackQueueController {
         if (stored == null) {
             return;
         }
-        remove(stored);
-        host.libraryState.tracks.remove(stored);
-        host.libraryRepository.reindex();
-        host.libraryState.favorites.remove(stored.uri);
-        host.playlistController.removeTrackFromAllPlaylists(stored);
-        TrackStore.delete(host, stored);
-        host.saveLibraryState();
-        host.render();
+        mutations.removeTrack(stored);
+    }
+
+    void removeDeletedFile(Track track) {
+        Track stored = track == null ? null : host.findTrack(track.uri);
+        if (stored != null) {
+            mutations.removeDeletedFile(stored);
+        }
+    }
+
+    void removeSource(LibrarySource source) {
+        mutations.removeSource(source);
+    }
+
+    void clearLibrary() {
+        mutations.clearLibrary();
+    }
+
+    void close() {
+        mutations.close();
+    }
+
+    void removeCommitted(java.util.Set<String> trackIds, java.util.Set<String> trackUris) {
+        if (trackIds.isEmpty()) {
+            return;
+        }
+        new PlaybackStateManager(host).removeTracks(trackIds, trackUris);
+        for (int index = host.playbackUiState.queue.size() - 1; index >= 0; index--) {
+            if (trackIds.contains(host.playbackUiState.queue.get(index).trackId)) {
+                host.playbackUiState.queue.remove(index);
+            }
+        }
+        playback.removeQueueItems(trackIds);
     }
 
     void playIndex(int index, int position) {
@@ -101,6 +153,10 @@ final class PlaybackQueueController {
             playback.submitQueue(queue, Math.max(0, Math.min(index, queue.size() - 1)),
                     position, host.repeatMode(), true);
         }
+    }
+
+    void seekIndex(int index) {
+        playback.seekQueueItem(index);
     }
 
     String loopLabel() {

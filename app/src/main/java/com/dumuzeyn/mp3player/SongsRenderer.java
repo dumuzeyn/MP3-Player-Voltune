@@ -8,16 +8,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 
 final class SongsRenderer {
     private final MainActivityCore host;
-    private final ExecutorService metadataExecutor = Executors.newSingleThreadExecutor();
-    private volatile boolean closed;
     private ArrayList<Track> pendingTracks;
     private int pendingStart;
     private int pendingGeneration = -1;
@@ -30,83 +23,7 @@ final class SongsRenderer {
         this.host = host;
     }
 
-    void refreshMissingMetadataAsync() {
-        final ArrayList<Track> snapshot = new ArrayList<>(host.libraryState.tracks);
-        try {
-            metadataExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    final Map<String, Track> refreshed = new HashMap<>();
-                    for (Track track : snapshot) {
-                        if (closed) {
-                            return;
-                        }
-                        if (!needsMetadataRefresh(track)) {
-                            continue;
-                        }
-                        Track updated = TrackStore.refreshMetadata(host, track);
-                        if (metadataChanged(track, updated)) {
-                            TrackStore.updateMetadata(host, updated);
-                            refreshed.put(updated.uri, updated);
-                        }
-                    }
-                    if (refreshed.isEmpty() || closed) {
-                        return;
-                    }
-                    host.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (closed) {
-                                return;
-                            }
-                            for (int index = 0; index < host.libraryState.tracks.size(); index++) {
-                                Track current = host.libraryState.tracks.get(index);
-                                Track updated = refreshed.get(current.uri);
-                                if (updated != null) {
-                                    host.libraryState.tracks.set(index, updated);
-                                    host.songRows.refreshMetadata(
-                                            updated.uri, updated,
-                                            host.formatTrackDuration(updated));
-                                    if (host.songsView != null) {
-                                        host.songsView.refreshMetadata(updated);
-                                    }
-                                }
-                            }
-                            host.libraryRepository.reindex();
-                            if (host.songsView != null) {
-                                host.songsView.refreshFilteredSource(
-                                        host.libraryState.tracks);
-                            }
-                        }
-                    });
-                }
-            });
-        } catch (RejectedExecutionException ignored) {
-            // Activity is already closing.
-        }
-    }
-
     void close() {
-        closed = true;
-        metadataExecutor.shutdownNow();
-    }
-
-    private boolean needsMetadataRefresh(Track track) {
-        return track.durationMs <= 0
-                || track.artist == null || track.artist.trim().isEmpty()
-                || track.album == null || track.album.trim().isEmpty()
-                || track.genre == null || track.genre.trim().isEmpty();
-    }
-
-    private boolean metadataChanged(Track before, Track after) {
-        return before.durationMs != after.durationMs
-                || !safeEquals(before.artist, after.artist)
-                || !safeEquals(before.album, after.album)
-                || !safeEquals(before.genre, after.genre);
-    }
-
-    private boolean safeEquals(String left, String right) {
-        return left == null ? right == null : left.equals(right);
     }
 
     void render(ArrayList<Track> tracks) {
@@ -130,7 +47,7 @@ final class SongsRenderer {
         String title;
         String titleRu;
         if (tracks.isEmpty()) {
-            if (host.navigationState.tabIndex == 0) {
+            if (host.navigationState.tabIndex == LibraryTabs.SONGS) {
                 title = "Add MP3 or another audio file";
                 titleRu = "Добавьте MP3 или другой аудиофайл";
             } else {
@@ -299,7 +216,7 @@ final class SongsRenderer {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(16);
         row.setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4));
-        host.uiFactory.applyCardStyle(row, host.navigationState.tabIndex == 1
+        host.uiFactory.applyCardStyle(row, host.navigationState.tabIndex == LibraryTabs.FAVORITES
                 ? host.appearanceState.favoriteCardOpacity : host.appearanceState.songCardOpacity);
 
         View marker = new View(host);
@@ -309,15 +226,10 @@ final class SongsRenderer {
 
         ImageView cover = host.uiFactory.coverView();
         host.artworkUi.loadCover(cover, track, host.purpleSoft);
-        cover.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                host.artworkUi.seedFromView(cover, track);
-                host.playbackQueueController.playTrack(track, true);
-                host.navigationState.fullPlayerOpening = true;
-                host.playerUiController.openFullPlayer();
-            }
-        });
+        View.OnClickListener openOrPlay = view -> TrackTapController.handle(
+                host, track, cover);
+        cover.setOnClickListener(openOrPlay);
+        row.setOnClickListener(openOrPlay);
         row.addView(cover, host.uiFactory.square(52));
 
         LinearLayout textColumn = new LinearLayout(host);
@@ -344,7 +256,7 @@ final class SongsRenderer {
         textColumn.addView(metaRow);
         row.addView(textColumn, new LinearLayout.LayoutParams(0, host.dp(62), 1.0f));
 
-        if (host.navigationState.tabIndex == 1) {
+        if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
             Button favorite = host.uiFactory.icon(host.libraryState.favorites.contains(track.uri) ? "♥︎" : "♡︎");
             favorite.setTextSize(14.0f);
             host.uiFactory.applyPlainIconStyle(favorite, host.libraryState.favorites.contains(track.uri) ? host.purple : host.secondaryText);

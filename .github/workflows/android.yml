@@ -34,17 +34,8 @@ jobs:
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
-
-      - name: Run Android lint
-        run: ./gradlew lintDebug
-
-      - name: Compile instrumentation tests
-        run: ./gradlew assembleDebugAndroidTest
-
-      - name: Build verification APK
-        run: ./gradlew assembleDebug
+      - name: Run Voltune quality gate
+        run: ./gradlew qualityCheck
 
       - name: Upload verification reports
         if: always()

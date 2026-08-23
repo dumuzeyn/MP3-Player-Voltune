@@ -24,9 +24,8 @@ final class CardTransparencyController {
         FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(12), host.dp(16), host.dp(12));
-        TextView title = host.uiFactory.text(settingLabel(), 18, true);
-        title.setPadding(0, 0, 0, host.dp(8));
-        panel.addView(title, new LinearLayout.LayoutParams(-1, -2));
+        panel.addView(host.uiFactory.dialogTitle(settingLabel(), 18),
+                host.uiFactory.dialogTitleParams());
 
         LinearLayout controls = new LinearLayout(host);
         controls.setOrientation(LinearLayout.VERTICAL);

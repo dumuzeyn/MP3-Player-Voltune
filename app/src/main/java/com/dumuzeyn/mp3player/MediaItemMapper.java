@@ -11,6 +11,8 @@ public final class MediaItemMapper {
                 .setArtist(track.artist)
                 .setAlbumTitle(track.album)
                 .setArtworkUri(track.asUri())
+                .setIsBrowsable(false)
+                .setIsPlayable(true)
                 .build();
         return new MediaItem.Builder()
                 .setMediaId(mediaId(track))

@@ -8,6 +8,7 @@ import java.util.Map;
 
 final class MainRenderer {
     private final MainActivityCore host;
+    private final MenuRenderer homeRenderer;
     private final SongsMenuRenderer songsRenderer;
     private final FavoritesMenuRenderer favoritesRenderer;
     private final PlaylistsMenuRenderer playlistsRenderer;
@@ -15,11 +16,13 @@ final class MainRenderer {
     private final MenuRenderer artistsRenderer;
     private final MenuRenderer albumsRenderer;
     private final MenuRenderer settingsRenderer;
+    private final MenuRenderer foldersRenderer;
     private final Map<String, Integer> scrollPositions = new HashMap<>();
     private String renderedMenuKey;
 
     MainRenderer(MainActivityCore host) {
         this.host = host;
+        this.homeRenderer = new HomeMenuRenderer(host);
         this.songsRenderer = new SongsMenuRenderer(host);
         this.favoritesRenderer = new FavoritesMenuRenderer(host);
         this.playlistsRenderer = new PlaylistsMenuRenderer(host);
@@ -27,13 +30,14 @@ final class MainRenderer {
         this.artistsRenderer = new ArtistsMenuRenderer(host);
         this.albumsRenderer = new AlbumsMenuRenderer(host);
         this.settingsRenderer = new SettingsMenuRenderer(host);
+        this.foldersRenderer = new FoldersMenuRenderer(host);
     }
 
     void render() {
         rememberCurrentScrollPosition();
         host.refreshTabs();
         host.navigationState.songRenderGeneration++;
-        if (host.navigationState.tabIndex == 0
+        if (host.navigationState.tabIndex == LibraryTabs.SONGS
                 && !host.navigationState.renderingTabPreview
                 && host.songsView != null) {
             host.songRows.clear();
@@ -60,7 +64,8 @@ final class MainRenderer {
         MenuRenderer renderer = rendererForTab();
         int scrollY = scrollPositionFor(
                 host.navigationState.tabIndex, host.navigationState.search);
-        if (host.navigationState.tabIndex <= 1) {
+        if (host.navigationState.tabIndex == LibraryTabs.SONGS
+                || host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
             host.songsRenderer.prepareNextRenderForScroll(scrollY);
         }
         renderer.render();
@@ -84,7 +89,7 @@ final class MainRenderer {
         if (renderedMenuKey == null || host.contentScroll == null) {
             return;
         }
-        if (renderedMenuKey.startsWith("0\n")) {
+        if (renderedMenuKey.startsWith(LibraryTabs.SONGS + "\n")) {
             return;
         }
         scrollPositions.put(renderedMenuKey, Math.max(0, host.contentScroll.getScrollY()));
@@ -150,7 +155,8 @@ final class MainRenderer {
             target.removeAllViews();
             host.renderSectionHeader();
             MenuRenderer renderer = rendererForTab(targetIndex);
-            if (targetIndex <= 1) {
+            if (targetIndex == LibraryTabs.SONGS
+                    || targetIndex == LibraryTabs.FAVORITES) {
                 host.songsRenderer.prepareNextRenderForScroll(scrollY);
             }
             renderer.render();
@@ -203,25 +209,31 @@ final class MainRenderer {
     }
 
     private MenuRenderer rendererForTab(int tabIndex) {
-        if (tabIndex == 0) {
+        if (tabIndex == LibraryTabs.HOME) {
+            return homeRenderer;
+        }
+        if (tabIndex == LibraryTabs.SONGS) {
             return songsRenderer;
         }
-        if (tabIndex == 1) {
+        if (tabIndex == LibraryTabs.FAVORITES) {
             return favoritesRenderer;
         }
-        if (tabIndex == 2) {
+        if (tabIndex == LibraryTabs.PLAYLISTS) {
             return playlistsRenderer;
         }
-        if (tabIndex == 3) {
+        if (tabIndex == LibraryTabs.GENRES) {
             return genresRenderer;
         }
-        if (tabIndex == 4) {
+        if (tabIndex == LibraryTabs.ARTISTS) {
             return artistsRenderer;
         }
-        if (tabIndex == 5) {
+        if (tabIndex == LibraryTabs.ALBUMS) {
             return albumsRenderer;
         }
-        if (tabIndex == 6) {
+        if (tabIndex == LibraryTabs.FOLDERS) {
+            return foldersRenderer;
+        }
+        if (tabIndex == LibraryTabs.SETTINGS) {
             return settingsRenderer;
         }
         return songsRenderer;

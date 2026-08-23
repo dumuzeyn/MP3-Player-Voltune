@@ -3,7 +3,6 @@
 build/
 output/
 *.keystore
-!.github/ci-debug.keystore
 *.jks
 *.idsig
 commandlinetools.zip
@@ -13,7 +12,14 @@ commandlinetools.zip
 *.jpg
 *.jpeg
 *.webp
+local.properties
+!app/src/main/res/drawable-nodpi/
+!app/src/main/res/drawable-nodpi/voltune_icon_master.png
+!app/src/main/res/drawable-nodpi/voltune_icon_foreground.png
 !docs/
+!docs/brand/
+!docs/brand/voltune-icon-3.1.png
+!docs/brand/voltune-icon-preview.png
 !docs/screenshots/
 !docs/screenshots/*.png
 !docs/screenshots/ru/

@@ -250,16 +250,12 @@ final class SongAdapter extends ListAdapter<Track, SongAdapter.SongViewHolder> {
             host.uiFactory.applyPlainIconStyle(actions);
             host.uiFactory.applyPrimaryButtonStyle(play);
 
-            cover.setOnClickListener(view -> {
+            View.OnClickListener openOrPlay = view -> {
                 Track track = boundTrack;
-                if (track == null) {
-                    return;
-                }
-                host.artworkUi.seedFromView(cover, track);
-                host.playbackQueueController.playTrack(track, true);
-                host.navigationState.fullPlayerOpening = true;
-                host.playerUiController.openFullPlayer();
-            });
+                TrackTapController.handle(host, track, cover);
+            };
+            card.setOnClickListener(openOrPlay);
+            cover.setOnClickListener(openOrPlay);
             actions.setOnClickListener(view -> {
                 if (boundTrack != null) {
                     host.overlayController.openSongActions(boundTrack);

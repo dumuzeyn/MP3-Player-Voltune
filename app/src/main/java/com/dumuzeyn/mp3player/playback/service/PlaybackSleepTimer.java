@@ -3,7 +3,7 @@ package com.dumuzeyn.mp3player.playback.service;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import com.dumuzeyn.mp3player.VoltuneLog;
 
 /** Owns sleep-timer persistence and scheduling for background playback. */
 public final class PlaybackSleepTimer {
@@ -11,7 +11,6 @@ public final class PlaybackSleepTimer {
         void onTimerExpired();
     }
 
-    private static final String DEBUG_TAG = "VoltuneDebug";
     private static final String PREFS = "player_sleep_timer";
     private static final String ENDS_AT = "endsAt";
 
@@ -29,7 +28,7 @@ public final class PlaybackSleepTimer {
                 schedule();
                 return;
             }
-            Log.i(DEBUG_TAG, "sleep_timer_expired");
+            VoltuneLog.info("sleep_timer_expired");
             endsAt = 0L;
             persist();
             listener.onTimerExpired();
@@ -46,7 +45,7 @@ public final class PlaybackSleepTimer {
         endsAt = System.currentTimeMillis() + safeDelayMs;
         persist();
         schedule();
-        Log.i(DEBUG_TAG, "sleep_timer_started delayMs=" + safeDelayMs + " endsAt=" + endsAt);
+        VoltuneLog.info("sleep_timer_started");
     }
 
     public void restore() {
@@ -60,14 +59,14 @@ public final class PlaybackSleepTimer {
             return;
         }
         schedule();
-        Log.i(DEBUG_TAG, "sleep_timer_restored endsAt=" + endsAt);
+        VoltuneLog.info("sleep_timer_restored");
     }
 
     public void cancel() {
         endsAt = 0L;
         handler.removeCallbacks(expiration);
         persist();
-        Log.i(DEBUG_TAG, "sleep_timer_cancelled");
+        VoltuneLog.info("sleep_timer_cancelled");
     }
 
     public long getEndsAt() {

@@ -118,6 +118,8 @@ final class SettingsRenderer {
         section(host.tr("Library", "Библиотека"));
         addButton(host.tr("Check songs", "Проверить песни"),
                 view -> host.openSongDiagnostics());
+        addButton(host.tr("Music folders", "Музыкальные папки"),
+                view -> host.settingsController.openMusicFolders());
         addButton(host.tr("Rescan music folders", "Повторно сканировать папки"),
                 view -> host.audioImportController.rescanPersistedFolders());
         addButton(host.tr("Export playlists and settings", "Экспорт плейлистов и настроек"),
@@ -154,6 +156,8 @@ final class SettingsRenderer {
 
     private void renderAdvanced() {
         section(host.tr("Advanced library", "Расширенная библиотека"));
+        addButton(host.tr("Batch edit metadata", "Массовое изменение метаданных"),
+                view -> host.metadataEditorController.openBatchSelection());
         addButton(host.tr("Remove unavailable songs", "Удалить недоступные песни"),
                 view -> host.settingsController.confirmRemoveUnavailableSongs());
         addButton(host.tr("Delete all songs from app", "Удалить все песни из приложения"),

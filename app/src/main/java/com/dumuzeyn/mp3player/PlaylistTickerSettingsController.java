@@ -25,7 +25,9 @@ final class PlaylistTickerSettingsController {
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
         TextView label = host.uiFactory.text(settingLabel(), 17, true);
-        panel.addView(label, new LinearLayout.LayoutParams(-1, host.dp(52)));
+        label.setMinHeight(host.dp(52));
+        label.setPadding(0, host.dp(4), 0, host.dp(8));
+        panel.addView(label, new LinearLayout.LayoutParams(-1, -2));
         SeekBar seek = new SeekBar(host);
         seek.setMax(200);
         seek.setProgress(host.appearanceState.playlistTickerSpeed);

@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="voltune_icon_background">#090218</color>
     <color name="launcher_icon_light_bg">#FFFFFF</color>
-    <color name="launcher_icon_dark_bg">#111015</color>
+    <color name="launcher_icon_dark_bg">#090218</color>
+    <color name="launcher_icon_blue_light_bg">#F3F8FF</color>
+    <color name="launcher_icon_blue_dark_bg">#071426</color>
+    <color name="launcher_icon_red_light_bg">#FFF4F5</color>
+    <color name="launcher_icon_red_dark_bg">#21080D</color>
+    <color name="launcher_icon_green_light_bg">#F3FCF7</color>
+    <color name="launcher_icon_green_dark_bg">#071A11</color>
+    <color name="launcher_icon_pink_light_bg">#FFF4FB</color>
+    <color name="launcher_icon_pink_dark_bg">#20091A</color>
+    <color name="launcher_icon_orange_light_bg">#FFF6F1</color>
+    <color name="launcher_icon_orange_dark_bg">#211008</color>
 </resources>

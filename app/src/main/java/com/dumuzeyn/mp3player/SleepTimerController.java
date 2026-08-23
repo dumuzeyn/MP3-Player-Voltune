@@ -17,7 +17,9 @@ final class SleepTimerController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr3("Sleep timer", "Таймер сна", "◷"), 22, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.dialogTitle(
+                        host.tr3("Sleep timer", "Таймер сна", "◷")),
+                host.uiFactory.dialogTitleParams());
 
         LinearLayout actions = new LinearLayout(host);
         actions.setOrientation(LinearLayout.VERTICAL);

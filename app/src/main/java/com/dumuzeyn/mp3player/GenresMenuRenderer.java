@@ -1,13 +1,16 @@
 package com.dumuzeyn.mp3player;
 
+import java.util.ArrayList;
+import java.util.Map;
+
 final class GenresMenuRenderer extends TrackGroupMenuRenderer {
     GenresMenuRenderer(MainActivityCore host) {
         super(host);
     }
 
     @Override
-    String groupValue(Track track) {
-        return track.genre;
+    Map<String, ArrayList<Track>> groupedTracks() {
+        return host.libraryState.homeContent.genreTracks;
     }
 
     @Override

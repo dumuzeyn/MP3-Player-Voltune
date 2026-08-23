@@ -37,6 +37,10 @@ final class PlayerUiController {
         }
     }
 
+    void onHostVisibilityChanged(boolean visible) {
+        fullPlayerController.onHostVisibilityChanged(visible);
+    }
+
     boolean isInsideMiniPlayer(MotionEvent event) {
         return miniPlayerController.isInsideMiniPlayer(event);
     }

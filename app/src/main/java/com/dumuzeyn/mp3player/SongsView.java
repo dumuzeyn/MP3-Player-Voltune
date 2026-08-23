@@ -23,7 +23,7 @@ final class SongsView extends FrameLayout implements AutoCloseable {
     private final Runnable progressTicker = new Runnable() {
         @Override
         public void run() {
-            if (getVisibility() != View.VISIBLE) {
+            if (!hostVisible || getVisibility() != View.VISIBLE) {
                 return;
             }
             if (host.isPlaybackPlaying()) {
@@ -41,6 +41,7 @@ final class SongsView extends FrameLayout implements AutoCloseable {
     private ArrayList<Track> sourceSnapshot = new ArrayList<>();
     private String query = "";
     private boolean closed;
+    private boolean hostVisible = true;
 
     SongsView(MainActivityCore host) {
         super(host);
@@ -96,6 +97,11 @@ final class SongsView extends FrameLayout implements AutoCloseable {
         songAdapter.replaceTrack(track);
     }
 
+    void setHostVisible(boolean visible) {
+        hostVisible = visible;
+        updateProgressTicker();
+    }
+
     void refreshFilteredSource(List<Track> source) {
         submit(source, query, true);
     }
@@ -148,7 +154,7 @@ final class SongsView extends FrameLayout implements AutoCloseable {
 
     private void updateProgressTicker() {
         host.uiHandler.removeCallbacks(progressTicker);
-        if (getVisibility() == View.VISIBLE && host.isPlaybackPlaying()) {
+        if (hostVisible && getVisibility() == View.VISIBLE && host.isPlaybackPlaying()) {
             host.uiHandler.post(progressTicker);
         }
     }

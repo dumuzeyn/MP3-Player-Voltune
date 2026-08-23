@@ -2,7 +2,6 @@ package com.dumuzeyn.mp3player;
 
 import android.content.ComponentName;
 import android.os.Bundle;
-import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
@@ -19,7 +18,6 @@ import java.util.Map;
 
 /** Connects the UI to Media3 and exposes playback commands plus a read-only UI snapshot. */
 final class PlaybackController implements Player.Listener {
-    private static final String TAG = "VoltuneMedia3";
     private static final int MAX_PENDING_COMMANDS = 24;
 
     private final MainActivityCore host;
@@ -94,7 +92,7 @@ final class PlaybackController implements Player.Listener {
                 pendingCommands.removeFirst().run();
             }
         } catch (Exception error) {
-            Log.e(TAG, "media_controller_connection_failed", error);
+            VoltuneLog.failure("media_controller_connection_failed", error);
             pendingCommands.clear();
         }
     }
@@ -201,12 +199,85 @@ final class PlaybackController implements Player.Listener {
         whenConnected(() -> controller.addMediaItem(mapper.toMediaItem(track)));
     }
 
+    void addQueueItems(List<Track> tracks) {
+        ArrayList<Track> requested = new ArrayList<>(tracks);
+        whenConnected(() -> {
+            ArrayList<MediaItem> additions = new ArrayList<>();
+            for (Track track : requested) {
+                if (indexOfMediaId(mapper.mediaId(track)) < 0) {
+                    additions.add(mapper.toMediaItem(track));
+                }
+            }
+            if (!additions.isEmpty()) {
+                controller.addMediaItems(additions);
+            }
+        });
+    }
+
+    void playNext(Track track) {
+        whenConnected(() -> {
+            int existing = indexOfMediaId(mapper.mediaId(track));
+            int insertion = Math.min(controller.getCurrentMediaItemIndex() + 1,
+                    controller.getMediaItemCount());
+            if (existing >= 0) {
+                int destination = existing < insertion ? insertion - 1 : insertion;
+                if (existing != destination) {
+                    controller.moveMediaItem(existing, destination);
+                }
+            } else {
+                controller.addMediaItem(insertion, mapper.toMediaItem(track));
+            }
+        });
+    }
+
+    void moveQueueItem(int from, int to) {
+        whenConnected(() -> {
+            if (from >= 0 && to >= 0 && from < controller.getMediaItemCount()
+                    && to < controller.getMediaItemCount() && from != to) {
+                controller.moveMediaItem(from, to);
+            }
+        });
+    }
+
+    void seekQueueItem(int index) {
+        whenConnected(() -> {
+            if (index >= 0 && index < controller.getMediaItemCount()) {
+                controller.seekToDefaultPosition(index);
+                controller.play();
+            }
+        });
+    }
+
     void removeQueueItem(int index) {
         whenConnected(() -> {
             if (index >= 0 && index < controller.getMediaItemCount()) {
                 controller.removeMediaItem(index);
             }
         });
+    }
+
+    void removeQueueItems(java.util.Set<String> mediaIds) {
+        java.util.HashSet<String> removed = new java.util.HashSet<>(mediaIds);
+        whenConnected(() -> {
+            for (int index = controller.getMediaItemCount() - 1; index >= 0; index--) {
+                if (removed.contains(controller.getMediaItemAt(index).mediaId)) {
+                    controller.removeMediaItem(index);
+                }
+            }
+            if (controller.getMediaItemCount() == 0) {
+                controller.stop();
+                controller.sendCustomCommand(Media3Commands.CLEAR_QUEUE_COMMAND, Bundle.EMPTY);
+            }
+        });
+    }
+
+    private int indexOfMediaId(String mediaId) {
+        for (int index = 0; index < controller.getMediaItemCount(); index++) {
+            if (mediaId.equals(controller.getMediaItemAt(index).mediaId)) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     void seekTo(int positionMs) {

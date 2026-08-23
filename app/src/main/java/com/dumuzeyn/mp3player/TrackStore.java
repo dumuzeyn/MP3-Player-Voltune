@@ -6,7 +6,6 @@ import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -21,7 +20,6 @@ import java.security.MessageDigest;
 
 public final class TrackStore {
     private static final int MAX_TEXT_LENGTH = 160;
-    private static final String DEBUG_TAG = "VoltuneDebug";
 
     private TrackStore() {
     }
@@ -52,7 +50,7 @@ public final class TrackStore {
                 ));
             }
         } catch (Exception e) {
-            Log.w(DEBUG_TAG, "track_load_failed error=" + e.getMessage());
+            VoltuneLog.failure("track_load_failed", e);
             tracks.clear();
         }
         sort(tracks);
@@ -98,10 +96,38 @@ public final class TrackStore {
         }
     }
 
+    public static void updateMetadata(Context context, List<Track> tracks) {
+        LibraryDatabase database = new LibraryDatabase(context);
+        try {
+            database.updateTrackMetadata(tracks);
+        } finally {
+            database.close();
+        }
+    }
+
+    static ArrayList<Track> loadMetadataRefreshCandidates(Context context, int revision) {
+        LibraryDatabase database = new LibraryDatabase(context);
+        try {
+            return database.loadTracksNeedingMetadataRefresh(revision);
+        } finally {
+            database.close();
+        }
+    }
+
+    static void applyMaintenance(Context context, List<Track> refreshed,
+            java.util.Set<String> checkedTrackIds, List<Track> unavailable, int revision) {
+        LibraryDatabase database = new LibraryDatabase(context);
+        try {
+            database.applyMaintenance(refreshed, checkedTrackIds, unavailable, revision);
+        } finally {
+            database.close();
+        }
+    }
+
     public static Track fromUri(Context context, Uri uri) {
         boolean canOpen = canOpenForRead(context, uri);
         if (!canOpen) {
-            Log.w(DEBUG_TAG, "add_track uri=" + uri + " canOpen=false");
+            VoltuneLog.warning("add_track_failed reason=unreadable");
             return null;
         }
 
@@ -113,13 +139,16 @@ public final class TrackStore {
         }
         String artist = isBlank(metadata.artist) ? "Unknown artist" : metadata.artist;
         String album = isBlank(metadata.album) ? "Unknown album" : metadata.album;
-        String genre = isBlank(metadata.genre) ? "Unknown genre" : metadata.genre;
+        String albumArtist = isBlank(metadata.albumArtist) ? artist : metadata.albumArtist;
+        String genre = GenreNormalizer.normalize(metadata.genre);
 
         FileIdentity file = readFileIdentity(context, uri);
         Track track = new Track(TrackIdentity.create(), uri.toString(), cleanText(title),
-                cleanText(artist), cleanText(album), cleanText(genre), metadata.durationMs,
-                file.size, file.lastModified, file.fingerprint);
-        Log.i(DEBUG_TAG, "add_track uri=" + uri + " title=" + track.title + " duration=" + track.durationMs + " canOpen=true");
+                cleanText(artist), cleanText(album), cleanText(albumArtist), cleanText(genre),
+                metadata.year, metadata.trackNumber, metadata.discNumber, metadata.durationMs,
+                file.size, file.lastModified, file.fingerprint, 0, 0,
+                System.currentTimeMillis(), 0L, 0L);
+        VoltuneLog.info("add_track_success duration_known=" + (track.durationMs > 0));
         return track;
     }
 
@@ -133,10 +162,17 @@ public final class TrackStore {
         String title = oldTrack.title;
         String artist = isBlank(fresh.artist) ? oldTrack.artist : fresh.artist;
         String album = isBlank(fresh.album) ? oldTrack.album : fresh.album;
-        String genre = isBlank(fresh.genre) ? oldTrack.genre : fresh.genre;
+        String genre = GenreNormalizer.isUnknown(fresh.genre) ? oldTrack.genre : fresh.genre;
         int durationMs = fresh.durationMs > 0 ? fresh.durationMs : oldTrack.durationMs;
-        return new Track(oldTrack.trackId, oldTrack.uri, title, artist, album, genre,
-                durationMs, fresh.fileSize, fresh.lastModified, fresh.fingerprint);
+        String albumArtist = isBlank(fresh.albumArtist)
+                ? oldTrack.albumArtist : fresh.albumArtist;
+        return new Track(oldTrack.trackId, oldTrack.uri, title, artist, album, albumArtist,
+                genre, fresh.year > 0 ? fresh.year : oldTrack.year,
+                fresh.trackNumber > 0 ? fresh.trackNumber : oldTrack.trackNumber,
+                fresh.discNumber > 0 ? fresh.discNumber : oldTrack.discNumber,
+                durationMs, fresh.fileSize, fresh.lastModified, fresh.fingerprint,
+                oldTrack.playCount, oldTrack.skipCount, oldTrack.dateAdded,
+                oldTrack.lastPlayedAt, oldTrack.lastCompletedAt);
     }
 
     public static boolean canOpenForRead(Context context, Uri uri) {
@@ -145,7 +181,7 @@ public final class TrackStore {
             descriptor = context.getContentResolver().openAssetFileDescriptor(uri, "r");
             return descriptor != null;
         } catch (Exception e) {
-            Log.w(DEBUG_TAG, "read_check_failed uri=" + uri + " error=" + e.getMessage());
+            VoltuneLog.failure("read_check_failed", e);
             return false;
         } finally {
             closeQuietly(descriptor);
@@ -162,7 +198,7 @@ public final class TrackStore {
         } finally {
             database.close();
         }
-        Log.i(DEBUG_TAG, "duration_updated uri=" + uri + " durationMs=" + durationMs);
+        VoltuneLog.info("duration_updated");
     }
 
     public static void updateLocation(Context context, Track track) {
@@ -199,7 +235,7 @@ public final class TrackStore {
             metadata.mergeMissing(fallback);
         }
         if (metadata.durationMs <= 0) {
-            Log.w(DEBUG_TAG, "duration_missing uri=" + uri);
+            VoltuneLog.warning("duration_missing");
         }
         return metadata;
     }
@@ -258,7 +294,7 @@ public final class TrackStore {
             }
             return result.toString();
         } catch (Exception error) {
-            Log.w(DEBUG_TAG, "fingerprint_failed error=" + error.getMessage());
+            VoltuneLog.failure("fingerprint_failed", error);
             return "";
         } finally {
             if (input != null) {
@@ -276,7 +312,7 @@ public final class TrackStore {
             retriever.setDataSource(context, uri);
             return Metadata.from(retriever);
         } catch (Throwable e) {
-            Log.w(DEBUG_TAG, "metadata_direct_failed uri=" + uri + " error=" + e.getMessage());
+            VoltuneLog.failure("metadata_direct_failed", e);
             return new Metadata();
         } finally {
             releaseQuietly(retriever);
@@ -299,7 +335,7 @@ public final class TrackStore {
             }
             return Metadata.from(retriever);
         } catch (Throwable e) {
-            Log.w(DEBUG_TAG, "metadata_fd_failed uri=" + uri + " error=" + e.getMessage());
+            VoltuneLog.failure("metadata_fd_failed", e);
             return new Metadata();
         } finally {
             releaseQuietly(retriever);
@@ -330,7 +366,7 @@ public final class TrackStore {
             long value = Long.parseLong(raw.trim());
             return value <= 0L ? 0 : (int) Math.min(Integer.MAX_VALUE, value);
         } catch (Exception e) {
-            Log.w(DEBUG_TAG, "duration_parse_failed value=" + raw + " error=" + e.getMessage());
+            VoltuneLog.failure("duration_parse_failed", e);
             return 0;
         }
     }
@@ -354,17 +390,29 @@ public final class TrackStore {
 
     private static final class Metadata {
         String album;
+        String albumArtist;
         String artist;
+        int discNumber;
         int durationMs;
         String genre;
         String title;
+        int trackNumber;
+        int year;
 
         static Metadata from(MediaMetadataRetriever retriever) {
             Metadata metadata = new Metadata();
             metadata.title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
             metadata.artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
             metadata.album = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+            metadata.albumArtist = retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST);
             metadata.genre = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE);
+            metadata.year = MetadataValidator.year(retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_YEAR));
+            metadata.trackNumber = MetadataValidator.trackNumber(retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER));
+            metadata.discNumber = MetadataValidator.trackNumber(retriever.extractMetadata(
+                    MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER));
             metadata.durationMs = parseDurationMs(retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
             return metadata;
         }
@@ -382,11 +430,23 @@ public final class TrackStore {
             if (isBlank(this.album)) {
                 this.album = fallback.album;
             }
+            if (isBlank(this.albumArtist)) {
+                this.albumArtist = fallback.albumArtist;
+            }
             if (isBlank(this.genre)) {
                 this.genre = fallback.genre;
             }
             if (this.durationMs <= 0) {
                 this.durationMs = fallback.durationMs;
+            }
+            if (this.year <= 0) {
+                this.year = fallback.year;
+            }
+            if (this.trackNumber <= 0) {
+                this.trackNumber = fallback.trackNumber;
+            }
+            if (this.discNumber <= 0) {
+                this.discNumber = fallback.discNumber;
             }
         }
     }
