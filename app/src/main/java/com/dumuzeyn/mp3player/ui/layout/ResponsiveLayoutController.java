@@ -78,12 +78,11 @@ public final class ResponsiveLayoutController {
     }
 
     public FrameLayout.LayoutParams centeredPanelParams(int requestedWidth, int requestedHeight) {
-        int width = requestedWidth;
+        int width = boundedPanelWidth(requestedWidth, screenWidth(), dp(28));
         int height = requestedHeight;
         if (isTablet()) {
-            width = Math.min(
-                    Math.max(requestedWidth, dp(440)),
-                    Math.max(dp(280), screenWidth() - dp(48)));
+            width = boundedPanelWidth(
+                    Math.max(requestedWidth, dp(440)), screenWidth(), dp(48));
             if (requestedHeight > 0) {
                 height = Math.min(requestedHeight, Math.max(dp(240), screenHeight() - dp(64)));
             }
@@ -92,6 +91,10 @@ public final class ResponsiveLayoutController {
                 width, height, Gravity.CENTER);
         params.setMargins(dp(14), dp(14), dp(14), dp(14));
         return params;
+    }
+
+    static int boundedPanelWidth(int requestedWidth, int screenWidth, int totalMargin) {
+        return Math.min(requestedWidth, Math.max(1, screenWidth - totalMargin));
     }
 
     public FrameLayout.LayoutParams bottomPanelParams() {
