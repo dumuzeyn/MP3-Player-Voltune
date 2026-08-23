@@ -130,6 +130,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         try {
             db.delete("favorites", "track_id=?", new String[]{trackId});
             db.delete("playlist_tracks", "track_id=?", new String[]{trackId});
+            db.delete("track_sources", "track_id=?", new String[]{trackId});
             db.delete("tracks", "track_id=?", new String[]{trackId});
             db.setTransactionSuccessful();
         } finally {
@@ -197,6 +198,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
             for (Track track : unavailable) {
                 db.delete("favorites", "track_id=?", new String[]{track.trackId});
                 db.delete("playlist_tracks", "track_id=?", new String[]{track.trackId});
+                db.delete("track_sources", "track_id=?", new String[]{track.trackId});
                 db.delete("tracks", "track_id=?", new String[]{track.trackId});
             }
             db.setTransactionSuccessful();
@@ -340,6 +342,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         for (String removedTrackId : storedById.keySet()) {
             db.delete("favorites", "track_id=?", new String[]{removedTrackId});
             db.delete("playlist_tracks", "track_id=?", new String[]{removedTrackId});
+            db.delete("track_sources", "track_id=?", new String[]{removedTrackId});
             db.delete("tracks", "track_id=?", new String[]{removedTrackId});
         }
     }

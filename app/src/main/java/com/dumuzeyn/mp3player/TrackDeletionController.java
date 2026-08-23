@@ -63,7 +63,7 @@ final class TrackDeletionController implements AutoCloseable {
         Track track = pendingTrack;
         pendingTrack = null;
         if (resultCode == Activity.RESULT_OK && track != null) {
-            host.playbackQueueController.removeFromLibrary(track);
+            host.playbackQueueController.removeDeletedFile(track);
         }
         return true;
     }
@@ -109,7 +109,7 @@ final class TrackDeletionController implements AutoCloseable {
     private void finishDirectDelete(Track track, boolean deleted) {
         pendingTrack = null;
         if (deleted) {
-            host.playbackQueueController.removeFromLibrary(track);
+            host.playbackQueueController.removeDeletedFile(track);
         } else {
             showFailure();
         }

@@ -14,12 +14,22 @@ final class LibraryMutationStore implements AutoCloseable {
     }
 
     RemovedLibraryItems removeTrack(Track track) {
+        return removeTrack(track, true);
+    }
+
+    RemovedLibraryItems removeDeletedFile(Track track) {
+        return removeTrack(track, false);
+    }
+
+    private RemovedLibraryItems removeTrack(Track track, boolean createExclusion) {
         RemovedLibraryItems removed = new RemovedLibraryItems();
         SQLiteDatabase db = database.getWritableDatabase();
         db.beginTransaction();
         try {
-            TrackOrigin origin = origin(db, track.trackId);
-            insertExclusion(db, ExcludedTrack.from(track, origin));
+            if (createExclusion) {
+                TrackOrigin origin = origin(db, track.trackId);
+                insertExclusion(db, ExcludedTrack.from(track, origin));
+            }
             deleteCollectionsAndTrack(db, track.trackId);
             removed.add(track.trackId, track.uri);
             db.setTransactionSuccessful();

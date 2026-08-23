@@ -16,13 +16,22 @@ final class LibraryMutationController implements AutoCloseable {
     }
 
     void removeTrack(Track track) {
+        removeTrack(track, false);
+    }
+
+    void removeDeletedFile(Track track) {
+        removeTrack(track, true);
+    }
+
+    private void removeTrack(Track track, boolean fileWasDeleted) {
         if (track == null) {
             return;
         }
         execute(() -> {
             LibraryMutationStore store = new LibraryMutationStore(host);
             try {
-                publish(store.removeTrack(track));
+                publish(fileWasDeleted
+                        ? store.removeDeletedFile(track) : store.removeTrack(track));
             } finally {
                 store.close();
             }
@@ -65,7 +74,6 @@ final class LibraryMutationController implements AutoCloseable {
     }
 
     private void publish(RemovedLibraryItems removed) {
-        LibraryMutationClock.advance();
         for (LibrarySource source : removed.sources) {
             PersistedFolderStore.releaseReadPermission(host, source.asUri());
         }

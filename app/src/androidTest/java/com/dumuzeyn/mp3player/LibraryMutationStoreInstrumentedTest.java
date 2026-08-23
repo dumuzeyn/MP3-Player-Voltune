@@ -105,6 +105,19 @@ public class LibraryMutationStoreInstrumentedTest {
         assertFalse(removed.sources.isEmpty());
     }
 
+    @Test
+    public void deletingPhysicalFileDoesNotCreateExclusion() {
+        Track track = addTrack("A");
+        LibraryMutationStore mutations = new LibraryMutationStore(context);
+        mutations.removeDeletedFile(track);
+        mutations.close();
+
+        LibrarySourceStore sources = new LibrarySourceStore(context);
+        assertTrue(sources.exclusions(null).isEmpty());
+        assertEquals(null, sources.originForTrack(track.trackId));
+        sources.close();
+    }
+
     private Track addTrack(String id) {
         Track track = new Track("track-" + id, "content://provider/document/" + id,
                 "Song " + id, "Artist", "Album", "Rock", 120000,

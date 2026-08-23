@@ -115,6 +115,13 @@ final class PlaybackQueueController {
         mutations.removeTrack(stored);
     }
 
+    void removeDeletedFile(Track track) {
+        Track stored = track == null ? null : host.findTrack(track.uri);
+        if (stored != null) {
+            mutations.removeDeletedFile(stored);
+        }
+    }
+
     void removeSource(LibrarySource source) {
         mutations.removeSource(source);
     }
