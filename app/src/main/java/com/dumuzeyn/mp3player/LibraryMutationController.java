@@ -90,7 +90,11 @@ final class LibraryMutationController implements AutoCloseable {
         } else {
             host.playbackQueueController.removeCommitted(removed.trackIds, removed.trackUris);
         }
-        host.libraryState.tracks.removeIf(track -> removed.trackIds.contains(track.trackId));
+        for (int index = host.libraryState.tracks.size() - 1; index >= 0; index--) {
+            if (removed.trackIds.contains(host.libraryState.tracks.get(index).trackId)) {
+                host.libraryState.tracks.remove(index);
+            }
+        }
         host.libraryState.favorites.removeAll(removed.trackUris);
         for (Playlist playlist : host.libraryState.playlists) {
             playlist.uris.removeAll(removed.trackUris);

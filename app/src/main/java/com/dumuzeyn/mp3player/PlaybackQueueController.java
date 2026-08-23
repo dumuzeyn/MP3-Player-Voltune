@@ -139,7 +139,11 @@ final class PlaybackQueueController {
             return;
         }
         new PlaybackStateManager(host).removeTracks(trackIds, trackUris);
-        host.playbackUiState.queue.removeIf(track -> trackIds.contains(track.trackId));
+        for (int index = host.playbackUiState.queue.size() - 1; index >= 0; index--) {
+            if (trackIds.contains(host.playbackUiState.queue.get(index).trackId)) {
+                host.playbackUiState.queue.remove(index);
+            }
+        }
         playback.removeQueueItems(trackIds);
     }
 
