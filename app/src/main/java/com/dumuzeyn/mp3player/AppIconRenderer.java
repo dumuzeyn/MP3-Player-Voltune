@@ -7,8 +7,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 
 /** Central renderer for every runtime Voltune icon used by the application UI. */
@@ -23,11 +21,18 @@ final class AppIconRenderer {
         Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
         Bitmap source = BitmapFactory.decodeResource(
                 context.getResources(), R.drawable.voltune_icon_foreground);
-        Canvas canvas = new Canvas(bitmap);
         int inset = Math.round(safeSize * 0.08f);
-        canvas.drawBitmap(source, new Rect(0, 0, source.getWidth(), source.getHeight()),
-                new RectF(inset, inset, safeSize - inset, safeSize - inset), null);
+        int contentSize = Math.max(1, safeSize - inset * 2);
+        Bitmap scaledSource = Bitmap.createScaledBitmap(source, contentSize, contentSize, true);
+        Bitmap scaled = scaledSource.copy(Bitmap.Config.ARGB_8888, true);
+        if (scaledSource != source) {
+            scaledSource.recycle();
+        }
         source.recycle();
+        tintLogo(scaled, primaryColor, secondaryColor);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawBitmap(scaled, inset, inset, null);
+        scaled.recycle();
         return bitmap;
     }
 
@@ -37,7 +42,8 @@ final class AppIconRenderer {
         Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         Paint background = new Paint(Paint.ANTI_ALIAS_FLAG);
-        background.setColor(BRAND_BACKGROUND);
+        background.setColor(Color.alpha(backgroundColor) == 0
+                ? BRAND_BACKGROUND : backgroundColor);
         float radius = safeSize * 0.22f;
         canvas.drawRoundRect(0, 0, safeSize, safeSize, radius, radius, background);
 
@@ -71,6 +77,46 @@ final class AppIconRenderer {
             return renderPreview(context, fallbackBackground,
                     primaryColor, secondaryColor, safeSize);
         }
+    }
+
+    private static void tintLogo(Bitmap bitmap, int primaryColor, int secondaryColor) {
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int[] pixels = new int[width * height];
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int index = y * width + x;
+                int source = pixels[index];
+                int alpha = Color.alpha(source);
+                if (alpha == 0) {
+                    continue;
+                }
+                float gradient = width == 1 ? 0f : x / (float) (width - 1);
+                int themed = blend(primaryColor, secondaryColor, gradient);
+                float luminance = (Color.red(source) * 0.2126f
+                        + Color.green(source) * 0.7152f
+                        + Color.blue(source) * 0.0722f) / 255f;
+                float shade = 0.72f + luminance * 0.48f;
+                pixels[index] = Color.argb(alpha,
+                        clamp(Math.round(Color.red(themed) * shade)),
+                        clamp(Math.round(Color.green(themed) * shade)),
+                        clamp(Math.round(Color.blue(themed) * shade)));
+            }
+        }
+        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
+    }
+
+    private static int blend(int first, int second, float amount) {
+        float inverse = 1f - amount;
+        return Color.rgb(
+                Math.round(Color.red(first) * inverse + Color.red(second) * amount),
+                Math.round(Color.green(first) * inverse + Color.green(second) * amount),
+                Math.round(Color.blue(first) * inverse + Color.blue(second) * amount));
+    }
+
+    private static int clamp(int value) {
+        return Math.max(0, Math.min(255, value));
     }
 
 }

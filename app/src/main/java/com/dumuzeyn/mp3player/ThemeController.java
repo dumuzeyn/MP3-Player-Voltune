@@ -400,11 +400,7 @@ final class ThemeController {
     }
 
     private Bitmap launcherPreviewIcon() {
-        boolean useDark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
-        ComponentName launcher = LauncherComponents.forPalette(
-                host, host.appearanceState.themeMode, useDark, host.purple, host.yellow);
-        return AppIconRenderer.renderLauncherPreview(
-                host, launcher, host.bg, host.purple, host.yellow,
+        return AppIconRenderer.renderPreview(host, host.bg, host.purple, host.yellow,
                 Math.max(1, host.dp(64)));
     }
 

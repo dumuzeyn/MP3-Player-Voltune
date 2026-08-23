@@ -85,7 +85,7 @@
             android:name=".LauncherLight"
             android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_home"
             android:label="@string/app_name"
             android:targetActivity=".MainActivity">
             <intent-filter>
@@ -97,7 +97,7 @@
             android:name=".LauncherDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_dark"
             android:label="@string/app_name"
             android:targetActivity=".DarkMainActivity">
             <intent-filter>
@@ -109,7 +109,7 @@
             android:name=".LauncherCustomBlueLight"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_blue_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomBlueLight"
             android:targetActivity=".LauncherThemeActivities$CustomBlueLight">
@@ -122,7 +122,7 @@
             android:name=".LauncherCustomBlueDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_blue_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomBlueDark"
             android:targetActivity=".LauncherThemeActivities$CustomBlueDark">
@@ -135,7 +135,7 @@
             android:name=".LauncherCustomRedLight"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_red_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomRedLight"
             android:targetActivity=".LauncherThemeActivities$CustomRedLight">
@@ -148,7 +148,7 @@
             android:name=".LauncherCustomRedDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_red_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomRedDark"
             android:targetActivity=".LauncherThemeActivities$CustomRedDark">
@@ -161,7 +161,7 @@
             android:name=".LauncherCustomGreenLight"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_green_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomGreenLight"
             android:targetActivity=".LauncherThemeActivities$CustomGreenLight">
@@ -174,7 +174,7 @@
             android:name=".LauncherCustomGreenDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_green_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomGreenDark"
             android:targetActivity=".LauncherThemeActivities$CustomGreenDark">
@@ -187,7 +187,7 @@
             android:name=".LauncherCustomPinkLight"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_pink_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomPinkLight"
             android:targetActivity=".LauncherThemeActivities$CustomPinkLight">
@@ -200,7 +200,7 @@
             android:name=".LauncherCustomPinkDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_pink_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomPinkDark"
             android:targetActivity=".LauncherThemeActivities$CustomPinkDark">
@@ -213,7 +213,7 @@
             android:name=".LauncherCustomOrangeLight"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_orange_light"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomOrangeLight"
             android:targetActivity=".LauncherThemeActivities$CustomOrangeLight">
@@ -226,7 +226,7 @@
             android:name=".LauncherCustomOrangeDark"
             android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_voltune"
+            android:icon="@mipmap/ic_launcher_custom_orange_dark"
             android:label="@string/app_name"
             android:theme="@style/AppThemeCustomOrangeDark"
             android:targetActivity=".LauncherThemeActivities$CustomOrangeDark">

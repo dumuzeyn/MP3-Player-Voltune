@@ -128,11 +128,30 @@ tasks.register("checkLauncherIcon") {
         }
         def manifestText = file("src/main/AndroidManifest.xml").getText("UTF-8")
         def styleText = file("src/main/res/values-v31/styles.xml").getText("UTF-8")
-        if (manifestText.count('@mipmap/ic_launcher_voltune') != 13) {
-            throw new GradleException("Every launcher alias must use the Voltune icon")
+        def launcherIcons = [
+                'ic_launcher_home', 'ic_launcher_dark',
+                'ic_launcher_custom_blue_light', 'ic_launcher_custom_blue_dark',
+                'ic_launcher_custom_red_light', 'ic_launcher_custom_red_dark',
+                'ic_launcher_custom_green_light', 'ic_launcher_custom_green_dark',
+                'ic_launcher_custom_pink_light', 'ic_launcher_custom_pink_dark',
+                'ic_launcher_custom_orange_light', 'ic_launcher_custom_orange_dark'
+        ]
+        launcherIcons.each { icon ->
+            if (!manifestText.contains("@mipmap/${icon}")) {
+                throw new GradleException("Launcher alias is not mapped to ${icon}")
+            }
+            def adaptive = file("src/main/res/mipmap-anydpi-v26/${icon}.xml").getText("UTF-8")
+            if (!adaptive.contains('@drawable/voltune_icon_foreground_layer')) {
+                throw new GradleException("${icon} does not use the current Voltune artwork")
+            }
+            def themed = file("src/main/res/mipmap-anydpi-v33/${icon}.xml").getText("UTF-8")
+            if (!themed.contains('<monochrome android:drawable="@drawable/voltune_icon_monochrome"')) {
+                throw new GradleException("${icon} does not provide an Android 13 themed icon")
+            }
         }
-        if (!styleText.contains('@drawable/voltune_splash_icon')) {
-            throw new GradleException("Android 12+ splash does not use the Voltune icon")
+        if (styleText.count('@drawable/voltune_splash_icon') != 12
+                || styleText.count('windowSplashScreenBackground') != 12) {
+            throw new GradleException("Every launch theme must define a themed splash")
         }
         println "Launcher icon PASS: ${master.width}px master, safe-zone width ${String.format('%.3f', effectiveWidth)}"
     }
