@@ -67,6 +67,24 @@ final class PersistedFolderStore {
         }
     }
 
+    static RemovedLibraryItems forget(Context context, LibrarySource source) {
+        LibraryMutationStore store = new LibraryMutationStore(context);
+        try {
+            return store.removeSource(source.sourceId);
+        } finally {
+            store.close();
+        }
+    }
+
+    static RemovedLibraryItems clear(Context context) {
+        LibraryMutationStore store = new LibraryMutationStore(context);
+        try {
+            return store.clearLibrary();
+        } finally {
+            store.close();
+        }
+    }
+
     static void releaseReadPermission(Context context, Uri uri) {
         if (uri == null) {
             return;

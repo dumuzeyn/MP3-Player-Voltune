@@ -21,9 +21,15 @@ final class SettingsController {
     private static final int EXPORT_PLAYBACK_DIAGNOSTICS = 5205;
     private static final String SUPPORT_URL = "https://pay.cloudtips.ru/p/54e5a4f9";
     private final MainActivityCore host;
+    private final MusicFoldersController musicFolders;
 
     SettingsController(MainActivityCore host) {
         this.host = host;
+        this.musicFolders = new MusicFoldersController(host);
+    }
+
+    void openMusicFolders() {
+        musicFolders.open();
     }
 
     String resumeWindowText() {
@@ -159,8 +165,10 @@ final class SettingsController {
     void confirmDeleteAllSongs() {
         host.showConfirmPanel(
                 host.tr("Delete all songs?", "Удалить все песни?"),
-                host.tr("Songs will disappear only from this app. Files on the phone will stay untouched.",
-                        "Песни исчезнут только из приложения. Файлы на телефоне останутся."),
+                host.tr("Songs and imported folder links will disappear from Voltune. "
+                                + "Files on the phone will stay untouched.",
+                        "Песни и связи с импортированными папками исчезнут из Voltune. "
+                                + "Файлы на телефоне останутся без изменений."),
                 () -> host.playbackQueueController.clearLibrary());
     }
 

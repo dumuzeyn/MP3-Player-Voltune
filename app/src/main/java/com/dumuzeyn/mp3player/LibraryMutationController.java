@@ -34,23 +34,13 @@ final class LibraryMutationController implements AutoCloseable {
             return;
         }
         execute(() -> {
-            LibraryMutationStore store = new LibraryMutationStore(host);
-            try {
-                publish(store.removeSource(source.sourceId));
-            } finally {
-                store.close();
-            }
+            publish(PersistedFolderStore.forget(host, source));
         });
     }
 
     void clearLibrary() {
         execute(() -> {
-            LibraryMutationStore store = new LibraryMutationStore(host);
-            try {
-                publish(store.clearLibrary());
-            } finally {
-                store.close();
-            }
+            publish(PersistedFolderStore.clear(host));
         });
     }
 

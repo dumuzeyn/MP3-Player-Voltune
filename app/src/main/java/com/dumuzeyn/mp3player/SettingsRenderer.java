@@ -118,6 +118,8 @@ final class SettingsRenderer {
         section(host.tr("Library", "Библиотека"));
         addButton(host.tr("Check songs", "Проверить песни"),
                 view -> host.openSongDiagnostics());
+        addButton(host.tr("Music folders", "Музыкальные папки"),
+                view -> host.settingsController.openMusicFolders());
         addButton(host.tr("Rescan music folders", "Повторно сканировать папки"),
                 view -> host.audioImportController.rescanPersistedFolders());
         addButton(host.tr("Export playlists and settings", "Экспорт плейлистов и настроек"),
