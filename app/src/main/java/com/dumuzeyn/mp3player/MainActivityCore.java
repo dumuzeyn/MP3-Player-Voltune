@@ -441,6 +441,9 @@ class MainActivityCore extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (this.overlayController.handleActivityResult(requestCode, resultCode)) {
+            return;
+        }
         if (this.settingsController.handleActivityResult(requestCode, resultCode, data)) {
             return;
         }
@@ -452,7 +455,6 @@ class MainActivityCore extends Activity {
         }
         this.audioImportController.handleActivityResult(requestCode, resultCode, data);
     }
-
     int cardSurfaceColor(int color) {
         return cardSurfaceColor(color, this.appearanceState.cardOpacity);
     }
@@ -469,11 +471,9 @@ class MainActivityCore extends Activity {
     void openSongDiagnostics() {
         this.diagnosticsDialogs.openSongDiagnostics();
     }
-
     void showConfirmPanel(String title, String message, Runnable yesAction) {
         this.diagnosticsDialogs.confirm(title, message, yesAction);
     }
-
     void showActionPanel(String title, String message, String negativeLabel,
             String positiveLabel, Runnable action) {
         this.diagnosticsDialogs.action(title, message, negativeLabel, positiveLabel, action);

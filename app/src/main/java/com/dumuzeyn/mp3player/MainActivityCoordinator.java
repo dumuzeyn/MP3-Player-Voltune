@@ -15,6 +15,7 @@ final class MainActivityCoordinator {
         closeables.add(host.libraryPersistenceController::close);
         closeables.add(host.libraryLoader);
         closeables.add(host.libraryMaintenanceController);
+        closeables.add(host.overlayController);
         closeables.add(host.trackSearchController);
         closeables.add(host.globalSearchController);
         closeables.add(host.lyricsRepository);

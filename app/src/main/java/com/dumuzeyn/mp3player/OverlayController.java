@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-final class OverlayController {
+final class OverlayController implements AutoCloseable {
     interface SelectionDone {
         void done(Set<String> selected);
     }
@@ -24,12 +24,14 @@ final class OverlayController {
     private final QueueOverlayController queueController;
     private final GlobalSearchOverlayController searchController;
     private final TrackSelectionOverlayController selectionController;
+    private final TrackDeletionController deletionController;
 
     OverlayController(MainActivityCore host) {
         this.host = host;
         this.queueController = new QueueOverlayController(host, this);
         this.searchController = new GlobalSearchOverlayController(host, this);
         this.selectionController = new TrackSelectionOverlayController(host);
+        this.deletionController = new TrackDeletionController(host);
     }
 
     void openGroup(String title, ArrayList<Track> tracks) {
@@ -181,10 +183,17 @@ final class OverlayController {
                 openPlaylist(sourcePlaylist);
             });
         }
-        addCompactPanelButton(panel, host.tr("Remove from app", "Удалить из приложения"), () -> {
+        addCompactPanelButton(panel, host.tr("Remove from library", "Убрать из медиатеки"), () -> {
             host.overlayHost.removeView(shade);
-            confirmDeleteTrack(track);
+            confirmRemoveTrack(track);
         });
+        if (deletionController.canDeleteFile(track)) {
+            addCompactPanelButton(panel, host.tr("Delete file from device",
+                    "Удалить файл с устройства"), () -> {
+                host.overlayHost.removeView(shade);
+                confirmDeleteFile(track);
+            });
+        }
         addCompactPanelButton(panel, host.tr("Close", "Закрыть"), () -> close(shade));
         shade.addView(panel, compactSongActionsParams());
         host.overlayHost.addView(shade);
@@ -280,12 +289,24 @@ final class OverlayController {
                 });
     }
 
-    private void confirmDeleteTrack(Track track) {
-        host.showConfirmPanel(host.tr("Delete song?", "Удалить песню?"),
+    private void confirmRemoveTrack(Track track) {
+        host.showConfirmPanel(host.tr("Remove from library?", "Убрать из медиатеки?"),
                 host.tr("The song will disappear from the app, but the file will stay on the phone.",
                         "Песня исчезнет из приложения, но файл останется на телефоне."), () -> {
                     host.playbackQueueController.removeFromLibrary(track);
                 });
+    }
+
+    private void confirmDeleteFile(Track track) {
+        host.showConfirmPanel(host.tr("Delete file from device?",
+                        "Удалить файл с устройства?"),
+                host.tr("This cannot be undone. The song will also be removed from the library.",
+                        "Это действие нельзя отменить. Песня также исчезнет из медиатеки."),
+                () -> deletionController.deleteFile(track));
+    }
+
+    boolean handleActivityResult(int requestCode, int resultCode) {
+        return deletionController.handleActivityResult(requestCode, resultCode);
     }
 
     void openSearch() {
@@ -383,6 +404,11 @@ final class OverlayController {
             host.overlayHost.removeView(shade);
         }
         host.playerUiController.updateMini();
+    }
+
+    @Override
+    public void close() {
+        deletionController.close();
     }
 
     private abstract static class SimpleTextWatcher implements TextWatcher {

@@ -226,15 +226,10 @@ final class SongsRenderer {
 
         ImageView cover = host.uiFactory.coverView();
         host.artworkUi.loadCover(cover, track, host.purpleSoft);
-        cover.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                host.artworkUi.seedFromView(cover, track);
-                host.playbackQueueController.playTrack(track, true);
-                host.navigationState.fullPlayerOpening = true;
-                host.playerUiController.openFullPlayer();
-            }
-        });
+        View.OnClickListener openOrPlay = view -> TrackTapController.handle(
+                host, track, cover);
+        cover.setOnClickListener(openOrPlay);
+        row.setOnClickListener(openOrPlay);
         row.addView(cover, host.uiFactory.square(52));
 
         LinearLayout textColumn = new LinearLayout(host);
