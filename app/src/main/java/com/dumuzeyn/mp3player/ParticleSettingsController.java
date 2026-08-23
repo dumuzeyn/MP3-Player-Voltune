@@ -77,7 +77,7 @@ final class ParticleSettingsController {
             host.overlayHost.removeAllViews();
             openColorPicker(primary);
         });
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(40));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(48));
         params.setMargins(0, host.dp(3), 0, host.dp(3));
         panel.addView(button, params);
     }
