@@ -7,42 +7,60 @@ import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/** Calculates one fixed gain per track and caches it. Gain never changes inside a song. */
+/** Performs bounded EBU R128-style analysis and caches content-versioned results. */
 final class TrackLoudnessNormalizer {
+    interface ProgressListener {
+        void onProgress(int completed, int total, int errors, boolean finished,
+                boolean cancelled);
+    }
+
+    static final int ALGORITHM_VERSION = 3;
+    static final String PREFS = "track_loudness_cache";
+    static final String REDUCE_ONLY = "reduce_only";
+    static final String TARGET_LUFS = "target_lufs";
+    private static final String ANALYSIS_PROFILE = "kweight-400ms-100ms-gates70-10-peak4";
     private static final String DEBUG_TAG = "VoltuneDebug";
-    private static final String PREFS = "track_loudness_cache";
-    private static final String GAIN_PREFIX = "gain_db_";
-    private static final float TARGET_DBFS = -18.0f;
-    private static final float MAX_BOOST_DB = 8.0f;
-    private static final float MAX_CUT_DB = -10.0f;
+    private static final String RESULT_PREFIX = "r128_result_";
+    private static final String ERROR_PREFIX = "r128_error_";
     private static final long MAX_ANALYSIS_US = 15L * 60L * 1_000_000L;
 
     private final Context context;
     private final SharedPreferences cache;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Set<String> pending = Collections.synchronizedSet(new HashSet<>());
+    private final AtomicBoolean cancelRequested = new AtomicBoolean();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private volatile boolean batchRunning;
 
     TrackLoudnessNormalizer(Context context) {
         this.context = context.getApplicationContext();
         this.cache = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    float cachedGainDb(String uri) {
-        if (!enabled() || uri == null || uri.isEmpty()) {
+    float cachedGainDb(Track track) {
+        if (!enabled() || track == null) {
             return 0.0f;
         }
-        return cache.getFloat(GAIN_PREFIX + key(uri), 0.0f);
+        LoudnessAnalysisResult result = cachedResult(track);
+        return result == null ? 0.0f : LoudnessGainPolicy.gainDb(result.integratedLufs,
+                result.peakDbfs, targetLufs(), reduceOnly());
     }
 
     void prefetch(List<Track> queue, int currentIndex) {
@@ -50,44 +68,151 @@ final class TrackLoudnessNormalizer {
             return;
         }
         for (int offset = 0; offset < Math.min(3, queue.size()); offset++) {
-            Track track = queue.get((Math.max(0, currentIndex) + offset) % queue.size());
-            prefetch(track == null ? null : track.uri);
+            prefetch(queue.get((Math.max(0, currentIndex) + offset) % queue.size()));
         }
     }
 
+    void analyzeLibrary(List<Track> tracks, ProgressListener listener) {
+        if (batchRunning) {
+            notifyProgress(listener, 0, tracks == null ? 0 : tracks.size(),
+                    errorCount(tracks),
+                    false, false);
+            return;
+        }
+        ArrayList<Track> source = tracks == null ? new ArrayList<>() : new ArrayList<>(tracks);
+        cancelRequested.set(false);
+        batchRunning = true;
+        executor.execute(() -> {
+            int completed = 0;
+            int errors = 0;
+            for (Track track : source) {
+                if (cancelRequested.get() || Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+                if (cachedResult(track) == null && !analyzeAndCache(track)) {
+                    errors++;
+                }
+                completed++;
+                notifyProgress(listener, completed, source.size(), errors, false, false);
+            }
+            boolean cancelled = cancelRequested.get() || completed < source.size();
+            batchRunning = false;
+            notifyProgress(listener, completed, source.size(), errors, true, cancelled);
+        });
+    }
+
+    void cancelAnalysis() {
+        cancelRequested.set(true);
+    }
+
+    void clearCache() {
+        cancelAnalysis();
+        cache.edit().clear().commit();
+    }
+
+    int analyzedCount(List<Track> tracks) {
+        int count = 0;
+        if (tracks != null) {
+            for (Track track : tracks) {
+                if (cachedResult(track) != null) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    int errorCount(List<Track> tracks) {
+        Set<String> failed = failedTrackIds();
+        int count = 0;
+        if (tracks != null) {
+            for (Track track : tracks) {
+                if (failed.contains(track.trackId)) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    Set<String> failedTrackIds() {
+        HashSet<String> ids = new HashSet<>();
+        for (String key : cache.getAll().keySet()) {
+            if (key.startsWith(ERROR_PREFIX)) {
+                ids.add(key.substring(ERROR_PREFIX.length()));
+            }
+        }
+        return ids;
+    }
+
+    boolean isBatchRunning() {
+        return batchRunning;
+    }
+
     void release() {
+        cancelAnalysis();
         executor.shutdownNow();
         pending.clear();
     }
 
-    private void prefetch(String uri) {
-        if (uri == null || uri.isEmpty()) {
-            return;
+    static String cacheKeyFor(Track track) {
+        return cacheKeyFor(track, ALGORITHM_VERSION);
+    }
+
+    static String cacheKeyFor(Track track, int algorithmVersion) {
+        if (track == null) {
+            return "none";
         }
-        String cacheKey = GAIN_PREFIX + key(uri);
-        if (cache.contains(cacheKey) || !pending.add(uri)) {
+        String identity = track.trackId + '|' + track.fileSize + '|' + track.lastModified
+                + '|' + algorithmVersion + '|' + ANALYSIS_PROFILE;
+        return hash(identity);
+    }
+
+    private void prefetch(Track track) {
+        if (track == null || cachedResult(track) != null || !pending.add(track.trackId)) {
             return;
         }
         executor.execute(() -> {
             try {
-                Float gain = analyze(uri);
-                if (gain != null) {
-                    cache.edit().putFloat(cacheKey, gain).apply();
-                    Log.i(DEBUG_TAG, "loudness_analyzed gainDb=" + gain + " uriHash=" + key(uri));
-                }
-            } catch (RuntimeException error) {
-                Log.w(DEBUG_TAG, "loudness_analysis_failed error=" + error.getMessage());
+                analyzeAndCache(track);
             } finally {
-                pending.remove(uri);
+                pending.remove(track.trackId);
             }
         });
     }
 
-    private Float analyze(String uri) {
+    private boolean analyzeAndCache(Track track) {
+        if (track == null || cancelRequested.get()) {
+            return false;
+        }
+        try {
+            LoudnessAnalysisResult result = analyze(track);
+            if (result == null) {
+                recordError(track, "no_audio_result");
+                return false;
+            }
+            String encoded = result.integratedLufs + "," + result.peakDbfs;
+            cache.edit()
+                    .putString(RESULT_PREFIX + cacheKeyFor(track), encoded)
+                    .remove(ERROR_PREFIX + track.trackId)
+                    .apply();
+            Log.i(DEBUG_TAG, "r128_analyzed lufs=" + result.integratedLufs
+                    + " peakDbfs=" + result.peakDbfs + " trackId="
+                    + PlaybackEventLogger.opaqueMediaId(track.trackId));
+            return true;
+        } catch (Exception error) {
+            recordError(track, error.getClass().getSimpleName());
+            Log.w(DEBUG_TAG, "r128_analysis_failed category="
+                    + error.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    private LoudnessAnalysisResult analyze(Track track) throws Exception {
         MediaExtractor extractor = new MediaExtractor();
         MediaCodec decoder = null;
         try {
-            extractor.setDataSource(context, Uri.parse(uri), null);
+            extractor.setDataSource(context, Uri.parse(track.uri), null);
             MediaFormat format = selectAudioTrack(extractor);
             if (format == null) {
                 return null;
@@ -103,10 +228,7 @@ final class TrackLoudnessNormalizer {
             decoder = MediaCodec.createDecoderByType(mime);
             decoder.configure(format, null, null, 0);
             decoder.start();
-            return decodeLoudness(extractor, decoder, sampleRate, channels);
-        } catch (Exception error) {
-            Log.w(DEBUG_TAG, "loudness_decode_failed error=" + error.getMessage());
-            return null;
+            return decode(extractor, decoder, sampleRate, channels);
         } finally {
             if (decoder != null) {
                 try {
@@ -122,26 +244,14 @@ final class TrackLoudnessNormalizer {
         }
     }
 
-    private MediaFormat selectAudioTrack(MediaExtractor extractor) {
-        for (int index = 0; index < extractor.getTrackCount(); index++) {
-            MediaFormat format = extractor.getTrackFormat(index);
-            String mime = format.getString(MediaFormat.KEY_MIME);
-            if (mime != null && mime.startsWith("audio/")) {
-                extractor.selectTrack(index);
-                return format;
-            }
-        }
-        return null;
-    }
-
-    private Float decodeLoudness(MediaExtractor extractor, MediaCodec decoder,
+    private LoudnessAnalysisResult decode(MediaExtractor extractor, MediaCodec decoder,
             int sampleRate, int channels) {
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        LoudnessAccumulator accumulator = new LoudnessAccumulator(sampleRate, channels);
+        R128LoudnessMeter meter = new R128LoudnessMeter(sampleRate, channels);
         boolean inputDone = false;
         boolean outputDone = false;
         int pcmEncoding = AudioFormat.ENCODING_PCM_16BIT;
-        while (!outputDone && !Thread.currentThread().isInterrupted()) {
+        while (!outputDone && !cancelRequested.get() && !Thread.currentThread().isInterrupted()) {
             if (!inputDone) {
                 int inputIndex = decoder.dequeueInputBuffer(10_000L);
                 if (inputIndex >= 0) {
@@ -170,13 +280,55 @@ final class TrackLoudnessNormalizer {
                 if (output != null && info.size > 0) {
                     output.position(info.offset);
                     output.limit(info.offset + info.size);
-                    accumulator.add(output.slice().order(ByteOrder.LITTLE_ENDIAN), pcmEncoding);
+                    meter.add(output.slice().order(ByteOrder.LITTLE_ENDIAN), pcmEncoding);
                 }
                 outputDone = (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
                 decoder.releaseOutputBuffer(outputIndex, false);
             }
         }
-        return accumulator.gainDb();
+        return cancelRequested.get() ? null : meter.result();
+    }
+
+    private static MediaFormat selectAudioTrack(MediaExtractor extractor) {
+        for (int index = 0; index < extractor.getTrackCount(); index++) {
+            MediaFormat format = extractor.getTrackFormat(index);
+            String mime = format.getString(MediaFormat.KEY_MIME);
+            if (mime != null && mime.startsWith("audio/")) {
+                extractor.selectTrack(index);
+                return format;
+            }
+        }
+        return null;
+    }
+
+    private LoudnessAnalysisResult cachedResult(Track track) {
+        String key = RESULT_PREFIX + cacheKeyFor(track);
+        String encoded = cache.getString(key, "");
+        if (encoded == null || encoded.isEmpty()) {
+            return null;
+        }
+        try {
+            String[] values = encoded.split(",", -1);
+            if (values.length != 2) {
+                throw new IllegalArgumentException("invalid result");
+            }
+            float lufs = Float.parseFloat(values[0]);
+            float peak = Float.parseFloat(values[1]);
+            if (!Float.isFinite(lufs) || !Float.isFinite(peak)) {
+                throw new IllegalArgumentException("non-finite result");
+            }
+            return new LoudnessAnalysisResult(lufs, peak);
+        } catch (RuntimeException error) {
+            cache.edit().remove(key).apply();
+            return null;
+        }
+    }
+
+    private void recordError(Track track, String category) {
+        if (track != null && !cancelRequested.get()) {
+            cache.edit().putString(ERROR_PREFIX + track.trackId,
+                    category == null ? "unknown" : category).apply();
+        }
     }
 
     private boolean enabled() {
@@ -184,69 +336,37 @@ final class TrackLoudnessNormalizer {
                 .getBoolean(VolumeLevelingController.ENABLED, false);
     }
 
-    private static String key(String value) {
+    private boolean reduceOnly() {
+        return context.getSharedPreferences(EqualizerController.PREFS, Context.MODE_PRIVATE)
+                .getBoolean(REDUCE_ONLY, false);
+    }
+
+    private float targetLufs() {
+        int target = context.getSharedPreferences(EqualizerController.PREFS,
+                Context.MODE_PRIVATE).getInt(TARGET_LUFS,
+                Math.round(LoudnessGainPolicy.DEFAULT_TARGET_LUFS));
+        return Math.max(-24, Math.min(-10, target));
+    }
+
+    private void notifyProgress(ProgressListener listener, int completed, int total, int errors,
+            boolean finished, boolean cancelled) {
+        if (listener != null) {
+            mainHandler.post(() -> listener.onProgress(completed, total, errors, finished,
+                    cancelled));
+        }
+    }
+
+    private static String hash(String value) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
             StringBuilder result = new StringBuilder(32);
             for (int index = 0; index < 16; index++) {
-                result.append(String.format(java.util.Locale.ROOT, "%02x", digest[index]));
+                result.append(String.format(Locale.ROOT, "%02x", digest[index]));
             }
             return result.toString();
         } catch (Exception ignored) {
             return Integer.toHexString(value.hashCode());
-        }
-    }
-
-    private static final class LoudnessAccumulator {
-        private final int blockSamples;
-        private int blockCount;
-        private double blockSquareSum;
-        private long acceptedSamples;
-        private double acceptedSquareSum;
-        private double peak;
-
-        LoudnessAccumulator(int sampleRate, int channels) {
-            blockSamples = Math.max(1, Math.round(sampleRate * Math.max(1, channels) * 0.4f));
-        }
-
-        void add(ByteBuffer buffer, int encoding) {
-            if (encoding == AudioFormat.ENCODING_PCM_FLOAT) {
-                while (buffer.remaining() >= 4) {
-                    addSample(Math.max(-1.0, Math.min(1.0, buffer.getFloat())));
-                }
-            } else {
-                while (buffer.remaining() >= 2) {
-                    addSample(buffer.getShort() / 32768.0);
-                }
-            }
-        }
-
-        private void addSample(double sample) {
-            double absolute = Math.abs(sample);
-            peak = Math.max(peak, absolute);
-            blockSquareSum += sample * sample;
-            blockCount++;
-            if (blockCount >= blockSamples) {
-                double blockRms = Math.sqrt(blockSquareSum / blockCount);
-                if (blockRms >= Math.pow(10.0, -50.0 / 20.0)) {
-                    acceptedSquareSum += blockSquareSum;
-                    acceptedSamples += blockCount;
-                }
-                blockSquareSum = 0.0;
-                blockCount = 0;
-            }
-        }
-
-        Float gainDb() {
-            if (acceptedSamples == 0 || peak <= 0.0) {
-                return null;
-            }
-            double rms = Math.sqrt(acceptedSquareSum / acceptedSamples);
-            double rmsDb = 20.0 * Math.log10(Math.max(1.0e-9, rms));
-            double peakDb = 20.0 * Math.log10(Math.max(1.0e-9, peak));
-            double gain = Math.min(TARGET_DBFS - rmsDb, -1.0 - peakDb);
-            return (float) Math.max(MAX_CUT_DB, Math.min(MAX_BOOST_DB, gain));
         }
     }
 }

@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.0.1 - Faster library and stable release startup
+
+- Replaced the manually rendered Songs list with `RecyclerView`, `ListAdapter`, stable track IDs, and targeted payload updates.
+- Moved library loading and debounced search filtering off the UI thread.
+- Added normalized search data so track metadata is not repeatedly converted for every entered character.
+- Reduced SQLite work with grouped playlist reads and differential track persistence.
+- Added memory and disk artwork caching while loading covers only for visible song rows.
+- Fixed two release-only startup crashes caused by accessing the Activity context before it was attached.
+- Removed the redundant favorite button from song rows; favorites remain available in track properties.
+- Simplified the full-player repeat control to `Repeat`, `Song`, and `List` states without numeric or infinity symbols.
+- Added unit coverage for normalized track search and retained Android 8, Android 16, and tablet compatibility checks.
+
+## 3.0 - Media3 playback and responsive library
+
+- Migrated playback to Media3 `ExoPlayer`, `MediaSessionService`, and `MediaController` while preserving background playback, queues, repeat, notifications, and sleep timer behavior.
+- Restored the current track and mini-player synchronously before the Media3 controller reconnects.
+- Matched current songs by stable track identifiers with compatibility for queues saved by older releases.
+- Removed repeated database reads from periodic playback-state persistence.
+- Moved playlist and favorite persistence off the UI thread and made collection updates atomic.
+- Reused the prepared Songs/Favorites screen after a tab swipe instead of building the same rows twice.
+- Prepared 15 visible cards for Songs, Favorites, Genres, Artists, and Albums to prevent visible incremental loading during transitions.
+- Reduced particle and cover work during tab previews while retaining active waveforms and rotating artwork.
+- Added a 1,000-track startup and navigation benchmark plus a 165-track database migration test.
+- Made Russian the default language for clean installations without changing an existing user's language.
+
 ## 2.5.3 - Launcher, splash, and theme polish
 
 - Route each custom launcher alias through an Activity with the matching Android 12+ splash theme.

@@ -30,6 +30,7 @@ final class PlaybackQueueResolver {
         Map<String, Track> tracksByUri = new HashMap<>();
         for (Track track : library) {
             tracksByUri.put(track.uri, track);
+            tracksByUri.put(track.trackId, track);
         }
 
         ArrayList<Track> restored = new ArrayList<>();

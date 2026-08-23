@@ -13,7 +13,7 @@ import java.util.Random;
 /** Lightweight decorative particles that never participate in touch dispatch. */
 final class ParticleEffectsView extends View {
     private static final int MAX_PARTICLES = 28;
-    private static final long MOVE_EMIT_INTERVAL_MS = 70L;
+    private static final long MOVE_EMIT_INTERVAL_MS = 120L;
     private final MainActivityCore host;
     private final ArrayList<Particle> particles = new ArrayList<>();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -32,7 +32,7 @@ final class ParticleEffectsView extends View {
             if (!attached || !windowVisible) {
                 return;
             }
-            if (host.particlesEnabled && getWidth() > 0 && getHeight() > 0) {
+            if (host.appearanceState.particlesEnabled && getWidth() > 0 && getHeight() > 0) {
                 addParticle(random.nextFloat() * getWidth(), random.nextFloat() * getHeight(), false);
             }
             postDelayed(this, ambientDelayMs());
@@ -50,19 +50,17 @@ final class ParticleEffectsView extends View {
     }
 
     void observeTouch(MotionEvent event) {
-        if (!host.particlesEnabled || getVisibility() != VISIBLE) {
+        if (!host.appearanceState.particlesEnabled || getVisibility() != VISIBLE) {
             return;
         }
         int action = event.getActionMasked();
-        int[] location = new int[2];
-        getLocationOnScreen(location);
-        float x = event.getRawX() - location[0];
-        float y = event.getRawY() - location[1];
+        float x = event.getX();
+        float y = event.getY();
         if (action == MotionEvent.ACTION_DOWN) {
             lastTouchX = x;
             lastTouchY = y;
             lastMoveEmitTime = SystemClock.uptimeMillis();
-            emitBurst(x, y, 7);
+            emitBurst(x, y, 4);
         } else if (action == MotionEvent.ACTION_MOVE) {
             long now = SystemClock.uptimeMillis();
             float dx = x - lastTouchX;
@@ -71,7 +69,7 @@ final class ParticleEffectsView extends View {
                 lastTouchX = x;
                 lastTouchY = y;
                 lastMoveEmitTime = now;
-                emitBurst(x, y, 2);
+                emitBurst(x, y, 1);
             }
         }
     }
@@ -112,7 +110,7 @@ final class ParticleEffectsView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (!host.particlesEnabled) {
+        if (!host.appearanceState.particlesEnabled) {
             particles.clear();
             return;
         }
@@ -146,7 +144,7 @@ final class ParticleEffectsView extends View {
 
     private void updateEmitter() {
         removeCallbacks(ambientEmitter);
-        if (attached && windowVisible && host.particlesEnabled) {
+        if (attached && windowVisible && host.appearanceState.particlesEnabled) {
             postDelayed(ambientEmitter, 350L);
         } else {
             particles.clear();
@@ -160,7 +158,7 @@ final class ParticleEffectsView extends View {
         Particle particle = new Particle();
         particle.x = x;
         particle.y = y;
-        float sizeScale = host.particleSize / 100.0f;
+        float sizeScale = host.appearanceState.particleSize / 100.0f;
         particle.size = host.dp(touchParticle ? 10 + random.nextInt(9) : 8 + random.nextInt(11)) * sizeScale;
         float speed = host.dp(touchParticle ? 22 + random.nextInt(38) : 8 + random.nextInt(18));
         float angle = (float) (random.nextDouble() * Math.PI * 2.0);
@@ -168,13 +166,13 @@ final class ParticleEffectsView extends View {
         particle.velocityY = (float) Math.sin(angle) * speed - host.dp(touchParticle ? 12 : 5);
         particle.rotation = random.nextInt(360);
         particle.rotationSpeed = signedRandom(38.0f);
-        float lifetimeScale = host.particleLifetime / 100.0f;
+        float lifetimeScale = host.appearanceState.particleLifetime / 100.0f;
         long baseLifetime = touchParticle ? 1200L + random.nextInt(801) : 2600L + random.nextInt(1801);
         particle.lifeMs = Math.round(baseLifetime * lifetimeScale);
-        int primaryColor = host.particlePrimaryColor != 0
-                ? host.particlePrimaryColor : host.purple;
-        int secondaryColor = host.particleSecondaryColor != 0
-                ? host.particleSecondaryColor : host.yellow;
+        int primaryColor = host.appearanceState.particlePrimaryColor != 0
+                ? host.appearanceState.particlePrimaryColor : host.purple;
+        int secondaryColor = host.appearanceState.particleSecondaryColor != 0
+                ? host.appearanceState.particleSecondaryColor : host.yellow;
         particle.color = random.nextBoolean() ? primaryColor : secondaryColor;
         particle.maxAlpha = touchParticle ? 145 + random.nextInt(56) : 55 + random.nextInt(41);
         particle.lightning = random.nextBoolean();
@@ -228,7 +226,7 @@ final class ParticleEffectsView extends View {
     }
 
     private long ambientDelayMs() {
-        int frequency = Math.max(10, Math.min(100, host.particleFrequency));
+        int frequency = Math.max(10, Math.min(100, host.appearanceState.particleFrequency));
         long base = 2600L - frequency * 22L;
         return Math.max(350L, base + random.nextInt(301));
     }

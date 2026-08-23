@@ -1,0 +1,54 @@
+plugins {
+    id "com.android.test"
+}
+
+android {
+    namespace "com.dumuzeyn.mp3player.benchmark.test"
+    compileSdk 36
+    targetProjectPath = ":app"
+    experimentalProperties["android.experimental.self-instrumenting"] = true
+
+    signingConfigs {
+        ciDebug {
+            storeFile rootProject.file(".github/ci-debug.keystore")
+            keyAlias "ci-debug"
+            storePassword "android"
+            keyPassword "android"
+        }
+    }
+
+    defaultConfig {
+        minSdk 23
+        targetSdk 35
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR,LOW-BATTERY"
+        signingConfig signingConfigs.ciDebug
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        benchmark {
+            debuggable false
+            minifyEnabled true
+            proguardFiles "proguard-rules.pro"
+            matchingFallbacks = ["release"]
+        }
+    }
+
+    testOptions {
+        animationsDisabled true
+    }
+}
+
+dependencies {
+    implementation "androidx.test.ext:junit:1.2.1"
+    implementation "androidx.test.uiautomator:uiautomator:2.4.0"
+    implementation "androidx.benchmark:benchmark-macro-junit4:1.4.1"
+    implementation "androidx.profileinstaller:profileinstaller:1.4.1"
+    implementation "androidx.startup:startup-runtime:1.2.0"
+    compileOnly "com.google.errorprone:error_prone_annotations:2.36.0"
+}

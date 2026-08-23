@@ -23,24 +23,24 @@ final class DialogController {
 
     void showConfirmation(String title, String message, String negativeLabel,
             String positiveLabel, boolean emphasizePositive, Runnable yesAction) {
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(title, 22, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
-        TextView messageView = host.text(message, 16, false);
+        panel.addView(host.uiFactory.text(title, 22, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
+        TextView messageView = host.uiFactory.text(message, 16, false);
         messageView.setTextColor(host.muted);
         messageView.setPadding(0, host.dp(4), 0, host.dp(14));
         panel.addView(messageView, new LinearLayout.LayoutParams(-1, -2));
-        LinearLayout actions = host.row();
-        Button no = host.button(negativeLabel);
+        LinearLayout actions = host.uiFactory.row();
+        Button no = host.uiFactory.button(negativeLabel);
         if (!emphasizePositive) {
-            host.applyPrimaryButtonStyle(no);
+            host.uiFactory.applyPrimaryButtonStyle(no);
         }
         no.setOnClickListener(view -> close(shade));
         actions.addView(no, new LinearLayout.LayoutParams(0, host.dp(54), 1.0f));
-        Button yes = host.button(positiveLabel);
+        Button yes = host.uiFactory.button(positiveLabel);
         if (emphasizePositive) {
-            host.applyPrimaryButtonStyle(yes);
+            host.uiFactory.applyPrimaryButtonStyle(yes);
         }
         yes.setOnClickListener(view -> {
             close(shade);
@@ -50,13 +50,13 @@ final class DialogController {
         panel.addView(actions);
         shade.addView(panel, host.centerParams(host.dp(330), -2));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     private void close(FrameLayout shade) {
         if (shade.getParent() != null) {
             host.overlayHost.removeView(shade);
         }
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 }

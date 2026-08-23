@@ -1,8 +1,10 @@
 package com.dumuzeyn.mp3player;
 
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.widget.Button;
 
 final class ButtonFactory {
@@ -27,6 +29,10 @@ final class ButtonFactory {
         button.setMinWidth(0);
         button.setMinHeight(0);
         button.setBackgroundColor(Color.TRANSPARENT);
+        button.setForeground(new RippleDrawable(
+                ColorStateList.valueOf(Color.argb(42, Color.red(host.fg),
+                        Color.green(host.fg), Color.blue(host.fg))),
+                null, rippleMask()));
         host.themeController.applyTextOutline(button);
         return button;
     }
@@ -59,7 +65,7 @@ final class ButtonFactory {
     }
 
     void applySecondary(Button button) {
-        applySecondary(button, host.cardOpacity);
+        applySecondary(button, host.appearanceState.cardOpacity);
     }
 
     void applySecondary(Button button, int opacity) {
@@ -72,12 +78,13 @@ final class ButtonFactory {
 
     void applyPlayerTool(Button button, boolean active) {
         button.setSingleLine(true);
-        button.setTextSize(13.0f);
+        button.setTextSize(14.0f);
         button.setTextColor(active ? host.yellow : host.primaryText);
-        GradientDrawable drawable = background(Color.TRANSPARENT, false);
+        GradientDrawable drawable = background(
+                host.cardSurfaceColor(host.card, Math.max(68, host.appearanceState.cardOpacity)), false);
         drawable.setStroke(host.dp(1), active ? host.purple : host.cardStroke);
         button.setBackground(drawable);
-        TextOutlinePolicy.markCardSurface(button, false);
+        TextOutlinePolicy.markCardSurface(button, true);
     }
 
     private GradientDrawable background(int color, boolean outlined) {
@@ -88,5 +95,12 @@ final class ButtonFactory {
             drawable.setStroke(host.dp(1), host.cardStroke);
         }
         return drawable;
+    }
+
+    private GradientDrawable rippleMask() {
+        GradientDrawable mask = new GradientDrawable();
+        mask.setColor(Color.WHITE);
+        mask.setCornerRadius(host.dp(16));
+        return mask;
     }
 }

@@ -53,4 +53,19 @@ public class PlaybackQueueResolverTest {
         assertEquals("uri:second", restored.get(0).uri);
         assertEquals("uri:first", restored.get(1).uri);
     }
+
+    @Test
+    public void stableIdRestoresQueueAfterUriChanges() {
+        ArrayList<Track> library = new ArrayList<>();
+        Track moved = new Track("track-stable", "content://new/location", "Moved",
+                "Artist", "Album", "Genre", 1000, 100L, 10L, "hash");
+        library.add(moved);
+        ArrayList<String> savedIds = new ArrayList<>();
+        savedIds.add("track-stable");
+
+        ArrayList<Track> restored = PlaybackQueueResolver.restore(library, savedIds, null);
+
+        assertEquals(1, restored.size());
+        assertEquals("content://new/location", restored.get(0).uri);
+    }
 }

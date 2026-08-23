@@ -10,6 +10,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,12 +72,13 @@ final class AudioImportController {
         }
         final int permissionFlags = data.getFlags();
         final HashSet<String> knownUris = new HashSet<>();
-        for (Track track : host.tracks) {
+        final ArrayList<Track> existingTracks = new ArrayList<>(host.libraryState.tracks);
+        for (Track track : host.libraryState.tracks) {
             knownUris.add(track.uri);
         }
         try {
             importExecutor.execute(() -> processImport(
-                    selectedUris, selectedTree, permissionFlags, knownUris));
+                    selectedUris, selectedTree, permissionFlags, knownUris, existingTracks));
         } catch (RejectedExecutionException ignored) {
             return false;
         }
@@ -89,13 +91,13 @@ final class AudioImportController {
     }
 
     private void processImport(ArrayList<Uri> selectedUris, Uri treeUri, int permissionFlags,
-            HashSet<String> knownUris) {
+            HashSet<String> knownUris, ArrayList<Track> existingTracks) {
         ArrayList<Track> imported = new ArrayList<>();
         if (treeUri != null) {
-            importFolder(treeUri, permissionFlags, knownUris, imported);
+            importFolder(treeUri, permissionFlags, knownUris, imported, existingTracks);
         } else {
             for (Uri uri : selectedUris) {
-                Track track = readTrack(uri, permissionFlags, true, knownUris);
+                Track track = readTrack(uri, permissionFlags, true, knownUris, existingTracks);
                 if (track != null) {
                     imported.add(track);
                     TrackStore.upsert(host, track);
@@ -110,37 +112,43 @@ final class AudioImportController {
                 return;
             }
             for (Track track : imported) {
-                if (host.findTrack(track.uri) == null) {
-                    host.tracks.add(track);
+                int existingIndex = indexOfTrackId(host.libraryState.tracks, track.trackId);
+                if (existingIndex >= 0) {
+                    host.libraryState.tracks.set(existingIndex, track);
+                } else if (host.findTrack(track.uri) == null) {
+                    host.libraryState.tracks.add(track);
                 }
             }
-            TrackStore.sort(host.tracks);
+            TrackStore.sort(host.libraryState.tracks);
+            host.libraryRepository.reindex();
             host.render();
         });
     }
 
     private void importFolder(Uri treeUri, int flags, HashSet<String> knownUris,
-            ArrayList<Track> importedTracks) {
+            ArrayList<Track> importedTracks, ArrayList<Track> existingTracks) {
         if (treeUri == null || !"content".equalsIgnoreCase(treeUri.getScheme())) {
             return;
         }
         int takeFlags = flags & Intent.FLAG_GRANT_READ_URI_PERMISSION;
         try {
             host.getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
+            PersistedFolderStore.remember(host, treeUri);
         } catch (RuntimeException error) {
             Log.w(DEBUG_TAG, "persist_folder_permission_failed uri=" + treeUri + " error=" + error.getMessage());
         }
         int[] imported = {0};
         try {
             scanDocumentTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri), imported,
-                    knownUris, importedTracks);
+                    knownUris, importedTracks, existingTracks);
         } catch (RuntimeException error) {
             Log.w(DEBUG_TAG, "folder_import_failed uri=" + treeUri + " error=" + error.getMessage());
         }
     }
 
     private void scanDocumentTree(Uri treeUri, String documentId, int[] imported,
-            HashSet<String> knownUris, ArrayList<Track> importedTracks) {
+            HashSet<String> knownUris, ArrayList<Track> importedTracks,
+            ArrayList<Track> existingTracks) {
         if (closed || imported[0] >= MAX_FOLDER_IMPORT) {
             return;
         }
@@ -158,9 +166,10 @@ final class AudioImportController {
                 String displayName = cursor.getString(2);
                 Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId);
                 if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)) {
-                    scanDocumentTree(treeUri, childId, imported, knownUris, importedTracks);
+                    scanDocumentTree(treeUri, childId, imported, knownUris, importedTracks,
+                            existingTracks);
                 } else if (isAudioDocument(mimeType, displayName)) {
-                    Track track = readTrack(childUri, 0, false, knownUris);
+                    Track track = readTrack(childUri, 0, false, knownUris, existingTracks);
                     if (track != null) {
                         importedTracks.add(track);
                         TrackStore.upsert(host, track);
@@ -185,7 +194,7 @@ final class AudioImportController {
     }
 
     private Track readTrack(Uri uri, int permissionFlags, boolean persistPermission,
-            Set<String> knownUris) {
+            Set<String> knownUris, List<Track> existingTracks) {
         if (!isSafeAudioUri(uri)) {
             Log.w(DEBUG_TAG, "add_track_rejected uri=" + uri + " reason=unsafe");
             return null;
@@ -217,6 +226,21 @@ final class AudioImportController {
             }
             Track track = TrackStore.fromUri(host, uri);
             if (track != null) {
+                List<Track> matches = TrackRelinker.candidates(existingTracks, track);
+                if (matches.size() == 1
+                        && !TrackStore.canOpenForRead(host, matches.get(0).asUri())) {
+                    Track old = matches.get(0);
+                    track = new Track(old.trackId, track.uri, track.title, track.artist,
+                            track.album, track.genre, track.durationMs, track.fileSize,
+                            track.lastModified, track.fingerprint);
+                } else if (matches.size() > 1) {
+                    Log.w(DEBUG_TAG, "relink_requires_confirmation candidates="
+                            + matches.size());
+                    Track ambiguous = track;
+                    host.uiHandler.post(() -> confirmAmbiguousImport(ambiguous,
+                            matches.size()));
+                    return null;
+                }
                 knownUris.add(value);
                 Log.i(DEBUG_TAG, "add_track_saved uri=" + uri + " title=" + track.title
                         + " durationMs=" + track.durationMs);
@@ -226,6 +250,57 @@ final class AudioImportController {
             Log.e(DEBUG_TAG, "add_track_failed uri=" + uri + " error=" + error.getMessage(), error);
             return null;
         }
+    }
+
+    void rescanPersistedFolders() {
+        ArrayList<Uri> trees = new ArrayList<>(PersistedFolderStore.readableTrees(host));
+        if (trees.isEmpty()) {
+            openFolder();
+            return;
+        }
+        HashSet<String> knownUris = new HashSet<>();
+        ArrayList<Track> existing = new ArrayList<>(host.libraryState.tracks);
+        for (Track track : existing) {
+            knownUris.add(track.uri);
+        }
+        importExecutor.execute(() -> {
+            for (Uri tree : trees) {
+                processImport(new ArrayList<Uri>(), tree, 0, knownUris, existing);
+            }
+        });
+    }
+
+    private static int indexOfTrackId(List<Track> tracks, String trackId) {
+        for (int index = 0; index < tracks.size(); index++) {
+            if (tracks.get(index).trackId.equals(trackId)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private void confirmAmbiguousImport(Track track, int candidateCount) {
+        if (closed) {
+            return;
+        }
+        host.showActionPanel(
+                host.tr("Possible moved file", "Возможно, файл был перемещён"),
+                host.tr("Voltune found several similar unavailable records. Import this file "
+                                + "as a separate track? Candidates: ",
+                        "Voltune нашёл несколько похожих недоступных записей. Импортировать "
+                                + "этот файл как отдельный трек? Совпадений: ")
+                        + candidateCount,
+                host.tr("Cancel", "Отмена"),
+                host.tr("Import separately", "Импортировать отдельно"),
+                true,
+                () -> {
+                    TrackStore.upsert(host, track);
+                    if (host.findTrack(track.uri) == null) {
+                        host.libraryState.tracks.add(track);
+                        TrackStore.sort(host.libraryState.tracks);
+                    }
+                    host.render();
+                });
     }
 
     private boolean isSafeAudioUri(Uri uri) {

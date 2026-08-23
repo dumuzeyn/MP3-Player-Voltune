@@ -20,6 +20,11 @@ final class SwipeController {
     private boolean startedOnMiniPlayer;
     private boolean consuming;
     private ScrollView previewScroll;
+    private LinearLayout previewList;
+    private View currentSurface;
+    private View previewSurface;
+    private boolean previewUsesSongsSurface;
+    private MainRenderer.PreviewState previewState;
     private int targetIndex = -1;
     private int direction;
     private int width;
@@ -33,7 +38,7 @@ final class SwipeController {
     }
 
     boolean handle(MotionEvent event) {
-        if (host.tabs == null || host.tabs.length == 0 || (host.tabAnimating && !consuming)) {
+        if (host.tabs == null || host.tabs.length == 0 || (host.navigationState.tabAnimating && !consuming)) {
             return false;
         }
         if (host.overlayHost != null && host.overlayHost.getChildCount() > 0) {
@@ -62,16 +67,16 @@ final class SwipeController {
                 if (host.root != null && host.root.getParent() != null) {
                     host.root.getParent().requestDisallowInterceptTouchEvent(true);
                 }
-                if (host.animations) {
+                if (host.appearanceState.animations) {
                     prepareAdjacentTransition(deltaX < 0.0f ? 1 : -1);
                 }
             }
             if (!consuming) {
                 return false;
             }
-            if (host.animations) {
+            if (host.appearanceState.animations) {
                 int requestedDirection = deltaX < 0.0f ? 1 : -1;
-                if (requestedDirection != direction && Math.abs(deltaX) > host.dp(SWIPE_START_DP)) {
+                if (requestedDirection != direction && Math.abs(deltaX) > host.dp(36)) {
                     cleanupPreview();
                     prepareAdjacentTransition(requestedDirection);
                 }
@@ -96,10 +101,11 @@ final class SwipeController {
         boolean commit = action == MotionEvent.ACTION_UP
                 && Math.abs(deltaX) > host.dp(SWIPE_COMMIT_DP)
                 && Math.abs(deltaX) > Math.abs(deltaY);
-        if (!host.animations) {
+        if (!host.appearanceState.animations) {
             if (commit) {
                 int target = adjacentIndex(deltaX < 0.0f ? 1 : -1);
-                host.completeTabTransition(target, deltaX < 0.0f ? 1 : -1, true, "");
+                host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                        target, deltaX < 0.0f ? 1 : -1, true, ""));
             }
             return true;
         }
@@ -115,13 +121,14 @@ final class SwipeController {
         if (host.tabs == null || target < 0 || target >= host.tabs.length) {
             return;
         }
-        if (target == host.tabIndex) {
-            host.search = search == null ? "" : search;
+        if (target == host.navigationState.tabIndex) {
+            host.navigationState.search = search == null ? "" : search;
             host.render();
             return;
         }
-        if (!host.animations || host.contentHost == null || host.contentHost.getWidth() <= 0) {
-            host.completeTabTransition(target, requestedDirection, saveHistory, search);
+        if (!host.appearanceState.animations || host.contentHost == null || host.contentHost.getWidth() <= 0) {
+            host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                    target, requestedDirection, saveHistory, search));
             return;
         }
         prepareTransition(target, requestedDirection, saveHistory, search);
@@ -141,30 +148,53 @@ final class SwipeController {
         targetSearch = search == null ? "" : search;
         width = Math.max(1, host.contentHost.getWidth());
         transitionDistance = width + host.dp(12);
-        LinearLayout previewList = new LinearLayout(host);
+        currentSurface = host.navigationState.tabIndex == 0 && host.songsView != null
+                ? host.songsView : host.contentScroll;
+        host.navigationState.tabAnimating = true;
+        host.tabsController.beginTransition(
+                host.navigationState.tabIndex, targetIndex, direction);
+        if (targetIndex == 0 && host.songsView != null) {
+            previewUsesSongsSurface = true;
+            host.songsView.prepareForTransition(
+                    host.libraryState.tracks, targetSearch);
+            previewSurface = host.songsView;
+            previewSurface.setTranslationX(direction * transitionDistance);
+            return;
+        }
+        previewUsesSongsSurface = false;
+        previewList = new LinearLayout(host);
         previewList.setOrientation(LinearLayout.VERTICAL);
-        int previewScrollY = host.renderTabPreview(previewList, targetIndex, targetSearch);
         previewScroll = new ScrollView(host);
         previewScroll.addView(previewList, new FrameLayout.LayoutParams(-1, -2));
-        int previewHeight = Math.max(1, host.contentHost.getHeight());
-        previewScroll.measure(
-                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(previewHeight, View.MeasureSpec.EXACTLY));
-        previewScroll.layout(0, 0, width, previewHeight);
-        previewScroll.scrollTo(0, previewScrollY);
         previewScroll.setTranslationX(direction * transitionDistance);
         host.contentHost.addView(previewScroll, 0, new FrameLayout.LayoutParams(-1, -1));
-        host.tabAnimating = true;
-        host.tabsController.beginTransition(host.tabIndex, targetIndex, direction);
+        previewSurface = previewScroll;
+        final ScrollView expectedScroll = previewScroll;
+        final LinearLayout expectedList = previewList;
+        final int expectedTarget = targetIndex;
+        final String expectedSearch = targetSearch;
+        host.contentHost.post(() -> {
+            if (previewScroll != expectedScroll || previewList != expectedList
+                    || targetIndex != expectedTarget || previewUsesSongsSurface) {
+                return;
+            }
+            previewState = host.renderTabPreview(
+                    expectedList, expectedTarget, expectedSearch);
+            expectedScroll.post(() -> {
+                if (previewScroll == expectedScroll && previewState != null) {
+                    expectedScroll.scrollTo(0, previewState.scrollY);
+                }
+            });
+        });
     }
 
     private void updateOffset(float offset) {
         currentOffset = offset;
-        if (host.contentScroll != null) {
-            host.contentScroll.setTranslationX(offset);
+        if (currentSurface != null) {
+            currentSurface.setTranslationX(offset);
         }
-        if (previewScroll != null) {
-            previewScroll.setTranslationX(offset + (direction * transitionDistance));
+        if (previewSurface != null) {
+            previewSurface.setTranslationX(offset + (direction * transitionDistance));
         }
         host.tabsController.setTransitionProgress(Math.min(1.0f, Math.abs(offset) / Math.max(1.0f, transitionDistance)));
     }
@@ -207,15 +237,45 @@ final class SwipeController {
         int completedDirection = direction;
         boolean shouldRecord = recordHistory;
         String completedSearch = targetSearch;
+        if (previewUsesSongsSurface && previewSurface != null) {
+            previewSurface.setTranslationX(0.0f);
+            previewSurface = null;
+            previewUsesSongsSurface = false;
+            previewScroll = null;
+            previewList = null;
+            previewState = null;
+            targetIndex = -1;
+            resetCurrentContent();
+            host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                    completedTarget, completedDirection, shouldRecord, completedSearch));
+            return;
+        }
+        if (previewScroll != null && previewList != null
+                && previewState != null) {
+            ScrollView committedScroll = previewScroll;
+            LinearLayout committedList = previewList;
+            MainRenderer.PreviewState committedState = previewState;
+            previewScroll = null;
+            previewList = null;
+            previewState = null;
+            previewSurface = null;
+            targetIndex = -1;
+            resetCurrentContent();
+            host.tabTransitionCoordinator.completeWithPreview(new TabTransitionRequest(
+                    completedTarget, completedDirection, shouldRecord, completedSearch,
+                    committedScroll, committedList, committedState));
+            return;
+        }
         cleanupPreview();
         resetCurrentContent();
-        host.completeTabTransition(completedTarget, completedDirection, shouldRecord, completedSearch);
+        host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
+                completedTarget, completedDirection, shouldRecord, completedSearch));
     }
 
     private void finishCancelledTransition() {
         cleanupPreview();
         resetCurrentContent();
-        host.tabAnimating = false;
+        host.navigationState.tabAnimating = false;
         host.tabsController.cancelTransition();
     }
 
@@ -223,12 +283,26 @@ final class SwipeController {
         if (previewScroll != null && previewScroll.getParent() == host.contentHost) {
             host.contentHost.removeView(previewScroll);
         }
+        if (previewUsesSongsSurface && host.songsView != null
+                && host.navigationState.tabIndex != 0) {
+            host.songsView.hide();
+        }
         previewScroll = null;
+        previewList = null;
+        previewState = null;
+        previewSurface = null;
+        previewUsesSongsSurface = false;
+        host.discardTabPreview();
         targetIndex = -1;
     }
 
     private void resetCurrentContent() {
         currentOffset = 0.0f;
+        if (currentSurface != null) {
+            currentSurface.setTranslationX(0.0f);
+            currentSurface.setAlpha(1.0f);
+        }
+        currentSurface = null;
         if (host.contentScroll != null) {
             host.contentScroll.setTranslationX(0.0f);
             host.contentScroll.setAlpha(1.0f);
@@ -242,7 +316,7 @@ final class SwipeController {
     private int adjacentIndex(int requestedDirection) {
         int count = host.tabs.length;
         return requestedDirection > 0
-                ? (host.tabIndex + 1) % count
-                : (host.tabIndex - 1 + count) % count;
+                ? (host.navigationState.tabIndex + 1) % count
+                : (host.navigationState.tabIndex - 1 + count) % count;
     }
 }

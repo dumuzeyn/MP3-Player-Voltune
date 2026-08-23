@@ -1,0 +1,8 @@
+HSPLcom/dumuzeyn/mp3player/Mp3PlayerApplication;-><init>()V
+HSPLcom/dumuzeyn/mp3player/MainActivity;-><init>()V
+HSPLcom/dumuzeyn/mp3player/MainActivityCore;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/dumuzeyn/mp3player/MainRenderer;->render()V
+HSPLcom/dumuzeyn/mp3player/SongsRenderer;->render(Ljava/util/ArrayList;)V
+HSPLcom/dumuzeyn/mp3player/PlaybackController;->connect()V
+HSPLcom/dumuzeyn/mp3player/FullPlayerController;->open()V
+Lcom/dumuzeyn/mp3player/TabsController;

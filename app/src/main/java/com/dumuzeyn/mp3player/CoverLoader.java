@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaMetadataRetriever;
+import android.content.Context;
+import android.os.Handler;
 import android.util.LruCache;
 import android.widget.ImageView;
 import java.lang.ref.WeakReference;
@@ -16,16 +18,19 @@ import java.util.concurrent.RejectedExecutionException;
 
 final class CoverLoader {
     private static final int MAX_COVER_BYTES = 8 * 1024 * 1024;
-    private static final int THUMB_SIZE = 160;
+    static final int THUMB_SIZE = 160;
 
-    private final MainActivityCore host;
+    private final Context context;
+    private final Handler mainHandler;
     private final LruCache<String, Bitmap> cache;
+    private volatile ArtworkDiskCache diskCache;
     private final Map<String, ArrayList<WeakReference<ImageView>>> pendingTargets = new LinkedHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private volatile boolean closed;
 
-    CoverLoader(MainActivityCore host) {
-        this.host = host;
+    CoverLoader(Context context, Handler mainHandler) {
+        this.context = context;
+        this.mainHandler = mainHandler;
         int maxKb = (int) Math.min(16L * 1024L,
                 Math.max(6L * 1024L, Runtime.getRuntime().maxMemory() / 1024L / 16L));
         cache = new LruCache<String, Bitmap>(maxKb) {
@@ -38,6 +43,21 @@ final class CoverLoader {
 
     void load(ImageView view, Track track, int fallbackColor) {
         load(view, track, fallbackColor, THUMB_SIZE);
+    }
+
+    void loadCachedOnly(ImageView view, Track track, int fallbackColor, int maxSize) {
+        String key = key(track, maxSize);
+        view.setTag(key);
+        Bitmap cached = cache.get(key);
+        if (cached == null && maxSize != THUMB_SIZE) {
+            cached = cache.get(key(track, THUMB_SIZE));
+        }
+        if (cached != null && !cached.isRecycled()) {
+            view.setImageBitmap(cached);
+        } else {
+            view.setImageDrawable(null);
+            view.setBackgroundColor(fallbackColor);
+        }
     }
 
     void load(final ImageView view, final Track track, int fallbackColor, final int maxSize) {
@@ -73,7 +93,15 @@ final class CoverLoader {
         }
         try {
             executor.execute(() -> {
-                final Bitmap bitmap = read(track, maxSize);
+                ArtworkDiskCache persistentCache = diskCache();
+                Bitmap loaded = persistentCache.read(key);
+                if (loaded == null) {
+                    loaded = read(track, maxSize);
+                    if (loaded != null) {
+                        persistentCache.write(key, loaded);
+                    }
+                }
+                final Bitmap bitmap = loaded;
                 if (closed) {
                     return;
                 }
@@ -87,7 +115,7 @@ final class CoverLoader {
                 synchronized (pendingTargets) {
                     targets = pendingTargets.remove(key);
                 }
-                host.uiHandler.post(() -> {
+                mainHandler.post(() -> {
                     if (closed || bitmap == null || targets == null) {
                         return;
                     }
@@ -114,6 +142,15 @@ final class CoverLoader {
         if (bitmap != null && !bitmap.isRecycled()) {
             cache.put(key(track, THUMB_SIZE), bitmap);
         }
+    }
+
+    void clear(ImageView view, int fallbackColor) {
+        if (view == null) {
+            return;
+        }
+        view.setTag(null);
+        view.setImageDrawable(null);
+        view.setBackgroundColor(fallbackColor);
     }
 
     void trimMemory(int level) {
@@ -158,7 +195,7 @@ final class CoverLoader {
     private Bitmap read(Track track, int maxSize) {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
-            retriever.setDataSource(host, track.asUri());
+            retriever.setDataSource(context, track.asUri());
             byte[] picture = retriever.getEmbeddedPicture();
             if (picture == null || picture.length > MAX_COVER_BYTES) {
                 return null;
@@ -199,6 +236,20 @@ final class CoverLoader {
     }
 
     private String key(Track track, int maxSize) {
-        return track.uri + "#" + maxSize;
+        return track.trackId + "|" + track.uri + "|" + track.fileSize + "|"
+                + track.lastModified + "|" + track.fingerprint + "#" + maxSize;
+    }
+
+    private ArtworkDiskCache diskCache() {
+        ArtworkDiskCache current = diskCache;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            if (diskCache == null) {
+                diskCache = new ArtworkDiskCache(context);
+            }
+            return diskCache;
+        }
     }
 }

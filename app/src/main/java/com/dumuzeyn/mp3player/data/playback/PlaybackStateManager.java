@@ -2,7 +2,10 @@ package com.dumuzeyn.mp3player.data.playback;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import com.dumuzeyn.mp3player.MiniPlayerRetentionPolicy;
 import com.dumuzeyn.mp3player.Track;
+import com.dumuzeyn.mp3player.PlaybackSnapshot;
+import com.dumuzeyn.mp3player.RepeatModeMapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
@@ -12,6 +15,7 @@ public final class PlaybackStateManager {
     public static final String PREFS = "player_resume";
     private static final String DURATION = "duration";
     private static final String INDEX = "index";
+    private static final String INACTIVE_SINCE = "inactiveSince";
     private static final String LOOP_MODE = "loopMode";
     private static final String PLAYING = "playing";
     private static final String POSITION = "position";
@@ -38,11 +42,19 @@ public final class PlaybackStateManager {
                 preferences.getBoolean(PLAYING, false),
                 preferences.getBoolean(SHUFFLE, false),
                 preferences.getLong(SAVED_AT, 0L),
+                preferences.getLong(INACTIVE_SINCE, 0L),
                 queueUris(preferences.getString(QUEUE, "[]")));
     }
 
     public void save(Snapshot snapshot, boolean includeQueue) {
         String queueJson = queueJson(snapshot.queueUris);
+        long now = System.currentTimeMillis();
+        long inactiveSince = snapshot.playing
+                ? 0L
+                : preferences.getLong(INACTIVE_SINCE, 0L);
+        if (!snapshot.playing && inactiveSince <= 0L) {
+            inactiveSince = now;
+        }
         SharedPreferences.Editor editor = preferences.edit()
                 .putString(URI, snapshot.uri)
                 .putInt(POSITION, Math.max(0, snapshot.position))
@@ -51,7 +63,8 @@ public final class PlaybackStateManager {
                 .putInt(LOOP_MODE, snapshot.loopMode)
                 .putBoolean(PLAYING, snapshot.playing)
                 .putBoolean(SHUFFLE, snapshot.shuffle)
-                .putLong(SAVED_AT, System.currentTimeMillis());
+                .putLong(SAVED_AT, now)
+                .putLong(INACTIVE_SINCE, inactiveSince);
         if (includeQueue || !queueJson.equals(lastSavedQueueJson)) {
             editor.putString(QUEUE, queueJson);
             lastSavedQueueJson = queueJson;
@@ -61,6 +74,25 @@ public final class PlaybackStateManager {
         } else {
             editor.apply();
         }
+    }
+
+    public void save(PlaybackSnapshot snapshot, String currentUri, List<Track> queue,
+            boolean includeQueue) {
+        boolean playbackActive = MiniPlayerRetentionPolicy.isPlaybackActive(
+                snapshot.playWhenReady, snapshot.phase, snapshot.stopReason);
+        save(new Snapshot(currentUri, (int) Math.min(Integer.MAX_VALUE, snapshot.positionMs),
+                (int) Math.min(Integer.MAX_VALUE, snapshot.durationMs), snapshot.currentIndex,
+                RepeatModeMapper.fromMedia3(snapshot.repeatMode),
+                playbackActive, snapshot.shuffleEnabled, queue), includeQueue);
+    }
+
+    public void save(PlaybackSnapshot snapshot, String currentUri, boolean includeQueue) {
+        boolean playbackActive = MiniPlayerRetentionPolicy.isPlaybackActive(
+                snapshot.playWhenReady, snapshot.phase, snapshot.stopReason);
+        save(new Snapshot(currentUri, (int) Math.min(Integer.MAX_VALUE, snapshot.positionMs),
+                (int) Math.min(Integer.MAX_VALUE, snapshot.durationMs), snapshot.currentIndex,
+                RepeatModeMapper.fromMedia3(snapshot.repeatMode), playbackActive,
+                snapshot.shuffleEnabled, new ArrayList<>(snapshot.queueMediaIds)), includeQueue);
     }
 
     public void clear() {
@@ -77,10 +109,12 @@ public final class PlaybackStateManager {
         public final boolean playing;
         public final boolean shuffle;
         public final long savedAt;
+        public final long inactiveSince;
         public final ArrayList<String> queueUris;
 
         State(String uri, int position, int duration, int index, int loopMode, boolean playing,
-                boolean shuffle, long savedAt, ArrayList<String> queueUris) {
+                boolean shuffle, long savedAt, long inactiveSince,
+                ArrayList<String> queueUris) {
             this.uri = uri;
             this.position = position;
             this.duration = duration;
@@ -89,6 +123,7 @@ public final class PlaybackStateManager {
             this.playing = playing;
             this.shuffle = shuffle;
             this.savedAt = savedAt;
+            this.inactiveSince = inactiveSince;
             this.queueUris = queueUris;
         }
     }
@@ -105,6 +140,11 @@ public final class PlaybackStateManager {
 
         public Snapshot(String uri, int position, int duration, int index, int loopMode,
                 boolean playing, boolean shuffle, List<Track> queue) {
+            this(uri, position, duration, index, loopMode, playing, shuffle, trackIds(queue));
+        }
+
+        private Snapshot(String uri, int position, int duration, int index, int loopMode,
+                boolean playing, boolean shuffle, ArrayList<String> queueIds) {
             this.uri = uri == null ? "" : uri;
             this.position = position;
             this.duration = duration;
@@ -112,10 +152,15 @@ public final class PlaybackStateManager {
             this.loopMode = loopMode;
             this.playing = playing;
             this.shuffle = shuffle;
-            this.queueUris = new ArrayList<>();
+            this.queueUris = queueIds;
+        }
+
+        private static ArrayList<String> trackIds(List<Track> queue) {
+            ArrayList<String> ids = new ArrayList<>();
             for (Track track : queue) {
-                this.queueUris.add(track.uri);
+                ids.add(track.trackId);
             }
+            return ids;
         }
     }
 

@@ -10,18 +10,23 @@ import android.widget.TextView;
 
 final class MiniPlayerController {
     private final MainActivityCore host;
+    private final PlaybackActions playbackActions;
+    private final PlaybackStateProvider playbackState;
     private boolean draggingMiniPlayer = false;
 
-    MiniPlayerController(MainActivityCore host) {
+    MiniPlayerController(MainActivityCore host, PlaybackActions playbackActions,
+            PlaybackStateProvider playbackState) {
         this.host = host;
+        this.playbackActions = playbackActions;
+        this.playbackState = playbackState;
     }
 
-    void build() {
+    void build(FrameLayout root) {
         host.miniPlayer = new LinearLayout(host);
         host.miniPlayer.setOrientation(LinearLayout.HORIZONTAL);
         host.miniPlayer.setGravity(16);
         host.miniPlayer.setPadding(host.dp(14), 0, host.dp(10), 0);
-        host.applyCardStyle(host.miniPlayer, host.miniPlayerCardOpacity);
+        host.uiFactory.applyCardStyle(host.miniPlayer, host.appearanceState.miniPlayerCardOpacity);
         host.miniPlayer.setVisibility(View.GONE);
         host.miniPlayer.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -33,8 +38,8 @@ final class MiniPlayerController {
 
         LinearLayout textColumn = new LinearLayout(host);
         textColumn.setOrientation(LinearLayout.VERTICAL);
-        host.miniTitle = host.text(host.tr("Song", "Песня"), 16, true);
-        host.miniSub = host.text(host.tr("Unknown artist", "Неизвестный исполнитель"), 12, false);
+        host.miniTitle = host.uiFactory.text(host.tr("Song", "Песня"), 16, true);
+        host.miniSub = host.uiFactory.text(host.tr("Unknown artist", "Неизвестный исполнитель"), 12, false);
         host.miniTitle.setSingleLine(true);
         host.miniTitle.setEllipsize(TextUtils.TruncateAt.END);
         host.miniSub.setSingleLine(true);
@@ -43,17 +48,17 @@ final class MiniPlayerController {
         textColumn.addView(host.miniSub);
         host.miniPlayer.addView(textColumn, new LinearLayout.LayoutParams(0, -2, 1.0f));
 
-        host.miniButton = host.icon("▶");
-        host.applyPrimaryButtonStyle(host.miniButton);
+        host.miniButton = host.uiFactory.icon("▶");
+        host.uiFactory.applyPrimaryButtonStyle(host.miniButton);
         host.miniButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                host.toggleCurrent();
+                playbackActions.togglePlayPause();
             }
         });
-        host.miniPlayer.addView(host.miniButton, host.square(52));
+        host.miniPlayer.addView(host.miniButton, host.uiFactory.square(52));
 
-        host.root.addView(host.miniPlayer, host.responsiveLayoutController.miniPlayerParams());
+        root.addView(host.miniPlayer, host.responsiveLayoutController.miniPlayerParams());
     }
 
     void updateState() {
@@ -84,18 +89,18 @@ final class MiniPlayerController {
     }
 
     private void openFullPlayerFromMini(final View view) {
-        if (host.animations) {
+        if (host.appearanceState.animations) {
             view.animate().scaleX(0.985f).scaleY(0.985f).setDuration(35L).withEndAction(new Runnable() {
                 @Override
                 public void run() {
                     view.animate().scaleX(1.0f).scaleY(1.0f).setDuration(60L).start();
-                    host.fullPlayerOpening = true;
-                    host.openFullPlayer();
+                    host.navigationState.fullPlayerOpening = true;
+                    host.playerUiController.openFullPlayer();
                 }
             }).start();
         } else {
-            host.fullPlayerOpening = true;
-            host.openFullPlayer();
+            host.navigationState.fullPlayerOpening = true;
+            host.playerUiController.openFullPlayer();
         }
     }
 
@@ -104,10 +109,7 @@ final class MiniPlayerController {
     }
 
     private Track currentTrack() {
-        if (host.currentIndex < 0 || host.currentIndex >= host.tracks.size()) {
-            return null;
-        }
-        return host.tracks.get(host.currentIndex);
+        return playbackState.currentTrack();
     }
 
     private boolean isOverlayOpen() {
@@ -117,7 +119,7 @@ final class MiniPlayerController {
     private void bindMiniPlayer(Track track) {
         host.miniTitle.setText(track.title);
         host.miniSub.setText(track.artist);
-        host.miniButton.setText(host.playing ? "Ⅱ" : "▶");
+        host.miniButton.setText(playbackState.isPlaying() ? "Ⅱ" : "▶");
     }
 
     private void hideMiniPlayer() {
@@ -175,7 +177,7 @@ final class MiniPlayerController {
                     dismissMiniPlayer(dx);
                 } else {
                     draggingMiniPlayer = false;
-                    host.miniPlayer.animate().translationX(0.0f).alpha(1.0f).setDuration(host.animations ? 120L : 0L).start();
+                    host.miniPlayer.animate().translationX(0.0f).alpha(1.0f).setDuration(host.appearanceState.animations ? 120L : 0L).start();
                 }
                 return true;
             }
@@ -185,7 +187,7 @@ final class MiniPlayerController {
 
     private void dismissMiniPlayer(float dx) {
         float target = dx < 0.0f ? -host.miniPlayer.getWidth() : host.miniPlayer.getWidth();
-        if (host.animations) {
+        if (host.appearanceState.animations) {
             host.miniPlayer.animate().translationX(target).alpha(0.0f).setDuration(130L).withEndAction(new Runnable() {
                 @Override
                 public void run() {

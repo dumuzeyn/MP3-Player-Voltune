@@ -19,7 +19,7 @@ final class PlaylistController {
         @Override
         public void run() {
             previewTickerScheduled = false;
-            if (previewGeneration != host.songRenderGeneration) {
+            if (previewGeneration != host.navigationState.songRenderGeneration) {
                 previewBindings.clear();
                 return;
             }
@@ -65,7 +65,7 @@ final class PlaylistController {
     ArrayList<Playlist> filteredPlaylists(String query) {
         ArrayList<Playlist> result = new ArrayList<>();
         String normalized = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
-        for (Playlist playlist : host.playlists) {
+        for (Playlist playlist : host.libraryState.playlists) {
             if (normalized.isEmpty()
                     || host.containsSearch(playlist.name, normalized)
                     || playlistContainsSearch(playlist, normalized)) {
@@ -113,7 +113,7 @@ final class PlaylistController {
         ticker.bindTracks(sortedTracks);
         cover.bindPlaylistTracks(sortedTracks);
         cover.bindTrack(sortedTracks.get(0), generation);
-        if (sortedTracks.size() <= 1 || host.playlistTickerSpeed <= 0) {
+        if (sortedTracks.size() <= 1 || host.appearanceState.playlistTickerSpeed <= 0) {
             return;
         }
         previewBindings.add(new PreviewBinding(ticker, cover, sortedTracks, generation));
@@ -121,7 +121,7 @@ final class PlaylistController {
     }
 
     private void schedulePreviewTicker() {
-        if (host.playlistTickerSpeed <= 0) {
+        if (host.appearanceState.playlistTickerSpeed <= 0) {
             host.uiHandler.removeCallbacks(previewTicker);
             previewTickerScheduled = false;
             return;
@@ -149,7 +149,7 @@ final class PlaylistController {
         }
 
         void advanceIfVisible() {
-            if (generation != host.songRenderGeneration || !ticker.isAttachedToWindow()) {
+            if (generation != host.navigationState.songRenderGeneration || !ticker.isAttachedToWindow()) {
                 return;
             }
             if (ticker.isVisibleToUser()) {
@@ -174,13 +174,13 @@ final class PlaylistController {
 
         boolean isCurrentGeneration() {
             return generation == playbackGeneration
-                    && generation == host.songRenderGeneration;
+                    && generation == host.navigationState.songRenderGeneration;
         }
 
         void apply() {
-            marker.setVisibility(host.isCurrentCollection(tracks) ? View.VISIBLE : View.INVISIBLE);
+            marker.setVisibility(host.playbackQueueController.isCurrentCollection(tracks) ? View.VISIBLE : View.INVISIBLE);
             SongRowStateRegistry.applyPlayState(
-                    playButton, host.isPlayingCollection(tracks));
+                    playButton, host.playbackQueueController.isPlayingCollection(tracks));
         }
     }
 
@@ -199,21 +199,21 @@ final class PlaylistController {
                 playlist.uris.add(uri);
             }
         }
-        host.saveState();
+        host.saveLibraryState();
     }
 
     void addTrackToPlaylist(Playlist playlist, Track track) {
         if (!playlist.uris.contains(track.uri)) {
             playlist.uris.add(track.uri);
         }
-        host.saveState();
+        host.saveLibraryState();
     }
 
     Playlist createPlaylist(String rawName) {
         String name = cleanPlaylistName(rawName);
         Playlist playlist = new Playlist(name);
-        host.playlists.add(playlist);
-        host.saveState();
+        host.libraryState.playlists.add(playlist);
+        host.saveLibraryState();
         return playlist;
     }
 
@@ -221,26 +221,26 @@ final class PlaylistController {
         Playlist playlist = createPlaylist(rawName);
         if (!playlist.uris.contains(track.uri)) {
             playlist.uris.add(track.uri);
-            host.saveState();
+            host.saveLibraryState();
         }
         return playlist;
     }
 
     void renamePlaylist(Playlist playlist, String rawName) {
         playlist.name = cleanPlaylistName(rawName);
-        host.saveState();
+        host.saveLibraryState();
     }
 
     void deletePlaylist(Playlist playlist) {
-        host.playlists.remove(playlist);
-        host.saveState();
+        host.libraryState.playlists.remove(playlist);
+        host.saveLibraryState();
     }
 
     void removeTrackFromAllPlaylists(Track track) {
-        for (Playlist playlist : host.playlists) {
+        for (Playlist playlist : host.libraryState.playlists) {
             playlist.uris.remove(track.uri);
         }
-        host.saveState();
+        host.saveLibraryState();
     }
 
     private String cleanPlaylistName(String rawName) {

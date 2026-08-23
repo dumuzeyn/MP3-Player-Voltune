@@ -24,14 +24,18 @@ gradle.taskGraph.whenReady { graph ->
 
 android {
     namespace "com.dumuzeyn.mp3player"
-    compileSdk 35
+    compileSdk 36
+
+    buildFeatures {
+        buildConfig true
+    }
 
     defaultConfig {
         applicationId "com.dumuzeyn.mp3player"
         minSdk 23
         targetSdk 35
-        versionCode 33
-        versionName "2.5.3"
+        versionCode 35
+        versionName "3.0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -68,10 +72,24 @@ android {
             }
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
+
+        benchmark {
+            initWith release
+            applicationIdSuffix ".benchmark"
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ["release"]
+            debuggable false
+        }
     }
 }
 
 dependencies {
+    def media3Version = "1.10.1"
+
+    implementation "androidx.media3:media3-exoplayer:$media3Version"
+    implementation "androidx.media3:media3-session:$media3Version"
+    implementation "androidx.recyclerview:recyclerview:1.4.0"
+    implementation "androidx.profileinstaller:profileinstaller:1.4.1"
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test:core:1.6.1"

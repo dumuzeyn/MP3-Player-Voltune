@@ -1,27 +1,14 @@
 package com.dumuzeyn.mp3player;
 
-import android.app.Activity;
-import java.util.ArrayList;
-import java.util.HashSet;
-
-/** Mutable application state shared by the activity and its controllers. */
-abstract class AppState extends Activity {
-    final ArrayList<Track> tracks = new ArrayList<>();
-    final HashSet<String> favorites = new HashSet<>();
-    final ArrayList<Playlist> playlists = new ArrayList<>();
-    final ArrayList<Track> playbackQueue = new ArrayList<>();
-
-    int tabIndex = 0;
-    int currentIndex = -1;
-    boolean playing = false;
-    int loopMode = 0;
+/** Persisted visual and interaction preferences. */
+final class AppearanceState {
     int customTimerMinutes = 10;
     int resumeWindowMinutes = 120;
     int particleFrequency = 45;
     int particleSize = 100;
     int particleLifetime = 100;
-    int particlePrimaryColor = 0;
-    int particleSecondaryColor = 0;
+    int particlePrimaryColor;
+    int particleSecondaryColor;
     int fullPlayerRotationSpeed = 100;
     int playlistTickerSpeed = 100;
     int cardOpacity = 82;
@@ -35,37 +22,28 @@ abstract class AppState extends Activity {
     int miniPlayerCardOpacity = 82;
     int headerCardOpacity = 82;
     int dialogCardOpacity = 82;
-    int resumePosition = 0;
-    long sleepTimerEndsAt = 0L;
-    boolean dark = false;
+    boolean dark;
     boolean animations = true;
     boolean particlesEnabled = true;
     int playerBackgroundMode = BackgroundSettingsController.MODE_GRADIENT;
     int mainBackgroundMode = BackgroundSettingsController.MODE_SOLID;
-    int mainSolidBackground = 0;
-    int playerSolidBackground = 0;
+    int mainSolidBackground;
+    int playerSolidBackground;
     String mainBackgroundMediaUri = "";
     String playerBackgroundMediaUri = "";
     int mainBackgroundBlur = 20;
     int playerBackgroundBlur = 20;
-    boolean circularCovers = false;
+    boolean circularCovers;
     int mainGradientStart = 0xff351b5d;
     int mainGradientEnd = 0xff3a3013;
     int playerGradientStart = 0xff351b5d;
     int playerGradientEnd = 0xff3a3013;
-    boolean shuffleMode = false;
-    String language = "en";
+    String language = "ru";
     String themeMode = "light";
     int customBg = -1;
     int customFg = -16777216;
     int customSecondaryAccent = 0xffffd000;
-    int customTextColor = 0;
-    boolean textOutlineEnabled = false;
-    int textOutlineColor = 0;
-    int preferredTabDirection = 0;
-    boolean tabAnimating = false;
-    String search = "";
-    boolean fullPlayerOpening = false;
-    int songRenderGeneration = 0;
-    boolean renderingTabPreview = false;
+    int customTextColor;
+    boolean textOutlineEnabled;
+    int textOutlineColor;
 }

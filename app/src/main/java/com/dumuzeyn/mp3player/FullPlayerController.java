@@ -16,6 +16,8 @@ import android.widget.TextView;
 
 final class FullPlayerController {
     private final MainActivityCore host;
+    private final PlaybackActions playbackActions;
+    private final PlaybackStateProvider playbackState;
     private FrameLayout currentSheet;
     private ImageView coverView;
     private TextView titleView;
@@ -29,15 +31,16 @@ final class FullPlayerController {
     private Runnable progressUpdater;
     private boolean seekTracking;
 
-    FullPlayerController(MainActivityCore host) {
+    FullPlayerController(MainActivityCore host, PlaybackActions playbackActions,
+            PlaybackStateProvider playbackState) {
         this.host = host;
+        this.playbackActions = playbackActions;
+        this.playbackState = playbackState;
     }
 
     void open() {
-        if (host.currentIndex < 0 && !host.tracks.isEmpty()) {
-            host.currentIndex = 0;
-        }
-        if (host.currentIndex < 0) {
+        Track track = playbackState.currentTrack();
+        if (track == null) {
             return;
         }
         if (this.currentSheet != null && this.currentSheet.getParent() != null) {
@@ -47,18 +50,34 @@ final class FullPlayerController {
         if (host.miniPlayer != null) {
             host.miniPlayer.setVisibility(View.GONE);
         }
-        Track track = host.tracks.get(host.currentIndex);
         this.boundTrack = track;
         FrameLayout sheet = createSheet();
         this.currentSheet = sheet;
-        sheet.setBackgroundColor(host.playerSolidBackground == 0 ? host.bg : host.playerSolidBackground);
-        if (host.playerBackgroundMode == BackgroundSettingsController.MODE_GRADIENT) {
-            sheet.addView(new PlayerGradientBackground(host, host.playerGradientStart, host.playerGradientEnd),
+        sheet.setBackgroundColor(host.appearanceState.playerSolidBackground == 0 ? host.bg : host.appearanceState.playerSolidBackground);
+        if (host.appearanceState.playerBackgroundMode == BackgroundSettingsController.MODE_GRADIENT) {
+            sheet.addView(new PlayerGradientBackground(host,
+                            new PlayerGradientBackground.Config() {
+                                @Override
+                                public boolean animationsEnabled() {
+                                    return host.appearanceState.animations;
+                                }
+
+                                @Override
+                                public boolean darkTheme() {
+                                    return host.appearanceState.dark;
+                                }
+
+                                @Override
+                                public int baseColor() {
+                                    return host.bg;
+                                }
+                            },
+                            host.appearanceState.playerGradientStart, host.appearanceState.playerGradientEnd),
                     new FrameLayout.LayoutParams(-1, -1));
-        } else if (host.playerBackgroundMode == BackgroundSettingsController.MODE_MEDIA
-                && !host.playerBackgroundMediaUri.isEmpty()) {
-            sheet.addView(new BackgroundMediaView(host, host.playerBackgroundMediaUri,
-                            host.playerBackgroundBlur),
+        } else if (host.appearanceState.playerBackgroundMode == BackgroundSettingsController.MODE_MEDIA
+                && !host.appearanceState.playerBackgroundMediaUri.isEmpty()) {
+            sheet.addView(new BackgroundMediaView(host, host.appearanceState.playerBackgroundMediaUri,
+                            host.appearanceState.playerBackgroundBlur, host.bg),
                     new FrameLayout.LayoutParams(-1, -1));
         }
 
@@ -75,8 +94,8 @@ final class FullPlayerController {
         content.addView(new View(host), new LinearLayout.LayoutParams(-1, 0, 1.0f));
         addTransportRow(content, sheet);
 
-        boolean animateOpen = host.animations && host.fullPlayerOpening;
-        host.fullPlayerOpening = false;
+        boolean animateOpen = host.appearanceState.animations && host.navigationState.fullPlayerOpening;
+        host.navigationState.fullPlayerOpening = false;
         host.overlayHost.addView(sheet, new FrameLayout.LayoutParams(-1, -1));
         if (animateOpen) {
             sheet.setTranslationY(host.getResources().getDisplayMetrics().heightPixels);
@@ -170,7 +189,7 @@ final class FullPlayerController {
                         if (action == MotionEvent.ACTION_UP && drag > host.dp(56)) {
                             closingDown = true;
                             close(this, true);
-                        } else if (host.animations) {
+                        } else if (host.appearanceState.animations) {
                             animate().translationY(0.0f).alpha(1.0f).setDuration(120L).setInterpolator(new DecelerateInterpolator()).start();
                         } else {
                             setTranslationY(0.0f);
@@ -188,27 +207,29 @@ final class FullPlayerController {
     }
 
     private void addHeader(LinearLayout content, FrameLayout sheet) {
-        LinearLayout row = host.row();
-        Button back = host.icon("←");
+        LinearLayout row = host.uiFactory.row();
+        Button back = host.uiFactory.icon("←");
         back.setTextSize(34.0f);
         back.setTypeface(Typeface.DEFAULT_BOLD);
         back.setOnClickListener(view -> close(sheet, false));
-        row.addView(back, host.square(58));
+        row.addView(back, host.uiFactory.square(58));
         row.addView(new View(host), new LinearLayout.LayoutParams(0, 1, 1.0f));
-        Button queue = host.icon("☰");
-        queue.setOnClickListener(view -> host.openQueuePanel());
-        row.addView(queue, host.square(58));
+        Button queue = host.uiFactory.icon("☰");
+        queue.setOnClickListener(view -> host.overlayController.openQueue());
+        row.addView(queue, host.uiFactory.square(58));
         content.addView(row, new LinearLayout.LayoutParams(-1, host.dp(72)));
     }
 
     private void addCoverAndTitle(LinearLayout content, Track track) {
-        ImageView cover = host.coverView();
+        ImageView cover = host.uiFactory.coverView();
         this.coverView = cover;
         if (cover instanceof RotatingCoverImageView) {
             ((RotatingCoverImageView) cover).setRotationSpeedPercent(
-                    host.fullPlayerRotationSpeed);
+                    host.appearanceState.fullPlayerRotationSpeed);
         }
-        host.loadCover(cover, track, host.dark ? Color.rgb(28, 28, 28) : Color.rgb(235, 235, 235), MainActivityCore.COVER_FULL_SIZE);
+        host.artworkUi.loadCover(cover, track,
+                host.appearanceState.dark ? Color.rgb(28, 28, 28) : Color.rgb(235, 235, 235),
+                MainActivityCore.COVER_FULL_SIZE);
         float density = host.getResources().getDisplayMetrics().density;
         int screenHeightDp = Math.round(host.getResources().getDisplayMetrics().heightPixels / density);
         int coverSizeDp = host.responsiveLayoutController.fullPlayerCoverSizeDp(screenHeightDp);
@@ -216,46 +237,48 @@ final class FullPlayerController {
         coverParams.gravity = 1;
         content.addView(cover, coverParams);
 
-        TextView title = host.text(track.title, 24, true);
+        TextView title = host.uiFactory.text(track.title, 24, true);
         this.titleView = title;
         title.setGravity(17);
         content.addView(title, new LinearLayout.LayoutParams(-1, host.dp(54)));
-        int queueSize = host.activeQueue().size();
-        TextView subtitle = host.text(track.artist + " · " + (host.queueIndexOf(track) + 1) + " " + host.tr3("of", "из", "/") + " " + queueSize, 15, false);
+        int queueSize = playbackState.activeQueue().size();
+        TextView subtitle = host.uiFactory.text(track.artist + " · "
+                + (playbackState.queueIndex(track) + 1) + " "
+                + host.tr3("of", "из", "/") + " " + queueSize, 15, false);
         this.subtitleView = subtitle;
         subtitle.setGravity(17);
         content.addView(subtitle, new LinearLayout.LayoutParams(-1, host.dp(34)));
     }
 
     private void addActionRow(LinearLayout content, FrameLayout sheet, Track track) {
-        LinearLayout row = host.row();
-        Button timer = host.button(host.timerButtonText());
+        LinearLayout row = host.uiFactory.row();
+        Button timer = host.uiFactory.button(host.timerButtonText());
         this.timerButton = timer;
-        host.applyPlayerToolStyle(timer, host.sleepTimerEndsAt > 0);
+        host.uiFactory.applyPlayerToolStyle(timer, host.playbackUiState.sleepTimerEndsAt > 0);
         timer.setSingleLine(true);
-        timer.setOnClickListener(view -> host.timerDialog());
+        timer.setOnClickListener(view -> host.sleepTimerController.openDialog());
         row.addView(timer, toolButtonParams());
 
-        Button like = host.button(saveButtonText(track));
+        Button like = host.uiFactory.button(saveButtonText(track));
         this.likeButton = like;
         like.setSingleLine(true);
         like.setTextSize(14.0f);
-        host.applyPlayerToolStyle(like, host.favorites.contains(track.uri));
+        host.uiFactory.applyPlayerToolStyle(like, host.libraryState.favorites.contains(track.uri));
         like.setOnClickListener(view -> {
             Track current = currentTrack();
             if (current != null) {
-                host.openSaveTrackDialog(current);
+                host.overlayController.chooseCollection(current);
             }
         });
         row.addView(like, toolButtonParams());
 
-        Button repeat = host.button(host.loopLabel());
+        Button repeat = host.uiFactory.button(host.loopLabel());
         this.repeatButton = repeat;
         styleRepeatButton(repeat);
-        host.applyPlayerToolStyle(repeat, host.loopMode != 0);
+        host.uiFactory.applyPlayerToolStyle(repeat, playbackState.repeatMode() != 0);
         repeat.setSingleLine(true);
         repeat.setOnClickListener(view -> {
-            host.cycleLoopMode();
+            playbackActions.cycleRepeatMode();
             refreshFromState(false);
         });
         row.addView(repeat, toolButtonParams());
@@ -269,7 +292,7 @@ final class FullPlayerController {
     }
 
     private void addAudioToolsRow(LinearLayout content) {
-        LinearLayout row = host.row();
+        LinearLayout row = host.uiFactory.row();
         Button equalizer = host.equalizerController.createPlayerButton();
         Button leveling = host.volumeLevelingController.createPlayerButton();
         LinearLayout.LayoutParams left = new LinearLayout.LayoutParams(0, host.dp(52), 1.0f);
@@ -295,15 +318,16 @@ final class FullPlayerController {
             }
             return false;
         });
-        host.applySeekBarColors(seek);
+        host.uiFactory.applySeekBarColors(seek);
         int displayDuration = host.playbackDurationFor(track);
         seek.setMax(Math.max(1, displayDuration));
-        seek.setProgress(Math.max(0, PlayerService.lastPosition));
+        seek.setProgress(Math.max(0, host.playbackPosition()));
         content.addView(seek, new LinearLayout.LayoutParams(-1, host.dp(42)));
 
-        LinearLayout row = host.row();
-        TextView elapsed = host.text(host.formatMs(PlayerService.lastPosition), 13, false);
-        TextView remain = host.text("-" + host.formatMs(Math.max(0, displayDuration - PlayerService.lastPosition)), 13, false);
+        LinearLayout row = host.uiFactory.row();
+        TextView elapsed = host.uiFactory.text(host.formatMs(host.playbackPosition()), 13, false);
+        TextView remain = host.uiFactory.text("-" + host.formatMs(
+                Math.max(0, displayDuration - host.playbackPosition())), 13, false);
         remain.setGravity(android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL);
         row.addView(elapsed, new LinearLayout.LayoutParams(0, host.dp(28), 1.0f));
         row.addView(remain, new LinearLayout.LayoutParams(0, host.dp(28), 1.0f));
@@ -329,7 +353,7 @@ final class FullPlayerController {
                 seekTracking = true;
                 RotatingCoverImageView rotatingCover = rotatingCover();
                 if (rotatingCover != null) {
-                    rotatingCover.beginSeekSpin(Math.max(0, PlayerService.lastPosition));
+                    rotatingCover.beginSeekSpin(Math.max(0, host.playbackPosition()));
                 }
             }
 
@@ -339,7 +363,7 @@ final class FullPlayerController {
                 if (rotatingCover != null) {
                     rotatingCover.endSeekSpin(seekBar.getProgress(), !seekDragged[0]);
                 }
-                host.seekTo(seekBar.getProgress());
+                playbackActions.seekTo(seekBar.getProgress());
                 seekTracking = false;
             }
         });
@@ -352,29 +376,29 @@ final class FullPlayerController {
     }
 
     private void addTransportRow(LinearLayout content, FrameLayout sheet) {
-        LinearLayout row = host.row();
+        LinearLayout row = host.uiFactory.row();
         row.setGravity(17);
-        Button previous = host.icon("⏮");
+        Button previous = host.uiFactory.icon("⏮");
         previous.setOnClickListener(view -> {
-            host.previousInternal();
+            playbackActions.previous();
             refreshFromState(true);
         });
-        row.addView(previous, host.square(68));
+        row.addView(previous, host.uiFactory.square(68));
 
-        Button play = host.icon(host.playing ? "Ⅱ" : "▶");
+        Button play = host.uiFactory.icon(playbackState.isPlaying() ? "Ⅱ" : "▶");
         this.playButton = play;
         play.setOnClickListener(view -> {
-            host.toggleCurrent();
+            playbackActions.togglePlayPause();
             refreshFromState(false);
         });
-        row.addView(play, host.square(84));
+        row.addView(play, host.uiFactory.square(84));
 
-        Button next = host.icon("⏭");
+        Button next = host.uiFactory.icon("⏭");
         next.setOnClickListener(view -> {
-            host.nextInternal();
+            playbackActions.next();
             refreshFromState(true);
         });
-        row.addView(next, host.square(68));
+        row.addView(next, host.uiFactory.square(68));
         content.addView(row, new LinearLayout.LayoutParams(-1, host.dp(112)));
     }
 
@@ -383,8 +407,8 @@ final class FullPlayerController {
             stopProgressUpdates();
         }
         if (sheet == null || sheet.getParent() == null) {
-            host.updateMini();
-        } else if (animate && host.animations) {
+            host.playerUiController.updateMini();
+        } else if (animate && host.appearanceState.animations) {
             sheet.animate()
                     .translationY(host.getResources().getDisplayMetrics().heightPixels)
                     .alpha(0.0f)
@@ -394,12 +418,12 @@ final class FullPlayerController {
                         if (sheet.getParent() != null) {
                             host.overlayHost.removeView(sheet);
                         }
-                        host.updateMini();
+                        host.playerUiController.updateMini();
                     })
                     .start();
         } else {
             host.overlayHost.removeView(sheet);
-            host.updateMini();
+            host.playerUiController.updateMini();
         }
         if (sheet == this.currentSheet) {
             this.currentSheet = null;
@@ -417,37 +441,43 @@ final class FullPlayerController {
     }
 
     private void refreshFromState(boolean allowTrackChange) {
-        if (host.currentIndex < 0 || host.currentIndex >= host.tracks.size()) {
+        Track track = playbackState.currentTrack();
+        if (track == null) {
             return;
         }
-        Track track = host.tracks.get(host.currentIndex);
         if (allowTrackChange && (this.boundTrack == null || !this.boundTrack.uri.equals(track.uri))) {
             this.boundTrack = track;
             if (this.coverView != null) {
-                host.loadCover(this.coverView, track, host.dark ? Color.rgb(28, 28, 28) : Color.rgb(235, 235, 235), MainActivityCore.COVER_FULL_SIZE);
+                host.artworkUi.loadCover(this.coverView, track,
+                        host.appearanceState.dark ? Color.rgb(28, 28, 28) : Color.rgb(235, 235, 235),
+                        MainActivityCore.COVER_FULL_SIZE);
             }
         }
         if (this.titleView != null) {
             this.titleView.setText(track.title);
         }
         if (this.subtitleView != null) {
-            this.subtitleView.setText(track.artist + " · " + (host.queueIndexOf(track) + 1) + " " + host.tr3("of", "из", "/") + " " + host.activeQueue().size());
+            this.subtitleView.setText(track.artist + " · "
+                    + (playbackState.queueIndex(track) + 1) + " "
+                    + host.tr3("of", "из", "/") + " "
+                    + playbackState.activeQueue().size());
         }
         if (this.timerButton != null) {
             this.timerButton.setText(host.timerButtonText());
-            host.applyPlayerToolStyle(this.timerButton, host.sleepTimerEndsAt > 0);
+            host.uiFactory.applyPlayerToolStyle(this.timerButton, host.playbackUiState.sleepTimerEndsAt > 0);
         }
         if (this.likeButton != null) {
             this.likeButton.setText(saveButtonText(track));
-            host.applyPlayerToolStyle(this.likeButton, host.favorites.contains(track.uri));
+            host.uiFactory.applyPlayerToolStyle(this.likeButton, host.libraryState.favorites.contains(track.uri));
         }
         if (this.repeatButton != null) {
             this.repeatButton.setText(host.loopLabel());
             styleRepeatButton(this.repeatButton);
-            host.applyPlayerToolStyle(this.repeatButton, host.loopMode != 0);
+            host.uiFactory.applyPlayerToolStyle(
+                    this.repeatButton, playbackState.repeatMode() != 0);
         }
         if (this.playButton != null) {
-            this.playButton.setText(host.playing ? "Ⅱ" : "▶");
+            this.playButton.setText(playbackState.isPlaying() ? "Ⅱ" : "▶");
         }
         RotatingCoverImageView rotatingCover = rotatingCover();
         if (rotatingCover != null) {
@@ -460,16 +490,13 @@ final class FullPlayerController {
     }
 
     private String saveButtonText(Track track) {
-        return host.favorites.contains(track.uri)
+        return host.libraryState.favorites.contains(track.uri)
                 ? host.tr("Saved ♥︎", "Добавлено ♥︎")
                 : host.tr("Save ♡︎", "Добавить ♡︎");
     }
 
     private Track currentTrack() {
-        if (host.currentIndex < 0 || host.currentIndex >= host.tracks.size()) {
-            return null;
-        }
-        return host.tracks.get(host.currentIndex);
+        return playbackState.currentTrack();
     }
 
     private RotatingCoverImageView rotatingCover() {
@@ -497,36 +524,28 @@ final class FullPlayerController {
 
         @Override
         public void run() {
-            Track resolvedTrack;
             if (sheet.getParent() == null) {
                 return;
             }
-            PlayerService.refreshSnapshot();
-            if (PlayerService.lastIndex < 0) {
-                host.currentIndex = -1;
-                host.playing = false;
+            if (playbackState.currentTrack() == null) {
                 host.overlayHost.removeView(sheet);
-                host.updateMini();
+                host.playerUiController.updateMini();
                 host.render();
                 return;
             }
-            if (PlayerService.lastUri != null && !PlayerService.lastUri.isEmpty() && !PlayerService.lastUri.equals(track.uri) && (resolvedTrack = host.findTrack(PlayerService.lastUri)) != null) {
+            Track resolvedTrack = currentTrack();
+            if (resolvedTrack != null && !resolvedTrack.uri.equals(track.uri)) {
                 this.track = resolvedTrack;
-                host.currentIndex = host.tracks.indexOf(resolvedTrack);
                 refreshFromState(true);
                 host.render();
             }
-            boolean playbackChanged = host.playing != PlayerService.lastPlaying;
-            host.playing = PlayerService.lastPlaying;
-            if (playbackChanged) {
-                refreshFromState(false);
-            }
             int displayDuration = host.playbackDurationFor(track);
+            int position = host.playbackPosition();
             if (!seekTracking) {
                 seek.setMax(Math.max(1, displayDuration));
-                seek.setProgress(Math.max(0, PlayerService.lastPosition));
-                elapsed.setText(host.formatMs(PlayerService.lastPosition));
-                remain.setText("-" + host.formatMs(Math.max(0, displayDuration - PlayerService.lastPosition)));
+                seek.setProgress(Math.max(0, position));
+                elapsed.setText(host.formatMs(position));
+                remain.setText("-" + host.formatMs(Math.max(0, displayDuration - position)));
             }
             if (timerButton != null) {
                 timerButton.setText(host.timerButtonText());

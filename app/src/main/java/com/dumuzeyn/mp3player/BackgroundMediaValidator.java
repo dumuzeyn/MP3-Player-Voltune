@@ -47,8 +47,10 @@ final class BackgroundMediaValidator {
             return Result.invalid();
         }
         long pixels = (long) bounds.outWidth * (long) bounds.outHeight;
-        return bounds.outWidth > 0 && bounds.outHeight > 0 && pixels <= MAX_PIXELS
-                ? Result.valid() : Result.invalid();
+        boolean valid = bounds.outWidth > 0 && bounds.outHeight > 0 && pixels <= MAX_PIXELS;
+        boolean heavy = valid && (("image/gif".equalsIgnoreCase(mime) && size > 8L * 1024L * 1024L)
+                || pixels > 24L * 1024L * 1024L);
+        return valid ? Result.valid(heavy) : Result.invalid();
     }
 
     private static long querySize(Context context, Uri uri) {
@@ -98,17 +100,19 @@ final class BackgroundMediaValidator {
 
     static final class Result {
         final boolean valid;
+        final boolean heavy;
 
-        private Result(boolean valid) {
+        private Result(boolean valid, boolean heavy) {
             this.valid = valid;
+            this.heavy = heavy;
         }
 
-        static Result valid() {
-            return new Result(true);
+        static Result valid(boolean heavy) {
+            return new Result(true, heavy);
         }
 
         static Result invalid() {
-            return new Result(false);
+            return new Result(false, false);
         }
     }
 }

@@ -35,44 +35,44 @@ final class ThemeController {
     }
 
     void load(SharedPreferences prefs) {
-        host.themeMode = prefs.getString(THEME, "light");
-        if (!"light".equals(host.themeMode)
-                && !"dark".equals(host.themeMode)
-                && !"custom".equals(host.themeMode)) {
-            host.themeMode = "light";
+        host.appearanceState.themeMode = prefs.getString(THEME, "light");
+        if (!"light".equals(host.appearanceState.themeMode)
+                && !"dark".equals(host.appearanceState.themeMode)
+                && !"custom".equals(host.appearanceState.themeMode)) {
+            host.appearanceState.themeMode = "light";
         }
-        host.customBg = prefs.getInt(CUSTOM_BG, Color.WHITE);
-        host.customFg = prefs.getInt(CUSTOM_FG, Color.BLACK);
-        host.customSecondaryAccent = prefs.getInt(
+        host.appearanceState.customBg = prefs.getInt(CUSTOM_BG, Color.WHITE);
+        host.appearanceState.customFg = prefs.getInt(CUSTOM_FG, Color.BLACK);
+        host.appearanceState.customSecondaryAccent = prefs.getInt(
                 CUSTOM_SECONDARY_ACCENT, Color.rgb(255, 208, 0));
     }
 
     String themeName() {
-        if ("dark".equals(host.themeMode)) {
+        if ("dark".equals(host.appearanceState.themeMode)) {
             return host.tr("Dark", "Темная");
         }
-        if ("custom".equals(host.themeMode)) {
+        if ("custom".equals(host.appearanceState.themeMode)) {
             return host.tr("Custom", "Своя");
         }
         return host.tr("Light", "Светлая");
     }
 
     void applyPalette() {
-        host.dark = isDarkTheme(host.themeMode, host.customBg);
-        if ("custom".equals(host.themeMode)) {
-            host.bg = host.customBg;
-            host.fg = host.customFg;
-            host.primaryText = host.customFg;
-            host.secondaryText = mixColor(host.customFg, host.customBg, 0.58f);
-            host.card = mixColor(host.customBg, host.customFg, host.dark ? 0.92f : 0.96f);
-            host.cardStroke = mixColor(host.customFg, host.customBg, 0.18f);
-            host.purple = host.customFg;
-            host.purpleDark = mixColor(host.customFg, host.customBg, 0.82f);
-            host.purpleSoft = mixColor(host.customFg, host.customBg, 0.18f);
-            host.yellow = host.customSecondaryAccent;
-            host.yellowDark = mixColor(host.customSecondaryAccent, host.customBg, 0.82f);
-            host.yellowSoft = mixColor(host.customSecondaryAccent, host.customBg, 0.18f);
-        } else if (host.dark) {
+        host.appearanceState.dark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
+        if ("custom".equals(host.appearanceState.themeMode)) {
+            host.bg = host.appearanceState.customBg;
+            host.fg = host.appearanceState.customFg;
+            host.primaryText = host.appearanceState.customFg;
+            host.secondaryText = mixColor(host.appearanceState.customFg, host.appearanceState.customBg, 0.58f);
+            host.card = mixColor(host.appearanceState.customBg, host.appearanceState.customFg, host.appearanceState.dark ? 0.92f : 0.96f);
+            host.cardStroke = mixColor(host.appearanceState.customFg, host.appearanceState.customBg, 0.18f);
+            host.purple = host.appearanceState.customFg;
+            host.purpleDark = mixColor(host.appearanceState.customFg, host.appearanceState.customBg, 0.82f);
+            host.purpleSoft = mixColor(host.appearanceState.customFg, host.appearanceState.customBg, 0.18f);
+            host.yellow = host.appearanceState.customSecondaryAccent;
+            host.yellowDark = mixColor(host.appearanceState.customSecondaryAccent, host.appearanceState.customBg, 0.82f);
+            host.yellowSoft = mixColor(host.appearanceState.customSecondaryAccent, host.appearanceState.customBg, 0.18f);
+        } else if (host.appearanceState.dark) {
             host.bg = Color.rgb(17, 16, 21);
             host.fg = Color.WHITE;
             host.primaryText = Color.WHITE;
@@ -99,10 +99,13 @@ final class ThemeController {
             host.yellowDark = Color.rgb(231, 185, 0);
             host.yellowSoft = Color.rgb(255, 245, 190);
         }
-        if ("custom".equals(host.themeMode) && host.customTextColor != 0) {
-            host.fg = host.customTextColor;
-            host.primaryText = host.customTextColor;
-            host.secondaryText = mixColor(host.customTextColor, host.bg, 0.58f);
+        if ("custom".equals(host.appearanceState.themeMode) && host.appearanceState.customTextColor != 0) {
+            host.fg = host.appearanceState.customTextColor;
+            host.primaryText = host.appearanceState.customTextColor;
+            host.secondaryText = mixColor(host.appearanceState.customTextColor, host.bg, 0.58f);
+            if (ThemeContrastPolicy.requiresOutline(host.appearanceState.customTextColor, host.bg)) {
+                host.appearanceState.textOutlineEnabled = true;
+            }
         }
         host.muted = host.secondaryText;
         host.line = host.cardStroke;
@@ -114,48 +117,57 @@ final class ThemeController {
         host.getWindow().setStatusBarColor(host.bg);
         host.getWindow().setNavigationBarColor(host.bg);
         if (Build.VERSION.SDK_INT >= 23) {
-            host.getWindow().getDecorView().setSystemUiVisibility(host.dark ? 0 : 8192);
+            host.getWindow().getDecorView().setSystemUiVisibility(host.appearanceState.dark ? 0 : 8192);
         }
         updateTaskPreview();
     }
 
     void openDialog() {
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(host.tr("Theme", "Тема"), 22, true),
+        panel.addView(host.uiFactory.text(host.tr("Theme", "Тема"), 22, true),
                 new LinearLayout.LayoutParams(-1, host.dp(42)));
         LinearLayout controls = new LinearLayout(host);
         controls.setOrientation(LinearLayout.VERTICAL);
         addChoice(controls, host.tr("Light", "Светлая"), "light");
         addChoice(controls, host.tr("Dark", "Темная"), "dark");
         addChoice(controls, host.tr("Custom", "Своя"), "custom");
-        if ("custom".equals(host.themeMode)) {
-            controls.addView(host.text(host.tr("Background", "Фон"), 16, true),
+        if ("custom".equals(host.appearanceState.themeMode)) {
+            controls.addView(host.uiFactory.text(host.tr("Background", "Фон"), 16, true),
                     new LinearLayout.LayoutParams(-1, host.dp(30)));
             addColorButton(controls, COLOR_BACKGROUND);
-            controls.addView(host.text(host.tr("Accent", "Акцент"), 16, true),
+            controls.addView(host.uiFactory.text(host.tr("Accent", "Акцент"), 16, true),
                     new LinearLayout.LayoutParams(-1, host.dp(30)));
             addColorButton(controls, COLOR_ACCENT);
-            controls.addView(host.text(host.tr("Second accent", "Второй акцент"), 16, true),
+            controls.addView(host.uiFactory.text(host.tr("Second accent", "Второй акцент"), 16, true),
                     new LinearLayout.LayoutParams(-1, host.dp(30)));
             addColorButton(controls, COLOR_SECONDARY_ACCENT);
-            controls.addView(host.text(host.tr("Text", "Текст"), 16, true),
+            controls.addView(host.uiFactory.text(host.tr("Text", "Текст"), 16, true),
                     new LinearLayout.LayoutParams(-1, host.dp(30)));
             addColorButton(controls, COLOR_TEXT);
-            Button outlineToggle = host.button(host.tr("Text outline: ", "Контур текста: ")
-                    + host.tr(host.textOutlineEnabled ? "on" : "off",
-                    host.textOutlineEnabled ? "вкл" : "выкл"));
-            host.applySecondaryButtonStyle(outlineToggle);
+            Button outlineToggle = host.uiFactory.button(host.tr("Text outline: ", "Контур текста: ")
+                    + host.tr(host.appearanceState.textOutlineEnabled ? "on" : "off",
+                    host.appearanceState.textOutlineEnabled ? "вкл" : "выкл"));
+            host.uiFactory.applySecondaryButtonStyle(outlineToggle);
             outlineToggle.setOnClickListener(view -> {
-                host.textOutlineEnabled = !host.textOutlineEnabled;
-                applyTheme(host.themeMode);
+                host.appearanceState.textOutlineEnabled = !host.appearanceState.textOutlineEnabled;
+                applyTheme(host.appearanceState.themeMode);
             });
             LinearLayout.LayoutParams outlineParams = new LinearLayout.LayoutParams(-1, host.dp(46));
             outlineParams.setMargins(0, host.dp(8), 0, host.dp(8));
             controls.addView(outlineToggle, outlineParams);
-            if (host.textOutlineEnabled) {
-                TextView outlineLabel = host.text(host.tr("Outline color", "Цвет контура"), 16, true);
+            if (host.appearanceState.customTextColor != 0
+                    && ThemeContrastPolicy.requiresOutline(host.appearanceState.customTextColor, host.bg)) {
+                TextView contrastHint = host.uiFactory.text(host.tr(
+                        "The outline is enabled automatically because the selected text color "
+                                + "has low contrast. Your color is unchanged.",
+                        "Контур включён автоматически из-за низкого контраста. "
+                                + "Выбранный цвет текста не изменён."), 13, false);
+                controls.addView(contrastHint, new LinearLayout.LayoutParams(-1, -2));
+            }
+            if (host.appearanceState.textOutlineEnabled) {
+                TextView outlineLabel = host.uiFactory.text(host.tr("Outline color", "Цвет контура"), 16, true);
                 LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-1, host.dp(32));
                 labelParams.setMargins(0, host.dp(4), 0, host.dp(2));
                 controls.addView(outlineLabel, labelParams);
@@ -167,18 +179,18 @@ final class ThemeController {
         } else {
             panel.addView(controls, new LinearLayout.LayoutParams(-1, -2));
         }
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> {
             if (shade.getParent() != null) {
                 host.overlayHost.removeView(shade);
             }
-            host.updateMini();
+            host.playerUiController.updateMini();
         });
         LinearLayout.LayoutParams doneParams = new LinearLayout.LayoutParams(-1, host.dp(48));
         doneParams.setMargins(0, host.dp(8), 0, 0);
         panel.addView(done, doneParams);
-        if ("custom".equals(host.themeMode)) {
+        if ("custom".equals(host.appearanceState.themeMode)) {
             int maxHeight = Math.min(host.dp(650),
                     host.getResources().getDisplayMetrics().heightPixels - host.dp(44));
             shade.addView(panel, host.centerParams(host.dp(340), maxHeight));
@@ -186,18 +198,18 @@ final class ThemeController {
             shade.addView(panel, host.centerParams(host.dp(340), -2));
         }
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     private void addChoice(LinearLayout parent, String label, final String mode) {
-        Button button = host.button(label);
+        Button button = host.uiFactory.button(label);
         button.setTextSize(17.0f);
         button.setGravity(8388627);
         button.setPadding(host.dp(18), 0, host.dp(12), 0);
-        if (mode.equals(host.themeMode)) {
-            host.applyPrimaryButtonStyle(button);
+        if (mode.equals(host.appearanceState.themeMode)) {
+            host.uiFactory.applyPrimaryButtonStyle(button);
         } else {
-            host.applySecondaryButtonStyle(button);
+            host.uiFactory.applySecondaryButtonStyle(button);
         }
         button.setOnClickListener(view -> applyTheme(mode));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(48));
@@ -207,9 +219,9 @@ final class ThemeController {
 
     private void addColorButton(LinearLayout parent, final int target) {
         int color = colorForTarget(target);
-        Button button = host.button(colorHex(color));
+        Button button = host.uiFactory.button(colorHex(color));
         button.setTextColor(ThemeManager.readableOn(color));
-        host.setSurface(button, color, false);
+        host.uiFactory.setSurface(button, color, false);
         button.setOnClickListener(view -> {
             host.overlayHost.removeAllViews();
             openColorPicker(target);
@@ -220,10 +232,10 @@ final class ThemeController {
     }
 
     private void openColorPicker(final int target) {
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(colorTargetName(target), 22, true),
+        panel.addView(host.uiFactory.text(colorTargetName(target), 22, true),
                 new LinearLayout.LayoutParams(-1, host.dp(46)));
         final View preview = new View(host);
         preview.setBackgroundColor(colorForTarget(target));
@@ -234,18 +246,18 @@ final class ThemeController {
                 colorForTarget(target),
                 color -> {
                     if (target == COLOR_BACKGROUND) {
-                        host.themeMode = "custom";
-                        host.customBg = color;
+                        host.appearanceState.themeMode = "custom";
+                        host.appearanceState.customBg = color;
                     } else if (target == COLOR_ACCENT) {
-                        host.themeMode = "custom";
-                        host.customFg = color;
+                        host.appearanceState.themeMode = "custom";
+                        host.appearanceState.customFg = color;
                     } else if (target == COLOR_SECONDARY_ACCENT) {
-                        host.themeMode = "custom";
-                        host.customSecondaryAccent = color;
+                        host.appearanceState.themeMode = "custom";
+                        host.appearanceState.customSecondaryAccent = color;
                     } else if (target == COLOR_OUTLINE) {
-                        host.textOutlineColor = color;
+                        host.appearanceState.textOutlineColor = color;
                     } else {
-                        host.customTextColor = color;
+                        host.appearanceState.customTextColor = color;
                     }
                     preview.setBackgroundColor(color);
                 });
@@ -253,19 +265,19 @@ final class ThemeController {
         wheelParams.setMargins(0, host.dp(12), 0, host.dp(12));
         panel.addView(wheel, wheelParams);
 
-        LinearLayout actions = host.row();
-        Button back = host.button(host.tr("Back", "Назад"));
+        LinearLayout actions = host.uiFactory.row();
+        Button back = host.uiFactory.button(host.tr("Back", "Назад"));
         back.setOnClickListener(view -> {
             host.overlayHost.removeView(shade);
             openDialog();
         });
         actions.addView(back, new LinearLayout.LayoutParams(0, host.dp(54), 1.0f));
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> applyTheme(
                 target == COLOR_BACKGROUND || target == COLOR_ACCENT
                         || target == COLOR_SECONDARY_ACCENT
-                        ? "custom" : host.themeMode));
+                        ? "custom" : host.appearanceState.themeMode));
         actions.addView(done, new LinearLayout.LayoutParams(0, host.dp(54), 1.0f));
         panel.addView(actions);
         shade.addView(panel, host.centerParams(host.dp(340), -2));
@@ -274,18 +286,18 @@ final class ThemeController {
 
     private int colorForTarget(int target) {
         if (target == COLOR_BACKGROUND) {
-            return host.customBg;
+            return host.appearanceState.customBg;
         }
         if (target == COLOR_ACCENT) {
-            return host.customFg;
+            return host.appearanceState.customFg;
         }
         if (target == COLOR_SECONDARY_ACCENT) {
-            return host.customSecondaryAccent;
+            return host.appearanceState.customSecondaryAccent;
         }
         if (target == COLOR_OUTLINE) {
             return effectiveOutlineColor();
         }
-        return host.customTextColor != 0 ? host.customTextColor : host.primaryText;
+        return host.appearanceState.customTextColor != 0 ? host.appearanceState.customTextColor : host.primaryText;
     }
 
     private String colorTargetName(int target) {
@@ -307,34 +319,34 @@ final class ThemeController {
     void applyTextOutline(TextView text) {
         text.setShadowLayer(0.0f, 0.0f, 0.0f, Color.TRANSPARENT);
         if (text instanceof OutlinedTextView) {
-            boolean lightTheme = "light".equals(host.themeMode);
-            boolean darkTheme = "dark".equals(host.themeMode);
+            boolean lightTheme = "light".equals(host.appearanceState.themeMode);
+            boolean darkTheme = "dark".equals(host.appearanceState.themeMode);
             float width = host.getResources().getDisplayMetrics().density
                     * (lightTheme || darkTheme ? 1.0f : 0.35f);
             ((OutlinedTextView) text).setTextOutline(
-                    lightTheme || darkTheme || host.textOutlineEnabled,
+                    lightTheme || darkTheme || host.appearanceState.textOutlineEnabled,
                     lightTheme ? Color.WHITE
                             : darkTheme ? Color.BLACK : effectiveOutlineColor(), width);
         } else if (text instanceof OutlinedButton) {
-            boolean lightTheme = "light".equals(host.themeMode);
-            boolean darkTheme = "dark".equals(host.themeMode);
+            boolean lightTheme = "light".equals(host.appearanceState.themeMode);
+            boolean darkTheme = "dark".equals(host.appearanceState.themeMode);
             float width = host.getResources().getDisplayMetrics().density
                     * (lightTheme || darkTheme ? 1.0f : 0.35f);
             ((OutlinedButton) text).setTextOutline(
-                    lightTheme || darkTheme || host.textOutlineEnabled,
+                    lightTheme || darkTheme || host.appearanceState.textOutlineEnabled,
                     lightTheme ? Color.WHITE
                             : darkTheme ? Color.BLACK : effectiveOutlineColor(), width);
         }
     }
 
     private int effectiveOutlineColor() {
-        return host.textOutlineColor != 0
-                ? host.textOutlineColor : ThemeManager.readableOn(host.primaryText);
+        return host.appearanceState.textOutlineColor != 0
+                ? host.appearanceState.textOutlineColor : ThemeManager.readableOn(host.primaryText);
     }
 
     private void applyTheme(String mode) {
-        host.themeMode = mode;
-        host.dark = isDarkTheme(mode, host.customBg);
+        host.appearanceState.themeMode = mode;
+        host.appearanceState.dark = isDarkTheme(mode, host.appearanceState.customBg);
         host.saveState();
         host.refreshPlaybackAppearance();
         if (host.overlayHost != null) {
@@ -355,9 +367,9 @@ final class ThemeController {
 
     void updateLauncherIcon() {
         PackageManager packageManager = host.getPackageManager();
-        boolean useDark = isDarkTheme(host.themeMode, host.customBg);
+        boolean useDark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
         ComponentName selected = LauncherComponents.forPalette(
-                host, host.themeMode, useDark, host.purple, host.yellow);
+                host, host.appearanceState.themeMode, useDark, host.purple, host.yellow);
         try {
             packageManager.setComponentEnabledSetting(
                     selected,
@@ -388,9 +400,9 @@ final class ThemeController {
     }
 
     private Bitmap launcherPreviewIcon() {
-        boolean useDark = isDarkTheme(host.themeMode, host.customBg);
+        boolean useDark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
         ComponentName launcher = LauncherComponents.forPalette(
-                host, host.themeMode, useDark, host.purple, host.yellow);
+                host, host.appearanceState.themeMode, useDark, host.purple, host.yellow);
         return AppIconRenderer.renderLauncherPreview(
                 host, launcher, host.bg, host.purple, host.yellow,
                 Math.max(1, host.dp(64)));

@@ -1,97 +1,132 @@
-# MP3 Player Voltune
+<a id="russian"></a>
+
+<p align="center">
+  <img src="docs/brand/voltune-icon.svg" width="148" alt="Иконка MP3 Player Voltune">
+</p>
+
+<h1 align="center">MP3 Player Voltune</h1>
+
+<p align="center">
+  <strong>Ваша музыка. Ваши правила. Никаких аккаунтов и подписок.</strong>
+</p>
+
+<p align="center">
+  Красивый и быстрый локальный музыкальный плеер для Android, созданный для коллекции, которая уже хранится на телефоне.
+</p>
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Release_2.5.3-9b4dff?style=for-the-badge" alt="Скачать APK">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.0.1-9b4dff?style=for-the-badge" alt="Скачать MP3 Player Voltune">
   </a>
   <a href="#english">
-    <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="English version">
+    <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
   </a>
 </p>
 
-MP3 Player Voltune — локальный музыкальный плеер для Android. Он воспроизводит музыку, уже скачанную на телефон, не требует регистрации и не отправляет библиотеку в интернет.
+<p align="center">
+  <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 6.0+">
+  <img src="https://img.shields.io/badge/Музыка-офлайн-17151d?style=flat-square" alt="Офлайн-плеер">
+  <img src="https://img.shields.io/badge/Интерфейс-русский_и_английский-ffd12f?style=flat-square&labelColor=17151d" alt="Русский и английский интерфейс">
+</p>
+
+Voltune превращает папку с музыкой в удобную личную медиатеку. Приложение быстро находит нужный трек, продолжает играть в фоне, помнит очередь и позицию, а внешний вид можно настроить под себя. Музыка остаётся на устройстве: для прослушивания не нужны интернет, регистрация или облачный сервис.
+
+## Почему Voltune
+
+| Преимущество | Что получает пользователь |
+| --- | --- |
+| **Музыка без ограничений** | Все функции бесплатны, нет подписки и закрытых возможностей. |
+| **Надёжное воспроизведение** | Media3, фоновый сервис, восстановление очереди, повтор песни или списка и таймер сна. |
+| **Личная медиатека** | Импорт отдельных файлов, нескольких песен или целой папки через безопасный системный выбор Android. |
+| **Интерфейс под себя** | Темы, цвета, фоны, прозрачность карточек, частицы и вращающиеся обложки. |
+| **Быстрая работа** | `RecyclerView`, фоновая загрузка библиотеки, кэш обложек и поиск без блокировки интерфейса. |
+| **Телефон и планшет** | Макет автоматически адаптируется к размеру экрана без отдельной настройки. |
+
+## Большая библиотека остаётся удобной
+
+Песни, избранное, плейлисты, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
+
+<p align="center">
+  <img src="docs/screenshots/ru/library.png" width="36%" alt="Библиотека песен MP3 Player Voltune">
+</p>
+
+## Полный контроль над воспроизведением
+
+Мини-плеер всегда оставляет основные действия под рукой, а большой плеер показывает качественную обложку, прогресс и очередь. Можно перематывать трек, включать повтор песни или всего списка, запускать таймер сна, управлять эквалайзером и добавлять композицию в избранное либо плейлист.
+
+Воспроизведение продолжает работать в фоне и управляется из системной медиапанели Android. Очередь, текущая песня, позиция и режим повтора сохраняются, чтобы после возвращения не начинать всё заново.
+
+<p align="center">
+  <img src="docs/screenshots/ru/player.png" width="36%" alt="Большой плеер MP3 Player Voltune">
+</p>
+
+## Звук и внешний вид под ваш вкус
+
+Voltune предлагает эквалайзер с готовыми профилями и собственной сохраняемой конфигурацией. Функция выравнивания громкости анализирует треки и сглаживает заметные перепады между песнями.
+
+Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и прозрачность карточек. Круглые обложки вращаются как пластинки, а скорость вращения и параметры частиц настраиваются отдельно.
+
+<p align="center">
+  <img src="docs/screenshots/ru/settings.png" width="36%" alt="Настройки MP3 Player Voltune">
+</p>
 
 ## Возможности
 
-- Добавление одной песни, нескольких файлов или папки через системный выбор Android.
+- Импорт одной песни, нескольких аудиофайлов или целой папки через Android SAF.
+- Воспроизведение локальных аудиоформатов, которые поддерживаются медиадвижком Android Media3 на устройстве.
 - Разделы «Песни», «Избранное», «Плейлисты», «Жанры», «Исполнители» и «Альбомы».
-- Поиск, сортировка, очередь, последовательное и случайное воспроизведение.
-- Фоновое воспроизведение и управление из системной медиапанели.
-- Повтор песни или всей очереди до ручной остановки либо срабатывания таймера сна.
-- Мини-плеер и большой плеер с качественной обложкой, перемоткой и управлением очередью.
-- Плейлисты, избранное, эквалайзер с готовыми профилями и собственной сохраняемой настройкой.
-- Анализ треков и плавное выравнивание воспринимаемой громкости без резких скачков внутри песни.
-- Светлая, тёмная и пользовательская темы с двумя акцентными цветами; значок Voltune следует выбранной палитре. Цвет текста и чёткий контур настраиваются отдельно.
-- Однотонные и градиентные фоны, а также безопасные изображения или GIF с регулируемым размытием.
-- Отдельный фон для основного интерфейса и большого плеера, настраиваемая прозрачность карточек.
-- Скруглённые или вращающиеся круглые обложки с регулируемой скоростью диска в большом плеере.
-- Анимации и частицы с настраиваемыми частотой, размером, временем жизни и двумя цветами.
-- Перемотка вращающейся обложки как диска: направление зависит от движения вперёд или назад, а пауза останавливает вращение.
-- Незаметное восстановление позиции прокрутки в разделах без движения списка сверху, а также памяти мини-плеера, очереди и текущего состояния воспроизведения.
+- Быстрый поиск, сортировка, очередь и случайное воспроизведение.
+- Фоновое воспроизведение и управление из уведомления и системной медиапанели.
+- Повтор текущей песни или всей очереди до ручной остановки либо срабатывания таймера.
+- Таймер сна, включая остановку после выбранного времени.
+- Мини-плеер с настраиваемой памятью и большой плеер со свайпом вниз.
+- Редактирование очереди, избранное и пользовательские плейлисты.
+- Эквалайзер с пресетами и запоминаемой ручной настройкой.
+- Анализ воспринимаемой громкости и плавное выравнивание уровня между треками.
+- Светлая, тёмная и полностью настраиваемая тема.
+- Однотонные, градиентные, графические и GIF-фоны с регулируемым размытием.
+- Настраиваемые цвета, контур текста, частицы и прозрачность разных типов карточек.
+- Обычные скруглённые или вращающиеся круглые обложки.
 - Русский и английский интерфейс.
-- Автоматически адаптированный интерфейс для планшетов без отдельной настройки.
-- Локальные отчёты о сбоях без URI и путей к музыкальным файлам.
-
-Все возможности приложения бесплатны. Приложение не содержит подписки и платных функций.
-
-## Скриншоты
-
-<p align="center">
-  <img src="docs/screenshots/ru/library.png" width="30%" alt="Библиотека">
-  <img src="docs/screenshots/ru/player.png" width="30%" alt="Большой плеер">
-  <img src="docs/screenshots/ru/settings.png" width="30%" alt="Настройки">
-</p>
+- Автоматическая адаптация интерфейса для планшетов.
+- Локальные отчёты о сбоях без сохранения URI и путей к музыкальным файлам.
 
 ## Как устроен проект
 
 ```mermaid
-flowchart TD
-    ACT["MainActivityCore<br/>координатор жизненного цикла"]
-    UI["MainRenderer и контроллеры плеера<br/>экраны, мини-плеер, большой плеер"]
-    SONGS["SongsRenderer<br/>списки и восстановление библиотеки"]
-    SERVICE["PlayerService<br/>Android foreground service"]
-    COMMANDS["PlaybackCommandHandler<br/>команды воспроизведения"]
-    ENGINE["PlaybackEngine<br/>MediaPlayer и источники content URI"]
-    STATE["data/playback/PlaybackStateManager<br/>очередь, позиция и режим повтора"]
-    RECOVERY["PlaybackErrorRecovery и PlaybackSleepTimer<br/>ошибки и таймер сна"]
-    DATA["LibraryDatabase и TrackStore<br/>песни, избранное, плейлисты"]
-    STYLE["ThemeController и UiFactory<br/>темы, диалоги, элементы интерфейса"]
-    BACKGROUND["BackgroundSettingsController и BackgroundMediaView<br/>цвет, градиент, изображение, GIF и размытие"]
-    AUDIO["AudioEffectsManager и TrackLoudnessNormalizer<br/>эквалайзер и выравнивание громкости"]
-    PREFS["UiPreferencesStore<br/>настройки интерфейса"]
+flowchart LR
+    UI["MainActivityCore и MainRenderer<br/>жизненный цикл и экраны"]
+    LIB["LibraryRepository и LibraryDatabase<br/>песни, избранное и плейлисты"]
+    SONGS["SongsView, SongAdapter и TrackSearchController<br/>список и поиск"]
+    CONTROL["PlaybackController<br/>состояние интерфейса"]
+    SERVICE["Media3PlayerService<br/>фоновая медиасессия"]
+    ENGINE["ExoPlayer<br/>очередь и воспроизведение"]
+    STATE["PlaybackStateManager<br/>позиция, очередь и повтор"]
+    AUDIO["AudioEffectsManager<br/>эквалайзер и громкость"]
+    STYLE["ThemeController и BackgroundSettingsController<br/>темы, цвета и фоны"]
 
-    ACT --> UI
-    ACT --> SONGS
-    ACT --> PREFS
-    SONGS --> DATA
-    UI --> SERVICE
-    SERVICE --> COMMANDS
+    UI --> SONGS
+    SONGS --> LIB
+    UI --> CONTROL
+    CONTROL --> SERVICE
     SERVICE --> ENGINE
     SERVICE --> STATE
-    SERVICE --> RECOVERY
     SERVICE --> AUDIO
-    STATE --> DATA
+    STATE --> LIB
     UI --> STYLE
-    UI --> BACKGROUND
-    BACKGROUND --> PREFS
-    AUDIO --> PREFS
 ```
-
-Новые независимые части размещаются по назначению: состояние — в `data/playback`, низкоуровневое воспроизведение — в `playback/service`, UI-утилиты — в `ui`, диагностика библиотеки — в `library`. Остальные классы переносятся постепенно, чтобы не ломать рабочие сценарии.
 
 Основные точки расширения:
 
-- Новый экран библиотеки: реализовать `MenuRenderer` и подключить его в `MainRenderer`.
-- Новая настройка: добавить состояние в соответствующий контроллер и строку в `SettingsRenderer`.
-- Новое действие воспроизведения: добавить команду в `PlaybackController` и обработать её в `PlayerService`.
-- Изменение карточек песен: `SongsRenderer`, `UiFactory` и `ButtonFactory`.
-- Изменение большого или мини-плеера: `FullPlayerController` или `MiniPlayerController`.
-- Работа с библиотекой: `TrackStore`, `LibraryDatabase` и `PlaylistController`.
-- Состояние фонового воспроизведения: `PlaybackStateManager`; подготовка аудио: `PlaybackEngine`.
-- Фоны приложения и большого плеера: `BackgroundSettingsController`, проверка файлов — `BackgroundMediaValidator`, отображение — `BackgroundMediaView`.
-- Эквалайзер и выравнивание громкости: `EqualizerController`, `AudioEffectsManager` и `TrackLoudnessNormalizer`.
-- Цвет текста и контура: `ThemeController`; общая отрисовка текста: `UiFactory` и `ButtonFactory`.
-- Частицы и скорость диска: `ParticleSettingsController`, `ParticleEffectsView`, `CoverRotationSettingsController` и `RotatingCoverImageView`.
+| Задача | Файлы |
+| --- | --- |
+| Списки песен и поиск | `SongsView`, `SongAdapter`, `SongsRenderer`, `TrackSearchController` |
+| Импорт и хранение библиотеки | `AudioImportController`, `LibraryRepository`, `LibraryDatabase`, `TrackStore` |
+| Воспроизведение и очередь | `PlaybackController`, `Media3PlayerService`, `PlaybackQueueManager` |
+| Мини-плеер и большой плеер | `MiniPlayerController`, `FullPlayerController`, `PlayerUiController` |
+| Плейлисты и избранное | `PlaylistController`, `PlaylistManager`, `FavoritesMenuRenderer` |
+| Темы, фоны и элементы интерфейса | `ThemeController`, `BackgroundSettingsController`, `UiFactory`, `ButtonFactory` |
+| Эквалайзер и громкость | `EqualizerController`, `AudioEffectsManager`, `TrackLoudnessNormalizer` |
 
 ## Сборка
 
@@ -103,118 +138,149 @@ flowchart TD
 
 Официальная release-сборка подписывается закрытым ключом через GitHub Actions. Готовый APK публикуется только в [GitHub Releases](../../releases/latest).
 
-Правила участия описаны в [CONTRIBUTING.md](CONTRIBUTING.md), порядок сообщения об уязвимостях — в [SECURITY.md](SECURITY.md).
-
 ## Лицензия
 
 Исходный код доступен для личного, образовательного и некоммерческого использования. Коммерческое применение требует разрешения автора. Это source-available проект с некоммерческой лицензией, а не лицензия OSI Open Source.
 
 ## Автор
 
-Автор проекта Зейналов У. Р. о.
+Автор проекта **Зейналов У. Р. о.**
 
 [Репозиторий MP3 Player Voltune](https://github.com/dumuzeyn/MP3-Player-Voltune)
 
-[Поддержать автора через CloudTips](https://pay.cloudtips.ru/p/54e5a4f9). Поддержка является добровольной и безвозмездной, не открывает дополнительные функции, подписку или другие преимущества.
+[Поддержать автора через CloudTips](https://pay.cloudtips.ru/p/54e5a4f9). Поддержка является добровольной и безвозмездной, не открывает подписку, дополнительные функции или другие преимущества.
 
 ---
 
 <a id="english"></a>
 
-# MP3 Player Voltune
+<p align="center">
+  <img src="docs/brand/voltune-icon.svg" width="148" alt="MP3 Player Voltune icon">
+</p>
+
+<h1 align="center">MP3 Player Voltune</h1>
+
+<p align="center">
+  <strong>Your music. Your rules. No accounts or subscriptions.</strong>
+</p>
+
+<p align="center">
+  A polished local music player for Android, built around the collection already stored on your device.
+</p>
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Release_2.5.3-9b4dff?style=for-the-badge" alt="Download APK">
+    <img src="https://img.shields.io/badge/Download_APK-Version_3.0.1-9b4dff?style=for-the-badge" alt="Download MP3 Player Voltune">
   </a>
-  <a href="#mp3-player-voltune">
-    <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Russian version">
+  <a href="#russian">
+    <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
   </a>
 </p>
 
-MP3 Player Voltune is a local Android music player for audio already downloaded to the phone. It requires no account and does not upload the music library to the internet.
+<p align="center">
+  <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 6.0+">
+  <img src="https://img.shields.io/badge/Music-offline-17151d?style=flat-square" alt="Offline player">
+  <img src="https://img.shields.io/badge/Interface-English_and_Russian-ffd12f?style=flat-square&labelColor=17151d" alt="English and Russian interface">
+</p>
+
+Voltune turns a folder of downloaded music into a focused personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers extensive visual customization. Music stays on the device: playback requires no internet connection, account, or cloud service.
+
+## Why Voltune
+
+| Advantage | What it means |
+| --- | --- |
+| **Music without restrictions** | Every feature is free, with no subscription or locked functionality. |
+| **Reliable playback** | Media3, a foreground service, queue restoration, repeat-one, repeat-all, and a sleep timer. |
+| **Your own library** | Import one file, multiple songs, or an entire folder through Android's secure system picker. |
+| **A personal interface** | Themes, colors, backgrounds, card opacity, particles, and rotating artwork. |
+| **Responsive with large libraries** | `RecyclerView`, background loading, artwork caching, and non-blocking search. |
+| **Phone and tablet ready** | The layout adapts automatically to the available screen size. |
+
+## A large library that stays manageable
+
+Songs, Favorites, Playlists, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltune creates only the rows that are actually visible.
+
+<p align="center">
+  <img src="docs/screenshots/en/library.png" width="36%" alt="MP3 Player Voltune music library">
+</p>
+
+## Complete playback control
+
+The mini-player keeps essential actions available throughout the app, while the full player presents high-quality artwork, progress, and the current queue. Seek through a track, repeat one song or the complete list, start the sleep timer, open the equalizer, or add the current song to Favorites and playlists.
+
+Playback continues in the background and integrates with Android system media controls. The queue, current song, position, and repeat mode are preserved so returning to the app does not mean starting over.
+
+<p align="center">
+  <img src="docs/screenshots/en/player.png" width="36%" alt="MP3 Player Voltune full player">
+</p>
+
+## Sound and appearance made personal
+
+Voltune includes an equalizer with built-in presets and a remembered custom profile. Volume leveling analyzes tracks and smooths noticeable loudness differences between songs.
+
+Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and card opacity. Circular artwork can rotate like a record, with separate controls for rotation speed and particle effects.
+
+<p align="center">
+  <img src="docs/screenshots/en/settings.png" width="36%" alt="MP3 Player Voltune settings">
+</p>
 
 ## Features
 
-- Import one song, multiple files, or a complete folder through Android's system picker.
+- Import one song, multiple audio files, or a complete folder through Android SAF.
+- Play local audio formats supported by Android Media3 on the device.
 - Songs, Favorites, Playlists, Genres, Artists, and Albums sections.
-- Search, sorting, queue management, sequential playback, and shuffle.
-- Background playback with Android system media controls.
-- Repeat one or repeat all until manually stopped or the sleep timer expires.
-- Mini-player and full player with high-quality artwork, seeking, and queue controls.
-- Playlists, favorites, an equalizer with built-in presets, and a remembered custom profile.
-- Per-track analysis and smooth perceived-volume leveling without abrupt changes inside a song.
-- Light, dark, and custom themes with two accent colors reflected by the Voltune icon, plus independent text and crisp outline colors.
-- Solid colors, gradients, or validated image and GIF backgrounds with adjustable blur.
-- Independent backgrounds for the main interface and full player, plus per-section card opacity.
-- Rounded or rotating circular artwork with adjustable full-player disc speed.
-- Animations and particles with configurable frequency, size, lifetime, and two-color palette.
-- Turntable-style artwork seeking that follows forward and backward movement and stops while playback is paused.
-- Invisible section scroll restoration without a jump from the top, plus mini-player memory, queue, and current playback state.
-- Russian and English interface.
-- Automatic tablet layout with no separate setting required.
-- Local crash reports that exclude music URIs and storage paths.
+- Fast search, sorting, queue management, and shuffle.
+- Background playback with notification and Android system media controls.
+- Repeat the current song or complete queue until manually stopped or interrupted by the timer.
+- Sleep timer with timed playback termination.
+- Remembered mini-player and a swipe-down full player.
+- Queue editing, Favorites, and user-created playlists.
+- Equalizer presets plus a saved manual configuration.
+- Per-track loudness analysis and smooth leveling between songs.
+- Light, Dark, and fully configurable Custom themes.
+- Solid, gradient, image, and GIF backgrounds with adjustable blur.
+- Custom colors, text outlines, particles, and opacity by card type.
+- Rounded square or rotating circular artwork.
+- English and Russian interfaces.
+- Automatic tablet adaptation.
+- Local crash reports that do not store music URIs or file paths.
 
-All application features are free. There are no subscriptions or paid features.
-
-## Screenshots
-
-<p align="center">
-  <img src="docs/screenshots/en/library.png" width="30%" alt="Library">
-  <img src="docs/screenshots/en/player.png" width="30%" alt="Full player">
-  <img src="docs/screenshots/en/settings.png" width="30%" alt="Settings">
-</p>
-
-## Project Structure
+## Project architecture
 
 ```mermaid
-flowchart TD
-    ACT["MainActivityCore<br/>lifecycle coordinator"]
-    UI["MainRenderer and player controllers<br/>screens, mini-player, full player"]
-    SONGS["SongsRenderer<br/>library lists and restoration"]
-    SERVICE["PlayerService<br/>Android foreground service"]
-    COMMANDS["PlaybackCommandHandler<br/>playback commands"]
-    ENGINE["PlaybackEngine<br/>MediaPlayer and content URI sources"]
-    STATE["data/playback/PlaybackStateManager<br/>queue, position, and repeat mode"]
-    RECOVERY["PlaybackErrorRecovery and PlaybackSleepTimer<br/>errors and sleep timer"]
-    DATA["LibraryDatabase and TrackStore<br/>songs, favorites, playlists"]
-    STYLE["ThemeController and UiFactory<br/>themes, dialogs, UI elements"]
-    BACKGROUND["BackgroundSettingsController and BackgroundMediaView<br/>color, gradient, image, GIF, and blur"]
-    AUDIO["AudioEffectsManager and TrackLoudnessNormalizer<br/>equalizer and volume leveling"]
-    PREFS["UiPreferencesStore<br/>UI preferences"]
+flowchart LR
+    UI["MainActivityCore and MainRenderer<br/>lifecycle and screens"]
+    LIB["LibraryRepository and LibraryDatabase<br/>songs, favorites, and playlists"]
+    SONGS["SongsView, SongAdapter, and TrackSearchController<br/>list and search"]
+    CONTROL["PlaybackController<br/>UI playback state"]
+    SERVICE["Media3PlayerService<br/>background media session"]
+    ENGINE["ExoPlayer<br/>queue and playback"]
+    STATE["PlaybackStateManager<br/>position, queue, and repeat"]
+    AUDIO["AudioEffectsManager<br/>equalizer and loudness"]
+    STYLE["ThemeController and BackgroundSettingsController<br/>themes, colors, and backgrounds"]
 
-    ACT --> UI
-    ACT --> SONGS
-    ACT --> PREFS
-    SONGS --> DATA
-    UI --> SERVICE
-    SERVICE --> COMMANDS
+    UI --> SONGS
+    SONGS --> LIB
+    UI --> CONTROL
+    CONTROL --> SERVICE
     SERVICE --> ENGINE
     SERVICE --> STATE
-    SERVICE --> RECOVERY
     SERVICE --> AUDIO
-    STATE --> DATA
+    STATE --> LIB
     UI --> STYLE
-    UI --> BACKGROUND
-    BACKGROUND --> PREFS
-    AUDIO --> PREFS
 ```
 
-New independent components are grouped by responsibility: state in `data/playback`, low-level playback in `playback/service`, UI utilities in `ui`, and library diagnostics in `library`. Remaining classes are moved incrementally to protect existing user workflows.
+Primary extension points:
 
-Common extension points:
-
-- New library screen: implement `MenuRenderer` and connect it in `MainRenderer`.
-- New setting: add its state to the responsible controller and its row to `SettingsRenderer`.
-- New playback command: dispatch it through `PlaybackController` and handle it in `PlayerService`.
-- Song card changes: use `SongsRenderer`, `UiFactory`, and `ButtonFactory`.
-- Full-player or mini-player changes: use `FullPlayerController` or `MiniPlayerController`.
-- Library persistence: use `TrackStore`, `LibraryDatabase`, and `PlaylistController`.
-- Background playback state: use `PlaybackStateManager`; audio preparation: use `PlaybackEngine`.
-- Main and full-player backgrounds: use `BackgroundSettingsController`; validation is handled by `BackgroundMediaValidator`, rendering by `BackgroundMediaView`.
-- Equalizer and loudness leveling: use `EqualizerController`, `AudioEffectsManager`, and `TrackLoudnessNormalizer`.
-- Text and outline colors: use `ThemeController`; shared text rendering lives in `UiFactory` and `ButtonFactory`.
-- Particles and disc speed: use `ParticleSettingsController`, `ParticleEffectsView`, `CoverRotationSettingsController`, and `RotatingCoverImageView`.
+| Task | Files |
+| --- | --- |
+| Song lists and search | `SongsView`, `SongAdapter`, `SongsRenderer`, `TrackSearchController` |
+| Library import and storage | `AudioImportController`, `LibraryRepository`, `LibraryDatabase`, `TrackStore` |
+| Playback and queue | `PlaybackController`, `Media3PlayerService`, `PlaybackQueueManager` |
+| Mini-player and full player | `MiniPlayerController`, `FullPlayerController`, `PlayerUiController` |
+| Playlists and favorites | `PlaylistController`, `PlaylistManager`, `FavoritesMenuRenderer` |
+| Themes, backgrounds, and UI elements | `ThemeController`, `BackgroundSettingsController`, `UiFactory`, `ButtonFactory` |
+| Equalizer and loudness | `EqualizerController`, `AudioEffectsManager`, `TrackLoudnessNormalizer` |
 
 ## Build
 
@@ -224,18 +290,16 @@ JDK 17 and the Android SDK are required:
 ./gradlew testDebugUnitTest lintDebug assembleDebugAndroidTest
 ```
 
-Official release builds are signed with a private key through GitHub Actions. The APK is published only in [GitHub Releases](../../releases/latest).
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) before contributing and [SECURITY.md](SECURITY.md) for private vulnerability reporting.
+Official release builds are signed with a private key through GitHub Actions. Installable APK files are published only through [GitHub Releases](../../releases/latest).
 
 ## License
 
-The source code is available for personal, educational, and non-commercial use. Commercial use requires the author's permission. This is a source-available project under a non-commercial license, not an OSI Open Source license.
+Source code is available for personal, educational, and non-commercial use. Commercial use requires the author's permission. This is a source-available project under a non-commercial license, not an OSI Open Source license.
 
 ## Author
 
-Project author: Zeynalov U. R. o.
+Project author: **Zeynalov U. R. o.**
 
 [MP3 Player Voltune repository](https://github.com/dumuzeyn/MP3-Player-Voltune)
 
-[Support the author through CloudTips](https://pay.cloudtips.ru/p/54e5a4f9). Support is voluntary and gratuitous and does not unlock additional features, a subscription, or any other benefit.
+[Support the author through CloudTips](https://pay.cloudtips.ru/p/54e5a4f9). Support is voluntary and gratuitous; it does not unlock subscriptions, additional features, or other benefits.

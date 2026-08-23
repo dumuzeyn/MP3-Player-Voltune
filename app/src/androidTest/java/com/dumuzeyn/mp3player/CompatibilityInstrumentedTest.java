@@ -31,7 +31,7 @@ public class CompatibilityInstrumentedTest {
         assertEquals(Mp3PlayerApplication.class.getName(), packageInfo.applicationInfo.className);
 
         ServiceInfo serviceInfo = context.getPackageManager().getServiceInfo(
-                new ComponentName(context, PlayerService.class), 0);
+                new ComponentName(context, Media3PlayerService.class), 0);
         assertNotNull(serviceInfo);
         assertTrue(!serviceInfo.exported);
         if (Build.VERSION.SDK_INT >= 29) {

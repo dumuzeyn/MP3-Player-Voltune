@@ -1,462 +1,342 @@
 package com.dumuzeyn.mp3player;
 
+import android.content.ComponentName;
+import android.os.Bundle;
+import android.util.Log;
+import androidx.annotation.Nullable;
+import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.Player;
+import androidx.media3.session.MediaController;
+import androidx.media3.session.SessionToken;
 import com.dumuzeyn.mp3player.data.playback.PlaybackStateManager;
-
-import android.content.Intent;
-import android.os.Build;
+import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-final class PlaybackController {
+/** Connects the UI to Media3 and exposes playback commands plus a read-only UI snapshot. */
+final class PlaybackController implements Player.Listener {
+    private static final String TAG = "VoltuneMedia3";
+    private static final int MAX_PENDING_COMMANDS = 24;
+
     private final MainActivityCore host;
+    private final MediaItemMapper mapper = new MediaItemMapper();
+    private final ArrayDeque<Runnable> pendingCommands = new ArrayDeque<>();
+    private ListenableFuture<MediaController> controllerFuture;
+    private MediaController controller;
+    private boolean released;
 
     PlaybackController(MainActivityCore host) {
         this.host = host;
     }
 
-    void playTrack(Track track) {
-        playTrack(track, true);
+    void connect() {
+        if (controllerFuture != null || released) {
+            return;
+        }
+        SessionToken token = new SessionToken(host,
+                new ComponentName(host, Media3PlayerService.class));
+        controllerFuture = new MediaController.Builder(host, token).buildAsync();
+        controllerFuture.addListener(() -> host.runOnUiThread(this::finishConnection),
+                Runnable::run);
     }
 
-    void playTrack(Track track, boolean refreshList) {
-        int index = host.tracks.indexOf(track);
-        if (index < 0) {
+    void restorePersistedUiState() {
+        PlaybackStateManager.State state = new PlaybackStateManager(host).load();
+        long resumeWindowMs = Math.max(0L, host.appearanceState.resumeWindowMinutes) * 60000L;
+        boolean expired = MiniPlayerRetentionPolicy.isExpired(
+                state.playing, state.inactiveSince, state.savedAt,
+                System.currentTimeMillis(), resumeWindowMs);
+        if (expired) {
             return;
         }
-        host.playbackQueue.clear();
-        host.playbackQueue.add(track);
-        host.shuffleMode = false;
-        host.currentIndex = index;
-        host.playing = true;
-        host.resumePosition = 0;
-        startServiceAction(PlayerService.ACTION_PLAY_INDEX, 0, true);
-        startPlaybackWatcher();
-        host.updateMini();
-        if (refreshList) {
-            host.refreshAfterTrackChange();
-        }
-    }
-
-    void playList(ArrayList<Track> source, boolean shuffle) {
-        if (source.isEmpty()) {
+        Track current = host.findTrack(state.uri);
+        ArrayList<Track> restoredQueue = PlaybackQueueResolver.restore(
+                host.libraryState.tracks, state.queueUris, current);
+        if (restoredQueue.isEmpty()) {
             return;
         }
-        ArrayList<Track> queue = new ArrayList<>(source);
-        if (shuffle) {
-            Collections.shuffle(queue, new Random());
-        }
-        int index = host.tracks.indexOf(queue.get(0));
-        if (index < 0) {
-            return;
-        }
-        host.playbackQueue.clear();
-        host.playbackQueue.addAll(queue);
-        host.shuffleMode = shuffle;
-        host.currentIndex = index;
-        host.playing = true;
-        host.resumePosition = 0;
-        startServiceAction(PlayerService.ACTION_PLAY_INDEX, 0, false);
-        startPlaybackWatcher();
-        host.refreshAfterTrackChange();
-    }
-
-    void toggleCurrent() {
-        if (host.currentIndex < 0) {
-            restoreCurrentFromPlaybackState();
-        }
-        if (host.currentIndex < 0 && !host.tracks.isEmpty()) {
-            playList(host.tracks, false);
-            return;
-        }
-        if (host.currentIndex < 0) {
-            return;
-        }
-        boolean shouldPlay = !host.playing;
-        host.playing = shouldPlay;
-        if (shouldPlay && host.resumePosition > 0) {
-            startServiceAction(PlayerService.ACTION_PLAY_INDEX, queueIndexOf(host.tracks.get(host.currentIndex)), false, host.resumePosition);
+        int index = Math.max(0, Math.min(state.index, restoredQueue.size() - 1));
+        if (current == null) {
+            current = restoredQueue.get(index);
         } else {
-            startServiceAction(PlayerService.ACTION_TOGGLE, queueIndexOf(host.tracks.get(host.currentIndex)), false);
-            if (!shouldPlay) {
-                host.resumePosition = Math.max(host.resumePosition, PlayerService.lastPosition);
+            int restoredIndex = restoredQueue.indexOf(current);
+            if (restoredIndex >= 0) {
+                index = restoredIndex;
             }
         }
-        startPlaybackWatcher();
-        host.updateMini();
-        host.refreshAfterTrackChange();
+        ArrayList<String> mediaIds = new ArrayList<>();
+        for (Track track : restoredQueue) {
+            mediaIds.add(mapper.mediaId(track));
+        }
+        host.playbackUiState.queue.clear();
+        host.playbackUiState.queue.addAll(restoredQueue);
+        host.updatePlaybackSnapshot(new PlaybackSnapshot(mediaIds, mapper.mediaId(current),
+                index, state.position, Math.max(current.durationMs, state.duration),
+                state.playing, Player.STATE_READY, RepeatModeMapper.toMedia3(state.loopMode),
+                state.shuffle, PlaybackPhase.READY,
+                state.playing ? PauseReason.NONE : PauseReason.USER, StopReason.NONE,
+                null, state.savedAt));
     }
 
-    private boolean restoreCurrentFromPlaybackState() {
-        PlayerService.refreshSnapshot();
-        Track current = host.findTrack(PlayerService.lastUri);
-        int position = Math.max(0, PlayerService.lastPosition);
-        int loopMode = PlayerService.lastLoopMode;
-        boolean wasPlaying = PlayerService.lastPlaying;
-        if (current == null) {
-            PlaybackStateManager.State savedState = new PlaybackStateManager(host).load();
-            current = restoreFromSavedResume(savedState);
-            position = savedState.position;
-            loopMode = savedState.loopMode;
-            wasPlaying = savedState.playing;
-        } else if (host.playbackQueue.isEmpty()) {
-            restoreQueueFromSavedState(new PlaybackStateManager(host).load(), current);
+    private void finishConnection() {
+        if (released || controllerFuture == null) {
+            return;
         }
-        if (current == null) {
-            return false;
+        try {
+            controller = controllerFuture.get();
+            controller.addListener(this);
+            synchronizeUi(true);
+            while (!pendingCommands.isEmpty()) {
+                pendingCommands.removeFirst().run();
+            }
+        } catch (Exception error) {
+            Log.e(TAG, "media_controller_connection_failed", error);
+            pendingCommands.clear();
         }
-        host.currentIndex = host.tracks.indexOf(current);
-        host.resumePosition = position;
-        host.loopMode = loopMode;
-        host.playing = wasPlaying;
-        if (host.playbackQueue.isEmpty()) {
-            host.playbackQueue.add(current);
-        }
-        return host.currentIndex >= 0;
     }
 
-    private Track restoreFromSavedResume(PlaybackStateManager.State savedState) {
-        if (host.resumeWindowMinutes <= 0) {
-            return null;
+    void release() {
+        released = true;
+        pendingCommands.clear();
+        if (controller != null) {
+            controller.removeListener(this);
+            controller.release();
+            controller = null;
+        } else if (controllerFuture != null) {
+            MediaController.releaseFuture(controllerFuture);
         }
-        long savedAt = savedState.savedAt;
-        if (savedAt <= 0 || System.currentTimeMillis() - savedAt
-                > ((long) host.resumeWindowMinutes) * 60000L) {
-            return null;
-        }
-        Track current = host.findTrack(savedState.uri);
-        restoreQueueFromSavedState(savedState, current);
-        return current;
+        controllerFuture = null;
     }
 
-    private void restoreQueueFromSavedState(PlaybackStateManager.State savedState, Track fallback) {
-        host.playbackQueue.clear();
-        host.playbackQueue.addAll(PlaybackQueueResolver.restore(
-                host.tracks,
-                savedState.queueUris,
-                fallback));
+    private void whenConnected(Runnable command) {
+        if (released) {
+            return;
+        }
+        if (controller != null) {
+            command.run();
+            return;
+        }
+        if (pendingCommands.size() >= MAX_PENDING_COMMANDS) {
+            pendingCommands.removeFirst();
+        }
+        pendingCommands.addLast(command);
+        connect();
+    }
+
+    void submitQueue(List<Track> source, int index, int positionMs, int repeatMode,
+            boolean playWhenReady) {
+        ArrayList<Track> queue = new ArrayList<>(source);
+        whenConnected(() -> {
+            if (queue.isEmpty()) {
+                return;
+            }
+            ArrayList<MediaItem> items = new ArrayList<>();
+            for (Track track : queue) {
+                items.add(mapper.toMediaItem(track));
+            }
+            int safeIndex = Math.max(0, Math.min(index, items.size() - 1));
+            controller.setMediaItems(items, safeIndex, Math.max(0, positionMs));
+            controller.setShuffleModeEnabled(false);
+            controller.setRepeatMode(RepeatModeMapper.toMedia3(repeatMode));
+            controller.prepare();
+            if (playWhenReady) {
+                controller.play();
+            } else {
+                controller.pause();
+            }
+        });
+    }
+
+    void toggle() {
+        whenConnected(() -> {
+            if (controller.getMediaItemCount() == 0) {
+                return;
+            }
+            if (controller.isPlaying() || controller.getPlayWhenReady()) {
+                controller.pause();
+            } else {
+                if (controller.getPlaybackState() == Player.STATE_IDLE) {
+                    controller.prepare();
+                }
+                controller.play();
+            }
+        });
     }
 
     void next() {
-        ArrayList<Track> queue = activeQueue();
-        if (queue.isEmpty()) {
-            return;
-        }
-        int queueIndex = host.currentIndex < 0 ? 0 : (queueIndexOf(host.tracks.get(host.currentIndex)) + 1) % queue.size();
-        host.currentIndex = host.tracks.indexOf(queue.get(queueIndex));
-        host.playing = true;
-        host.resumePosition = 0;
-        startServiceAction(PlayerService.ACTION_PLAY_INDEX, queueIndex, false);
-        startPlaybackWatcher();
-        host.refreshAfterTrackChange();
+        whenConnected(() -> {
+            if (controller.hasNextMediaItem()) {
+                controller.seekToNextMediaItem();
+                controller.play();
+            }
+        });
     }
 
     void previous() {
-        ArrayList<Track> queue = activeQueue();
-        if (queue.isEmpty()) {
-            return;
-        }
-        int queueIndex = host.currentIndex < 0 ? 0 : queueIndexOf(host.tracks.get(host.currentIndex));
-        if (queueIndex <= 0) {
-            queueIndex = queue.size();
-        }
-        int previousIndex = queueIndex - 1;
-        host.currentIndex = host.tracks.indexOf(queue.get(previousIndex));
-        host.playing = true;
-        host.resumePosition = 0;
-        startServiceAction(PlayerService.ACTION_PLAY_INDEX, previousIndex, false);
-        startPlaybackWatcher();
-        host.refreshAfterTrackChange();
+        whenConnected(() -> {
+            controller.seekToPreviousMediaItem();
+            controller.play();
+        });
     }
 
-    void startPlaybackWatcher() {
-        host.playbackHandler.removeCallbacksAndMessages(null);
-        host.playbackHandler.postDelayed(new PlaybackWatcher(), 900L);
+    void cycleRepeatMode() {
+        int nextMode = (host.repeatMode() + 1) % 3;
+        whenConnected(() -> controller.setRepeatMode(
+                RepeatModeMapper.toMedia3(nextMode)));
     }
 
-    void cycleLoopMode() {
-        host.loopMode = (host.loopMode + 1) % 3;
-        Intent intent = new Intent(host, (Class<?>) PlayerService.class);
-        intent.setAction(PlayerService.ACTION_LOOP);
-        intent.putExtra(PlayerService.EXTRA_LOOP_MODE, host.loopMode);
-        startService(intent);
+    void clearQueue() {
+        whenConnected(() -> {
+            controller.stop();
+            controller.clearMediaItems();
+            controller.sendCustomCommand(Media3Commands.CLEAR_QUEUE_COMMAND, Bundle.EMPTY);
+        });
     }
 
-    void clearPlaybackMemory() {
-        host.playbackQueue.clear();
-        host.currentIndex = -1;
-        host.playing = false;
-        host.resumePosition = 0;
-        host.playbackHandler.removeCallbacksAndMessages(null);
-        PlayerService.lastIndex = -1;
-        PlayerService.lastPlaying = false;
-        PlayerService.lastDuration = 0;
-        PlayerService.lastPosition = 0;
-        PlayerService.lastUri = "";
-        new PlaybackStateManager(host).clear();
-        Intent intent = new Intent(host, (Class<?>) PlayerService.class);
-        intent.setAction(PlayerService.ACTION_STOP);
-        startService(intent);
+    void addQueueItem(Track track) {
+        whenConnected(() -> controller.addMediaItem(mapper.toMediaItem(track)));
     }
 
-    void addToQueue(Track track) {
-        if (track == null) {
-            return;
-        }
-        if (host.playbackQueue.isEmpty() && host.currentIndex >= 0 && host.currentIndex < host.tracks.size()) {
-            host.playbackQueue.add(host.tracks.get(host.currentIndex));
-        }
-        if (!host.playbackQueue.contains(track)) {
-            host.playbackQueue.add(track);
-        }
-        if (host.currentIndex >= 0) {
-            Intent intent = new Intent(host, PlayerService.class);
-            intent.setAction(PlayerService.ACTION_UPDATE_QUEUE);
-            intent.putStringArrayListExtra(PlayerService.EXTRA_QUEUE_URIS, queueUris());
-            startService(intent);
-        }
-    }
-
-    void removeFromQueue(Track track) {
-        if (track == null) {
-            return;
-        }
-        ArrayList<Track> queue = new ArrayList<>(activeQueue());
-        int removedIndex = indexOfUri(queue, track.uri);
-        if (removedIndex < 0) {
-            return;
-        }
-        Track current = currentTrack();
-        boolean removingCurrent = current != null && current.uri.equals(track.uri);
-        queue.remove(removedIndex);
-        host.playbackQueue.clear();
-        host.playbackQueue.addAll(queue);
-        if (queue.isEmpty()) {
-            clearPlaybackMemory();
-            return;
-        }
-        if (removingCurrent) {
-            int nextIndex = Math.min(removedIndex, queue.size() - 1);
-            Track next = queue.get(nextIndex);
-            host.currentIndex = host.tracks.indexOf(next);
-            host.playing = true;
-            host.resumePosition = 0;
-            startServiceAction(PlayerService.ACTION_PLAY_INDEX, nextIndex, false);
-            startPlaybackWatcher();
-        } else {
-            syncCurrentIndexFromService();
-            sendQueueUpdate();
-        }
-        host.refreshAfterTrackChange();
-    }
-
-    void removeFromLibrary(Track track) {
-        if (track == null) {
-            return;
-        }
-        Track storedTrack = host.findTrack(track.uri);
-        if (storedTrack == null) {
-            return;
-        }
-        track = storedTrack;
-        Track current = currentTrack();
-        boolean removingCurrent = current != null && current.uri.equals(track.uri);
-        ArrayList<Track> queue = new ArrayList<>(activeQueue());
-        int removedQueueIndex = indexOfUri(queue, track.uri);
-        if (removedQueueIndex >= 0) {
-            queue.remove(removedQueueIndex);
-        }
-
-        host.tracks.remove(track);
-        host.favorites.remove(track.uri);
-        host.playlistController.removeTrackFromAllPlaylists(track);
-        host.playbackQueue.clear();
-        host.playbackQueue.addAll(queue);
-        TrackStore.save(host, host.tracks);
-        host.saveState();
-
-        if (removingCurrent) {
-            if (queue.isEmpty()) {
-                clearPlaybackMemory();
-            } else {
-                int nextIndex = Math.min(Math.max(0, removedQueueIndex), queue.size() - 1);
-                Track next = queue.get(nextIndex);
-                host.currentIndex = host.tracks.indexOf(next);
-                host.playing = true;
-                host.resumePosition = 0;
-                startServiceAction(PlayerService.ACTION_PLAY_INDEX, nextIndex, false);
-                startPlaybackWatcher();
+    void removeQueueItem(int index) {
+        whenConnected(() -> {
+            if (index >= 0 && index < controller.getMediaItemCount()) {
+                controller.removeMediaItem(index);
             }
-        } else {
-            if (current != null) {
-                host.currentIndex = host.tracks.indexOf(current);
-            }
-            if (removedQueueIndex >= 0) {
-                sendQueueUpdate();
-            }
+        });
+    }
+
+    void seekTo(int positionMs) {
+        whenConnected(() -> controller.seekTo(Math.max(0, positionMs)));
+    }
+
+    void startSleepTimer(long delayMs) {
+        Bundle args = new Bundle();
+        args.putLong(Media3Commands.ARG_TIMER_MS, Math.max(1000L, delayMs));
+        whenConnected(() -> controller.sendCustomCommand(
+                Media3Commands.TIMER_START_COMMAND, args));
+    }
+
+    void cancelSleepTimer() {
+        whenConnected(() -> controller.sendCustomCommand(
+                Media3Commands.TIMER_CANCEL_COMMAND, Bundle.EMPTY));
+    }
+
+    void refreshAudioEffects() {
+        whenConnected(() -> controller.sendCustomCommand(
+                Media3Commands.AUDIO_EFFECTS_COMMAND, Bundle.EMPTY));
+    }
+
+    long currentPosition() {
+        return controller == null ? host.playbackSnapshot().positionMs
+                : Math.max(0L, controller.getCurrentPosition());
+    }
+
+    long duration() {
+        if (controller == null || controller.getDuration() == C.TIME_UNSET) {
+            return host.playbackSnapshot().durationMs;
         }
-        host.render();
+        return Math.max(0L, controller.getDuration());
     }
 
-    String loopLabel() {
-        if (host.loopMode == 1) {
-            return host.tr("Track ↻", "Песня ↻");
+    boolean hasPlaybackSession() {
+        if (controller != null) {
+            return controller.getMediaItemCount() > 0;
         }
-        if (host.loopMode == 2) {
-            return host.tr("Queue ↻", "Очередь ↻");
-        }
-        return host.tr("Off ↻", "Выкл ↻");
+        return !new PlaybackStateManager(host).load().queueUris.isEmpty();
     }
 
-    void seekTo(int position) {
-        Intent intent = new Intent(host, (Class<?>) PlayerService.class);
-        intent.setAction(PlayerService.ACTION_SEEK);
-        intent.putExtra(PlayerService.EXTRA_POSITION, Math.max(0, position));
-        startService(intent);
-    }
-
-    void startServiceAction(String action, int index) {
-        startServiceAction(action, index, false);
-    }
-
-    void startServiceAction(String action, int index, boolean oneShot) {
-        startServiceAction(action, index, oneShot, 0);
-    }
-
-    void startServiceAction(String action, int index, boolean oneShot, int position) {
-        Intent intent = new Intent(host, (Class<?>) PlayerService.class);
-        intent.setAction(action);
-        intent.putExtra(PlayerService.EXTRA_INDEX, index);
-        intent.putExtra(PlayerService.EXTRA_ONE_SHOT, oneShot);
-        intent.putExtra(PlayerService.EXTRA_SHUFFLE, host.shuffleMode);
-        intent.putExtra(PlayerService.EXTRA_LOOP_MODE, host.loopMode);
-        intent.putExtra(PlayerService.EXTRA_POSITION, Math.max(0, position));
-        intent.putStringArrayListExtra(PlayerService.EXTRA_QUEUE_URIS, queueUris());
-        startService(intent);
-    }
-
-    private void startService(Intent intent) {
-        if (Build.VERSION.SDK_INT < 26) {
-            host.startService(intent);
-        } else {
-            host.startForegroundService(intent);
-        }
-    }
-
-    private void sendQueueUpdate() {
-        Intent intent = new Intent(host, PlayerService.class);
-        intent.setAction(PlayerService.ACTION_UPDATE_QUEUE);
-        intent.putStringArrayListExtra(PlayerService.EXTRA_QUEUE_URIS, queueUris());
-        startService(intent);
-    }
-
+    @Nullable
     private Track currentTrack() {
-        PlayerService.refreshSnapshot();
-        Track live = host.findTrack(PlayerService.lastUri);
-        if (live != null) {
-            return live;
+        if (controller == null) {
+            return null;
         }
-        return host.currentIndex >= 0 && host.currentIndex < host.tracks.size()
-                ? host.tracks.get(host.currentIndex) : null;
+        MediaItem item = controller.getCurrentMediaItem();
+        if (item == null || item.localConfiguration == null) {
+            return null;
+        }
+        return host.findTrack(item.localConfiguration.uri.toString());
     }
 
-    private void syncCurrentIndexFromService() {
+    private void synchronizeUi(boolean refreshRows) {
+        if (controller == null) {
+            return;
+        }
+        int previousIndex = host.currentTrackIndex();
+        Track previous = previousIndex >= 0 && previousIndex < host.libraryState.tracks.size()
+                ? host.libraryState.tracks.get(previousIndex) : null;
         Track current = currentTrack();
-        if (current != null) {
-            host.currentIndex = host.tracks.indexOf(current);
+        host.updatePlaybackSnapshot(snapshotFromController());
+        synchronizeQueueProjection();
+        boolean trackChanged = previous == null ? current != null
+                : current == null || !previous.uri.equals(current.uri);
+        host.playerUiController.updateMini();
+        if (trackChanged || refreshRows) {
+            host.refreshAfterTrackChange();
         }
+        host.playerUiController.syncPlaybackUi();
     }
 
-    private int indexOfUri(ArrayList<Track> tracks, String uri) {
-        for (int index = 0; index < tracks.size(); index++) {
-            if (tracks.get(index).uri.equals(uri)) {
-                return index;
+    private void synchronizeQueueProjection() {
+        Map<String, Track> tracksById = new HashMap<>();
+        Map<String, Track> tracksByUri = new HashMap<>();
+        for (Track track : host.libraryState.tracks) {
+            tracksById.put(mapper.mediaId(track), track);
+            tracksByUri.put(track.uri, track);
+        }
+        host.playbackUiState.queue.clear();
+        for (int itemIndex = 0; itemIndex < controller.getMediaItemCount(); itemIndex++) {
+            MediaItem item = controller.getMediaItemAt(itemIndex);
+            Track track = tracksById.get(item.mediaId);
+            if (track == null && item.localConfiguration != null) {
+                track = tracksByUri.get(item.localConfiguration.uri.toString());
+            }
+            if (track != null) {
+                host.playbackUiState.queue.add(track);
             }
         }
-        return -1;
     }
 
-    ArrayList<String> queueUris() {
-        ArrayList<String> uris = new ArrayList<>();
-        Iterator<Track> iterator = activeQueue().iterator();
-        while (iterator.hasNext()) {
-            uris.add(iterator.next().uri);
+    private PlaybackSnapshot snapshotFromController() {
+        ArrayList<String> mediaIds = new ArrayList<>();
+        for (int index = 0; index < controller.getMediaItemCount(); index++) {
+            mediaIds.add(controller.getMediaItemAt(index).mediaId);
         }
-        return uris;
+        PlaybackPhase phase = phase(controller.getPlaybackState());
+        MediaItem item = controller.getCurrentMediaItem();
+        String mediaId = item == null ? "" : item.mediaId;
+        long duration = controller.getDuration() == C.TIME_UNSET
+                ? 0L : Math.max(0L, controller.getDuration());
+        return new PlaybackSnapshot(mediaIds, mediaId,
+                controller.getCurrentMediaItemIndex(), controller.getCurrentPosition(), duration,
+                controller.getPlayWhenReady(), controller.getPlaybackState(),
+                controller.getRepeatMode(), controller.getShuffleModeEnabled(), phase,
+                controller.getPlayWhenReady() ? PauseReason.NONE : PauseReason.USER,
+                phase == PlaybackPhase.ENDED ? StopReason.QUEUE_ENDED : StopReason.NONE,
+                null, System.currentTimeMillis());
     }
 
-    ArrayList<Track> activeQueue() {
-        return host.playbackQueue.isEmpty() ? host.tracks : host.playbackQueue;
+    private static PlaybackPhase phase(int playbackState) {
+        switch (playbackState) {
+            case Player.STATE_BUFFERING:
+                return PlaybackPhase.BUFFERING;
+            case Player.STATE_READY:
+                return PlaybackPhase.READY;
+            case Player.STATE_ENDED:
+                return PlaybackPhase.ENDED;
+            default:
+                return PlaybackPhase.IDLE;
+        }
     }
 
-    boolean isPlayingSource(ArrayList<Track> source) {
-        if (!host.playing || source == null || source.isEmpty() || host.playbackQueue.size() != source.size()) {
-            return false;
-        }
-        for (int i = 0; i < source.size(); i++) {
-            if (!host.playbackQueue.get(i).uri.equals(source.get(i).uri)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    boolean isPlayingCollection(ArrayList<Track> source) {
-        return host.playing && isCurrentCollection(source);
-    }
-
-    boolean isCurrentCollection(ArrayList<Track> source) {
-        if (source == null || source.isEmpty() || host.playbackQueue.size() != source.size()) {
-            return false;
-        }
-        java.util.HashSet<String> expected = new java.util.HashSet<>();
-        java.util.HashSet<String> active = new java.util.HashSet<>();
-        for (Track track : source) {
-            expected.add(track.uri);
-        }
-        for (Track track : host.playbackQueue) {
-            active.add(track.uri);
-        }
-        return expected.size() == source.size() && expected.equals(active);
-    }
-
-    int queueIndexOf(Track track) {
-        ArrayList<Track> queue = activeQueue();
-        for (int i = 0; i < queue.size(); i++) {
-            if (queue.get(i).uri.equals(track.uri)) {
-                return i;
-            }
-        }
-        return Math.max(0, host.tracks.indexOf(track));
-    }
-
-    private final class PlaybackWatcher implements Runnable {
-        @Override
-        public void run() {
-            Track resolvedTrack;
-            PlayerService.refreshSnapshot();
-            if (PlayerService.lastIndex < 0) {
-                if (host.resumeWindowMinutes <= 0) {
-                    host.currentIndex = -1;
-                }
-                host.playing = false;
-                host.resumePosition = Math.max(0, PlayerService.lastPosition);
-                host.updateMini();
-                host.render();
-                return;
-            }
-            host.playing = PlayerService.lastPlaying;
-            host.resumePosition = Math.max(0, PlayerService.lastPosition);
-            if (PlayerService.lastUri != null && !PlayerService.lastUri.isEmpty() && (resolvedTrack = host.findTrack(PlayerService.lastUri)) != null && !host.isCurrent(resolvedTrack)) {
-                host.currentIndex = host.tracks.indexOf(resolvedTrack);
-                host.refreshAfterTrackChange();
-            } else {
-                host.updateMini();
-            }
-            if (host.playing || host.currentIndex >= 0) {
-                host.playbackHandler.postDelayed(this, 900L);
-            }
-        }
+    @Override
+    public void onEvents(Player player, Player.Events events) {
+        boolean refreshRows = events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)
+                || events.contains(Player.EVENT_IS_PLAYING_CHANGED)
+                || events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED);
+        synchronizeUi(refreshRows);
     }
 }

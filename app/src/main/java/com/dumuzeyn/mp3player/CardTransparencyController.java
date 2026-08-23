@@ -21,10 +21,10 @@ final class CardTransparencyController {
     }
 
     void openDialog() {
-        FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(12), host.dp(16), host.dp(12));
-        TextView title = host.text(settingLabel(), 18, true);
+        TextView title = host.uiFactory.text(settingLabel(), 18, true);
         title.setPadding(0, 0, 0, host.dp(8));
         panel.addView(title, new LinearLayout.LayoutParams(-1, -2));
 
@@ -34,120 +34,120 @@ final class CardTransparencyController {
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.songCardOpacity;
+                        return host.appearanceState.songCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.songCardOpacity = value;
+                        host.appearanceState.songCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Favorites", "Избранное"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.favoriteCardOpacity;
+                        return host.appearanceState.favoriteCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.favoriteCardOpacity = value;
+                        host.appearanceState.favoriteCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Playlists", "Плейлисты"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.playlistCardOpacity;
+                        return host.appearanceState.playlistCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.playlistCardOpacity = value;
+                        host.appearanceState.playlistCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Genres", "Жанры"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.genreCardOpacity;
+                        return host.appearanceState.genreCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.genreCardOpacity = value;
+                        host.appearanceState.genreCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Artists", "Исполнители"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.artistCardOpacity;
+                        return host.appearanceState.artistCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.artistCardOpacity = value;
+                        host.appearanceState.artistCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Albums", "Альбомы"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.albumCardOpacity;
+                        return host.appearanceState.albumCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.albumCardOpacity = value;
+                        host.appearanceState.albumCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Settings", "Настройки"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.settingsCardOpacity;
+                        return host.appearanceState.settingsCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.settingsCardOpacity = value;
+                        host.appearanceState.settingsCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Mini-player", "Мини-плеер"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.miniPlayerCardOpacity;
+                        return host.appearanceState.miniPlayerCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.miniPlayerCardOpacity = value;
+                        host.appearanceState.miniPlayerCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Application header", "Шапка приложения"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.headerCardOpacity;
+                        return host.appearanceState.headerCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.headerCardOpacity = value;
+                        host.appearanceState.headerCardOpacity = value;
                     }
                 });
         addControl(controls, host.tr("Dialogs", "Диалоговые окна"),
                 new OpacityValue() {
                     @Override
                     public int get() {
-                        return host.dialogCardOpacity;
+                        return host.appearanceState.dialogCardOpacity;
                     }
 
                     @Override
                     public void set(int value) {
-                        host.dialogCardOpacity = value;
+                        host.appearanceState.dialogCardOpacity = value;
                     }
                 });
 
@@ -155,8 +155,8 @@ final class CardTransparencyController {
         scroll.addView(controls, new ScrollView.LayoutParams(-1, -2));
         panel.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1.0f));
 
-        Button done = host.button(host.tr("Done", "Готово"));
-        host.applyPrimaryButtonStyle(done);
+        Button done = host.uiFactory.button(host.tr("Done", "Готово"));
+        host.uiFactory.applyPrimaryButtonStyle(done);
         done.setOnClickListener(view -> {
             host.saveState();
             host.overlayHost.removeView(shade);
@@ -166,17 +166,17 @@ final class CardTransparencyController {
         int maxHeight = host.getResources().getDisplayMetrics().heightPixels - host.dp(96);
         shade.addView(panel, host.centerParams(host.dp(350), Math.min(host.dp(600), maxHeight)));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     private void addControl(LinearLayout panel, String title, OpacityValue value) {
-        TextView label = host.text(labelText(title, value.get()), 14, true);
+        TextView label = host.uiFactory.text(labelText(title, value.get()), 14, true);
         panel.addView(label, new LinearLayout.LayoutParams(-1, host.dp(24)));
 
         SeekBar seek = new SeekBar(host);
         seek.setMax(MAX_OPACITY - MIN_OPACITY);
         seek.setProgress(value.get() - MIN_OPACITY);
-        host.applySeekBarColors(seek);
+        host.uiFactory.applySeekBarColors(seek);
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {

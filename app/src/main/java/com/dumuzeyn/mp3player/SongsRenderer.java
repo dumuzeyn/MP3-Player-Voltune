@@ -1,7 +1,5 @@
 package com.dumuzeyn.mp3player;
 
-import com.dumuzeyn.mp3player.data.playback.PlaybackStateManager;
-
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -23,58 +21,17 @@ final class SongsRenderer {
     private ArrayList<Track> pendingTracks;
     private int pendingStart;
     private int pendingGeneration = -1;
+    private int renderedStart;
+    private int rowStartChildIndex;
+    private View topSpacer;
+    private int nextRenderScrollY = -1;
 
     SongsRenderer(MainActivityCore host) {
         this.host = host;
     }
 
-    void restoreRecentPlayback() {
-        PlayerService.refreshSnapshot();
-        boolean liveSession = PlayerService.hasPlaybackSession();
-        if (!liveSession && host.resumeWindowMinutes <= 0) {
-            return;
-        }
-        PlaybackStateManager.State savedState = new PlaybackStateManager(host).load();
-        long savedAt = savedState.savedAt;
-        long resumeWindow = (long) host.resumeWindowMinutes * 60000L;
-        if (!liveSession && (savedAt <= 0L || System.currentTimeMillis() - savedAt > resumeWindow)) {
-            return;
-        }
-        String savedUri = savedState.uri;
-        String uri = liveSession && !PlayerService.lastUri.isEmpty()
-                ? PlayerService.lastUri
-                : savedUri;
-        Track track = host.findTrack(uri);
-        if (track == null) {
-            return;
-        }
-        host.currentIndex = host.tracks.indexOf(track);
-        host.playing = liveSession && PlayerService.lastPlaying;
-        host.resumePosition = liveSession
-                ? Math.max(0, PlayerService.lastPosition)
-                : savedState.position;
-        host.loopMode = liveSession
-                ? PlayerService.lastLoopMode
-                : savedState.loopMode;
-        host.shuffleMode = savedState.shuffle;
-        host.playbackQueue.clear();
-        host.playbackQueue.addAll(PlaybackQueueResolver.restore(
-                host.tracks,
-                savedState.queueUris,
-                track));
-        if (!liveSession) {
-            PlayerService.lastIndex = host.currentIndex;
-            PlayerService.lastPlaying = false;
-            PlayerService.lastPosition = host.resumePosition;
-            PlayerService.lastDuration = Math.max(track.durationMs,
-                    savedState.duration);
-            PlayerService.lastUri = uri;
-            PlayerService.lastLoopMode = host.loopMode;
-        }
-    }
-
     void refreshMissingMetadataAsync() {
-        final ArrayList<Track> snapshot = new ArrayList<>(host.tracks);
+        final ArrayList<Track> snapshot = new ArrayList<>(host.libraryState.tracks);
         try {
             metadataExecutor.execute(new Runnable() {
                 @Override
@@ -102,14 +59,24 @@ final class SongsRenderer {
                             if (closed) {
                                 return;
                             }
-                            for (int index = 0; index < host.tracks.size(); index++) {
-                                Track current = host.tracks.get(index);
+                            for (int index = 0; index < host.libraryState.tracks.size(); index++) {
+                                Track current = host.libraryState.tracks.get(index);
                                 Track updated = refreshed.get(current.uri);
                                 if (updated != null) {
-                                    host.tracks.set(index, updated);
+                                    host.libraryState.tracks.set(index, updated);
+                                    host.songRows.refreshMetadata(
+                                            updated.uri, updated,
+                                            host.formatTrackDuration(updated));
+                                    if (host.songsView != null) {
+                                        host.songsView.refreshMetadata(updated);
+                                    }
                                 }
                             }
-                            host.render();
+                            host.libraryRepository.reindex();
+                            if (host.songsView != null) {
+                                host.songsView.refreshFilteredSource(
+                                        host.libraryState.tracks);
+                            }
                         }
                     });
                 }
@@ -146,33 +113,57 @@ final class SongsRenderer {
         renderSongsState(tracks);
     }
 
+    void renderLibrary(ArrayList<Track> tracks, String query) {
+        if (!host.navigationState.renderingTabPreview && host.songsView != null) {
+            host.songsView.show(tracks, query);
+            return;
+        }
+        renderSongsState(host.libraryListController.filter(tracks));
+    }
+
     void renderSongsState(ArrayList<Track> tracks) {
         pendingTracks = null;
         pendingStart = 0;
         pendingGeneration = -1;
+        renderedStart = 0;
+        topSpacer = null;
         String title;
         String titleRu;
         if (tracks.isEmpty()) {
-            if (host.tabIndex == 0) {
+            if (host.navigationState.tabIndex == 0) {
                 title = "Add MP3 or another audio file";
                 titleRu = "Добавьте MP3 или другой аудиофайл";
             } else {
                 title = "Nothing here yet";
                 titleRu = "Здесь пока пусто";
             }
-            TextView empty = host.text(host.tr(title, titleRu), 18, true);
+            TextView empty = host.uiFactory.text(host.tr(title, titleRu), 18, true);
             empty.setPadding(host.dp(12), host.dp(24), host.dp(12), host.dp(24));
             host.list.addView(empty);
             host.addMiniSpacerIfNeeded();
             return;
         }
         pendingTracks = new ArrayList<>(tracks);
-        pendingGeneration = host.songRenderGeneration;
+        pendingGeneration = host.navigationState.songRenderGeneration;
+        rowStartChildIndex = host.list.getChildCount();
+        int initialScrollY = nextRenderScrollY;
+        nextRenderScrollY = -1;
+        if (initialScrollY > 0 && initializeWindow(initialScrollY)) {
+            return;
+        }
         appendNextSongBatch();
     }
 
+    void prepareNextRenderForScroll(int scrollY) {
+        nextRenderScrollY = Math.max(0, scrollY);
+    }
+
     void loadMoreIfNearBottom() {
-        if (host.contentScroll == null || pendingTracks == null || pendingStart >= pendingTracks.size()) {
+        if (host.contentScroll == null || pendingTracks == null) {
+            return;
+        }
+        prependPreviousBatchIfNeeded();
+        if (pendingStart >= pendingTracks.size()) {
             return;
         }
         View child = host.contentScroll.getChildAt(0);
@@ -187,49 +178,108 @@ final class SongsRenderer {
         if (scrollY <= 0 || pendingTracks == null) {
             return;
         }
-        int approximateRows = Math.max(24, scrollY / Math.max(1, host.dp(62)) + 18);
-        while (pendingTracks != null && pendingStart < approximateRows) {
-            appendNextSongBatch();
+        initializeWindow(scrollY);
+    }
+
+    private boolean initializeWindow(int scrollY) {
+        int rowHeight = estimatedRowHeight();
+        int targetStart = Math.max(0, scrollY / rowHeight - 8);
+        if (targetStart <= 0 || targetStart < pendingStart) {
+            return false;
+        }
+        while (host.list.getChildCount() > rowStartChildIndex) {
+            host.list.removeViewAt(host.list.getChildCount() - 1);
+        }
+        host.activeSongRows().clear();
+        renderedStart = targetStart;
+        pendingStart = targetStart;
+        topSpacer = new View(host);
+        topSpacer.setLayoutParams(new LinearLayout.LayoutParams(
+                -1, targetStart * rowHeight));
+        host.list.addView(topSpacer);
+        appendNextSongBatch();
+        return true;
+    }
+
+    private void prependPreviousBatchIfNeeded() {
+        if (renderedStart <= 0 || topSpacer == null || pendingTracks == null) {
+            return;
+        }
+        int spacerHeight = renderedStart * estimatedRowHeight();
+        if (host.contentScroll.getScrollY() > spacerHeight + host.dp(700)) {
+            return;
+        }
+        int newStart = Math.max(0, renderedStart - 15);
+        int insertionIndex = rowStartChildIndex + 1;
+        for (int index = newStart; index < renderedStart; index++) {
+            host.list.addView(songRow(pendingTracks.get(index), true, true),
+                    insertionIndex++);
+        }
+        renderedStart = newStart;
+        if (renderedStart == 0) {
+            host.list.removeView(topSpacer);
+            topSpacer = null;
+        } else {
+            topSpacer.getLayoutParams().height = renderedStart * estimatedRowHeight();
+            topSpacer.requestLayout();
         }
     }
 
+    private int estimatedRowHeight() {
+        return Math.max(1, host.dp(66));
+    }
+
     BatchState captureBatchState() {
-        return new BatchState(pendingTracks, pendingStart, pendingGeneration);
+        return new BatchState(pendingTracks, pendingStart, pendingGeneration,
+                renderedStart, rowStartChildIndex, topSpacer);
     }
 
     void restoreBatchState(BatchState state) {
         pendingTracks = state.pendingTracks;
         pendingStart = state.pendingStart;
         pendingGeneration = state.pendingGeneration;
+        renderedStart = state.renderedStart;
+        rowStartChildIndex = state.rowStartChildIndex;
+        topSpacer = state.topSpacer;
     }
 
     static final class BatchState {
         final ArrayList<Track> pendingTracks;
         final int pendingStart;
         final int pendingGeneration;
+        final int renderedStart;
+        final int rowStartChildIndex;
+        final View topSpacer;
 
-        BatchState(ArrayList<Track> pendingTracks, int pendingStart, int pendingGeneration) {
+        BatchState(ArrayList<Track> pendingTracks, int pendingStart, int pendingGeneration,
+                int renderedStart, int rowStartChildIndex, View topSpacer) {
             this.pendingTracks = pendingTracks;
             this.pendingStart = pendingStart;
             this.pendingGeneration = pendingGeneration;
+            this.renderedStart = renderedStart;
+            this.rowStartChildIndex = rowStartChildIndex;
+            this.topSpacer = topSpacer;
         }
     }
 
     private void appendNextSongBatch() {
-        if (pendingTracks == null || pendingGeneration != host.songRenderGeneration || host.tabIndex > 1) {
+        if (pendingTracks == null || pendingGeneration != host.navigationState.songRenderGeneration
+                || host.navigationState.tabIndex > 1) {
             pendingTracks = null;
+            return;
+        }
+        if (pendingStart >= pendingTracks.size()) {
             return;
         }
         ArrayList<Track> tracksToRender = pendingTracks;
         int start = pendingStart;
-        int batchSize = host.renderingTabPreview ? 15 : 24;
+        int batchSize = 15;
         int end = Math.min(tracksToRender.size(), start + batchSize);
         for (int i = start; i < end; i++) {
             host.list.addView(songRow(tracksToRender.get(i), true, true));
         }
         pendingStart = end;
         if (end >= tracksToRender.size()) {
-            pendingTracks = null;
             host.addMiniSpacerIfNeeded();
         }
     }
@@ -249,33 +299,31 @@ final class SongsRenderer {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(16);
         row.setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4));
-        host.applyCardStyle(row, host.tabIndex == 1
-                ? host.favoriteCardOpacity : host.songCardOpacity);
+        host.uiFactory.applyCardStyle(row, host.navigationState.tabIndex == 1
+                ? host.appearanceState.favoriteCardOpacity : host.appearanceState.songCardOpacity);
 
         View marker = new View(host);
         marker.setBackgroundColor(host.yellow);
         marker.setVisibility(host.isCurrent(track) ? View.VISIBLE : View.INVISIBLE);
-        if (!host.renderingTabPreview) {
-            host.songRows.registerCurrentMarker(track.uri, marker);
-        }
+        host.activeSongRows().registerCurrentMarker(track.uri, marker);
 
-        ImageView cover = host.coverView();
-        host.loadCover(cover, track, host.purpleSoft);
+        ImageView cover = host.uiFactory.coverView();
+        host.artworkUi.loadCover(cover, track, host.purpleSoft);
         cover.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                host.seedCoverCacheFromView(cover, track);
-                host.playTrack(track);
-                host.fullPlayerOpening = true;
-                host.openFullPlayer();
+                host.artworkUi.seedFromView(cover, track);
+                host.playbackQueueController.playTrack(track, true);
+                host.navigationState.fullPlayerOpening = true;
+                host.playerUiController.openFullPlayer();
             }
         });
-        row.addView(cover, host.square(52));
+        row.addView(cover, host.uiFactory.square(52));
 
         LinearLayout textColumn = new LinearLayout(host);
         textColumn.setOrientation(LinearLayout.VERTICAL);
         textColumn.setPadding(host.dp(10), 0, host.dp(6), 0);
-        TextView title = host.text(track.title, 16, true);
+        TextView title = host.uiFactory.text(track.title, 16, true);
         title.setTextColor(host.primaryText);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
@@ -284,22 +332,22 @@ final class SongsRenderer {
         LinearLayout metaRow = new LinearLayout(host);
         metaRow.setOrientation(LinearLayout.HORIZONTAL);
         metaRow.setGravity(16);
-        WaveformView waveform = host.wave(track, host.isCurrent(track));
-        if (!host.renderingTabPreview) {
-            host.songRows.registerWaveform(track.uri, waveform);
-        }
+        WaveformView waveform = host.artworkUi.createWaveform(
+                track, host.isCurrent(track));
+        host.activeSongRows().registerWaveform(track.uri, waveform);
         metaRow.addView(waveform, new LinearLayout.LayoutParams(0, host.dp(26), 1.0f));
-        TextView duration = host.text(host.formatTrackDuration(track), 12, false);
+        TextView duration = host.uiFactory.text(host.formatTrackDuration(track), 12, false);
         duration.setGravity(17);
         duration.setTextColor(host.secondaryText);
         metaRow.addView(duration, new LinearLayout.LayoutParams(host.dp(46), host.dp(26)));
+        host.activeSongRows().registerMetadata(track.uri, title, duration);
         textColumn.addView(metaRow);
         row.addView(textColumn, new LinearLayout.LayoutParams(0, host.dp(62), 1.0f));
 
-        if (host.tabIndex == 1) {
-            Button favorite = host.icon(host.favorites.contains(track.uri) ? "♥︎" : "♡︎");
+        if (host.navigationState.tabIndex == 1) {
+            Button favorite = host.uiFactory.icon(host.libraryState.favorites.contains(track.uri) ? "♥︎" : "♡︎");
             favorite.setTextSize(14.0f);
-            host.applyPlainIconStyle(favorite, host.favorites.contains(track.uri) ? host.purple : host.secondaryText);
+            host.uiFactory.applyPlainIconStyle(favorite, host.libraryState.favorites.contains(track.uri) ? host.purple : host.secondaryText);
             favorite.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -307,49 +355,48 @@ final class SongsRenderer {
                     host.render();
                 }
             });
-            row.addView(favorite, host.square(40));
+            row.addView(favorite, host.uiFactory.square(40));
         } else if (showActions) {
-            Button actions = host.icon("⋯");
-            host.applyPlainIconStyle(actions);
+            Button actions = host.uiFactory.icon("⋯");
+            host.uiFactory.applyPlainIconStyle(actions);
             actions.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     if (actionOverride != null) {
                         actionOverride.run();
                     } else {
-                        host.openSongActions(track);
+                        host.overlayController.openSongActions(track);
                     }
                 }
             });
-            row.addView(actions, host.square(44));
+            row.addView(actions, host.uiFactory.square(44));
         }
 
-        Button play = host.icon("");
-        host.applyPrimaryButtonStyle(play);
-        SongRowStateRegistry.applyPlayState(play, host.isCurrent(track) && host.playing);
+        Button play = host.uiFactory.icon("");
+        host.uiFactory.applyPrimaryButtonStyle(play);
+        SongRowStateRegistry.applyPlayState(play,
+                host.isCurrent(track) && host.isPlaybackPlaying());
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (host.isCurrent(track)) {
-                    host.toggleCurrent();
+                    host.playbackQueueController.toggleOrStart();
                 } else {
-                    host.playTrack(track);
+                    host.playbackQueueController.playTrack(track, true);
                 }
                 if (afterPlay != null) {
                     afterPlay.run();
                 }
             }
         });
-        if (!host.renderingTabPreview) {
-            host.songRows.registerPlayButton(track.uri, play);
-        }
-        row.addView(play, host.square(44));
+        host.activeSongRows().registerPlayButton(track.uri, play);
+        row.addView(play, host.uiFactory.square(44));
         container.addView(row, new FrameLayout.LayoutParams(-1, -2));
         FrameLayout.LayoutParams markerParams = new FrameLayout.LayoutParams(host.dp(4), host.dp(52));
         markerParams.gravity = android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL;
         markerParams.setMargins(host.dp(2), 0, 0, 0);
         container.addView(marker, markerParams);
-        return host.spaced(container);
+        return host.uiFactory.spaced(container);
     }
 
     View queueRow(final Track track, final Runnable removeAction, final Runnable playAction) {
@@ -357,40 +404,43 @@ final class SongsRenderer {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(16);
         row.setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4));
-        host.setSurface(row, host.isCurrent(track) ? host.fg : host.panel, false,
-                host.songCardOpacity);
+        host.uiFactory.setSurface(row, host.isCurrent(track) ? host.fg : host.panel, false,
+                host.appearanceState.songCardOpacity);
 
-        ImageView cover = host.coverView();
-        host.loadCover(cover, track, host.dark ? android.graphics.Color.rgb(28, 28, 28) : android.graphics.Color.rgb(235, 235, 235));
-        row.addView(cover, host.square(52));
+        ImageView cover = host.uiFactory.coverView();
+        host.artworkUi.loadCover(cover, track,
+                host.appearanceState.dark ? android.graphics.Color.rgb(28, 28, 28)
+                        : android.graphics.Color.rgb(235, 235, 235));
+        row.addView(cover, host.uiFactory.square(52));
 
-        TextView title = host.text(track.title, 17, true);
+        TextView title = host.uiFactory.text(track.title, 17, true);
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         title.setPadding(host.dp(12), 0, host.dp(8), 0);
         title.setTextColor(host.isCurrent(track) ? host.bg : host.fg);
         row.addView(title, new LinearLayout.LayoutParams(0, host.dp(62), 1.0f));
 
-        Button remove = host.icon("−");
-        host.applyPlainIconStyle(remove, host.isCurrent(track) ? host.bg : android.graphics.Color.rgb(190, 45, 45));
+        Button remove = host.uiFactory.icon("−");
+        host.uiFactory.applyPlainIconStyle(remove, host.isCurrent(track) ? host.bg : android.graphics.Color.rgb(190, 45, 45));
         remove.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 removeAction.run();
             }
         });
-        row.addView(remove, host.square(44));
+        row.addView(remove, host.uiFactory.square(44));
 
-        Button play = host.icon("");
-        host.applyPlainIconStyle(play, host.isCurrent(track) ? host.bg : host.purple);
-        SongRowStateRegistry.applyPlayState(play, host.isCurrent(track) && host.playing);
+        Button play = host.uiFactory.icon("");
+        host.uiFactory.applyPlainIconStyle(play, host.isCurrent(track) ? host.bg : host.purple);
+        SongRowStateRegistry.applyPlayState(play,
+                host.isCurrent(track) && host.isPlaybackPlaying());
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 playAction.run();
             }
         });
-        row.addView(play, host.square(44));
-        return host.spaced(row);
+        row.addView(play, host.uiFactory.square(44));
+        return host.uiFactory.spaced(row);
     }
 }

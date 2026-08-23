@@ -1,10 +1,9 @@
 package com.dumuzeyn.mp3player;
 
-import android.content.Intent;
-import android.os.Build;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import com.dumuzeyn.mp3player.playback.service.PlaybackSleepTimer;
 
 final class SleepTimerController {
     private final MainActivityCore host;
@@ -15,18 +14,18 @@ final class SleepTimerController {
 
     void openDialog() {
         syncFromService();
-        final FrameLayout shade = host.shade();
-        LinearLayout panel = host.panelCard();
+        final FrameLayout shade = host.uiFactory.shade();
+        LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.text(host.tr3("Sleep timer", "Таймер сна", "◷"), 22, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.text(host.tr3("Sleep timer", "Таймер сна", "◷"), 22, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
 
         LinearLayout actions = new LinearLayout(host);
         actions.setOrientation(LinearLayout.VERTICAL);
-        int[] values = {5, 15, 30, host.customTimerMinutes};
-        String[] labels = {"5 min", "15 min", "30 min", host.customTimerMinutes + " min"};
+        int[] values = {5, 15, 30, host.appearanceState.customTimerMinutes};
+        String[] labels = {"5 min", "15 min", "30 min", host.appearanceState.customTimerMinutes + " min"};
         for (int i = 0; i < values.length; i++) {
             final int minutes = values[i];
-            Button button = host.button(labels[i]);
+            Button button = host.uiFactory.button(labels[i]);
             button.setOnClickListener(view -> {
                 host.overlayHost.removeView(shade);
                 start(minutes);
@@ -36,7 +35,7 @@ final class SleepTimerController {
             actions.addView(button, params);
         }
 
-        Button custom = host.button(host.tr3("Custom time", "Свое время", "Custom"));
+        Button custom = host.uiFactory.button(host.tr3("Custom time", "Свое время", "Custom"));
         custom.setOnClickListener(view -> {
             host.overlayHost.removeView(shade);
             openCustomDialog();
@@ -45,8 +44,8 @@ final class SleepTimerController {
         customParams.setMargins(0, host.dp(4), 0, host.dp(4));
         actions.addView(custom, customParams);
 
-        if (host.sleepTimerEndsAt > 0) {
-            Button cancel = host.button(host.tr3("Disable timer", "Выключить таймер", "×"));
+        if (host.playbackUiState.sleepTimerEndsAt > 0) {
+            Button cancel = host.uiFactory.button(host.tr3("Disable timer", "Выключить таймер", "×"));
             cancel.setOnClickListener(view -> {
                 host.overlayHost.removeView(shade);
                 cancel();
@@ -59,19 +58,19 @@ final class SleepTimerController {
         panel.addView(actions);
         shade.addView(panel, host.centerParams(host.dp(330), -2));
         host.overlayHost.addView(shade);
-        host.updateMini();
+        host.playerUiController.updateMini();
     }
 
     void openCustomDialog() {
-        host.showInputPanel(host.tr3("Custom time", "Свое время", "◷"),
+        host.overlayController.showInput(host.tr3("Custom time", "Свое время", "◷"),
                 host.tr3("Minutes", "Минуты", "′"),
-                String.valueOf(host.customTimerMinutes),
+                String.valueOf(host.appearanceState.customTimerMinutes),
                 true,
                 value -> {
                     try {
-                        host.customTimerMinutes = Math.max(1, Integer.parseInt(value.trim()));
+                        host.appearanceState.customTimerMinutes = Math.max(1, Integer.parseInt(value.trim()));
                         host.saveState();
-                        start(host.customTimerMinutes);
+                        start(host.appearanceState.customTimerMinutes);
                     } catch (Exception ignored) {
                     }
                 });
@@ -79,43 +78,30 @@ final class SleepTimerController {
 
     void start(int minutes) {
         long delayMs = Math.max(1L, (long) minutes) * 60L * 1000L;
-        host.sleepTimerEndsAt = System.currentTimeMillis() + delayMs;
-        sendTimerAction(PlayerService.ACTION_TIMER_START, delayMs);
+        host.playbackUiState.sleepTimerEndsAt = System.currentTimeMillis() + delayMs;
+        host.playbackController.startSleepTimer(delayMs);
         host.playerUiController.syncPlaybackUi();
     }
 
     void cancel() {
-        host.sleepTimerEndsAt = 0L;
-        sendTimerAction(PlayerService.ACTION_TIMER_CANCEL, 0L);
+        host.playbackUiState.sleepTimerEndsAt = 0L;
+        host.playbackController.cancelSleepTimer();
         host.playerUiController.syncPlaybackUi();
     }
 
     String buttonText() {
-        if (host.sleepTimerEndsAt > 0L
-                && host.sleepTimerEndsAt <= System.currentTimeMillis()) {
+        if (host.playbackUiState.sleepTimerEndsAt > 0L
+                && host.playbackUiState.sleepTimerEndsAt <= System.currentTimeMillis()) {
             syncFromService();
         }
-        if (host.sleepTimerEndsAt <= 0) {
+        if (host.playbackUiState.sleepTimerEndsAt <= 0) {
             return host.tr("Timer ◷", "Таймер ◷");
         }
-        long remainingMs = Math.max(0L, host.sleepTimerEndsAt - System.currentTimeMillis());
+        long remainingMs = Math.max(0L, host.playbackUiState.sleepTimerEndsAt - System.currentTimeMillis());
         return host.formatSeconds((remainingMs + 999L) / 1000L);
     }
 
     private void syncFromService() {
-        host.sleepTimerEndsAt = PlayerService.getSleepTimerEndsAt(host);
-    }
-
-    private void sendTimerAction(String action, long delayMs) {
-        Intent intent = new Intent(host, (Class<?>) PlayerService.class);
-        intent.setAction(action);
-        if (delayMs > 0L) {
-            intent.putExtra(PlayerService.EXTRA_TIMER_MS, delayMs);
-        }
-        if (Build.VERSION.SDK_INT >= 26) {
-            host.startForegroundService(intent);
-        } else {
-            host.startService(intent);
-        }
+        host.playbackUiState.sleepTimerEndsAt = PlaybackSleepTimer.readEndsAt(host);
     }
 }
