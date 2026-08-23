@@ -42,6 +42,7 @@ final class BackgroundMediaView extends ImageView {
     private final int blurPercent;
     private Movie legacyMovie;
     private long movieStartedAt;
+    private boolean uiActive = true;
 
     BackgroundMediaView(android.content.Context context, String mediaUri, int blurPercent,
             int fallbackColor) {
@@ -117,14 +118,25 @@ final class BackgroundMediaView extends ImageView {
         }
         setImageDrawable(decoded.drawable);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            Api28Decoder.startIfAnimated(decoded.drawable);
+            Api28Decoder.setAnimatedRunning(decoded.drawable, uiActive);
         }
         applyModernBlur();
     }
 
+    void setUiActive(boolean active) {
+        uiActive = active;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            Api28Decoder.setAnimatedRunning(getDrawable(), active);
+        }
+        if (active) {
+            movieStartedAt = SystemClock.uptimeMillis();
+            invalidate();
+        }
+    }
+
     @Override
     protected void onDraw(android.graphics.Canvas canvas) {
-        if (legacyMovie == null) {
+        if (legacyMovie == null || !uiActive) {
             super.onDraw(canvas);
             return;
         }
@@ -271,9 +283,11 @@ final class BackgroundMediaView extends ImageView {
             }
         }
 
-        static void startIfAnimated(Drawable drawable) {
+        static void setAnimatedRunning(Drawable drawable, boolean running) {
             if (drawable instanceof android.graphics.drawable.AnimatedImageDrawable) {
-                ((android.graphics.drawable.AnimatedImageDrawable) drawable).start();
+                android.graphics.drawable.AnimatedImageDrawable animated =
+                        (android.graphics.drawable.AnimatedImageDrawable) drawable;
+                if (running) animated.start(); else animated.stop();
             }
         }
     }

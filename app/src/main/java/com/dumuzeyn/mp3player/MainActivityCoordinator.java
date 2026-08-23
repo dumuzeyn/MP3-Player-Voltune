@@ -19,7 +19,6 @@ final class MainActivityCoordinator {
         closeables.add(host.trackSearchController);
         closeables.add(host.globalSearchController);
         closeables.add(host.lyricsRepository);
-        closeables.add(host.lyricsOverlayController::close);
         closeables.add(host.metadataEditorController);
         closeables.add(() -> {
             if (host.songsView != null) {
@@ -49,11 +48,10 @@ final class MainActivityCoordinator {
         host.libraryLoader.load(
                 host.getIntent().getIntExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 0),
                 host::applyLibrarySnapshot);
-        host.uiHandler.postDelayed(
-                host.backgroundPlaybackSettingsController::maybePromptOnce, 900L);
     }
 
     void onResume() {
+        UiVisibilityController.apply(host, true);
         host.playbackUiState.sleepTimerEndsAt = PlaybackSleepTimer.readEndsAt(host);
         host.playerUiController.syncPlaybackUi();
         host.refreshAfterTrackChange();
@@ -68,6 +66,7 @@ final class MainActivityCoordinator {
     }
 
     void onStop() {
+        UiVisibilityController.apply(host, false);
         host.themeController.onHostStopped();
     }
 

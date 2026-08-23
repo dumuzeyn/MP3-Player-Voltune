@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /** Reads bounded local sidecar and embedded lyrics through ContentResolver only. */
 final class LyricsRepository implements AutoCloseable {
@@ -24,6 +26,12 @@ final class LyricsRepository implements AutoCloseable {
     private final android.os.Handler mainHandler;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private volatile boolean closed;
+    private final Map<String, LrcDocument> cache = new LinkedHashMap<String, LrcDocument>(
+            8, 0.75f, true) {
+        @Override protected boolean removeEldestEntry(Map.Entry<String, LrcDocument> eldest) {
+            return size() > 12;
+        }
+    };
 
     LyricsRepository(Context context, android.os.Handler mainHandler) {
         this.context = context;
@@ -31,9 +39,19 @@ final class LyricsRepository implements AutoCloseable {
     }
 
     void load(Track track, Callback callback) {
+        synchronized (cache) {
+            LrcDocument cached = cache.get(track.uri);
+            if (cached != null) {
+                mainHandler.post(() -> callback.loaded(cached));
+                return;
+            }
+        }
         try {
             executor.execute(() -> {
                 LrcDocument result = find(track);
+                synchronized (cache) {
+                    cache.put(track.uri, result);
+                }
                 mainHandler.post(() -> {
                     if (!closed) {
                         callback.loaded(result);
@@ -48,6 +66,9 @@ final class LyricsRepository implements AutoCloseable {
     @Override
     public void close() {
         closed = true;
+        synchronized (cache) {
+            cache.clear();
+        }
         executor.shutdownNow();
     }
 

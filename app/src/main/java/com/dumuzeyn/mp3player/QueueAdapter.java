@@ -3,11 +3,13 @@ package com.dumuzeyn.mp3player;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-final class QueueAdapter extends RecyclerView.Adapter<QueueAdapter.Holder> {
+final class QueueAdapter extends ListAdapter<Track, QueueAdapter.Holder> {
     interface Listener {
         void remove(int index);
         void play(int index);
@@ -16,18 +18,30 @@ final class QueueAdapter extends RecyclerView.Adapter<QueueAdapter.Holder> {
 
     private final MainActivityCore host;
     private final Listener listener;
-    private final ArrayList<Track> tracks;
+    private static final DiffUtil.ItemCallback<Track> DIFF =
+            new DiffUtil.ItemCallback<Track>() {
+                @Override public boolean areItemsTheSame(@NonNull Track oldItem,
+                        @NonNull Track newItem) {
+                    return oldItem.trackId.equals(newItem.trackId);
+                }
+                @Override public boolean areContentsTheSame(@NonNull Track oldItem,
+                        @NonNull Track newItem) {
+                    return oldItem.uri.equals(newItem.uri)
+                            && oldItem.title.equals(newItem.title);
+                }
+            };
 
     QueueAdapter(MainActivityCore host, List<Track> tracks, Listener listener) {
+        super(DIFF);
         this.host = host;
         this.listener = listener;
-        this.tracks = new ArrayList<>(tracks);
         setHasStableIds(true);
+        submitTracks(tracks);
     }
 
     @Override
     public long getItemId(int position) {
-        return tracks.get(position).trackId.hashCode();
+        return getItem(position).trackId.hashCode();
     }
 
     @NonNull
@@ -41,35 +55,36 @@ final class QueueAdapter extends RecyclerView.Adapter<QueueAdapter.Holder> {
     @Override
     public void onBindViewHolder(@NonNull Holder holder, int position) {
         holder.container.removeAllViews();
-        Track track = tracks.get(position);
+        Track track = getItem(position);
         holder.container.addView(host.songsRenderer.queueRow(track,
                 () -> remove(holder.getBindingAdapterPosition()),
                 () -> listener.play(holder.getBindingAdapterPosition())),
                 new FrameLayout.LayoutParams(-1, -2));
     }
 
-    @Override
-    public int getItemCount() {
-        return tracks.size();
+    void submitTracks(List<Track> tracks) {
+        submitList(new ArrayList<>(tracks));
     }
 
     boolean move(int from, int to) {
-        if (from < 0 || to < 0 || from >= tracks.size() || to >= tracks.size()) {
+        if (from < 0 || to < 0 || from >= getItemCount() || to >= getItemCount()) {
             return false;
         }
+        ArrayList<Track> tracks = new ArrayList<>(getCurrentList());
         Track moved = tracks.remove(from);
         tracks.add(to, moved);
-        notifyItemMoved(from, to);
+        submitList(tracks);
         listener.move(from, to);
         return true;
     }
 
     void remove(int position) {
-        if (position < 0 || position >= tracks.size()) {
+        if (position < 0 || position >= getItemCount()) {
             return;
         }
+        ArrayList<Track> tracks = new ArrayList<>(getCurrentList());
         tracks.remove(position);
-        notifyItemRemoved(position);
+        submitList(tracks);
         listener.remove(position);
     }
 

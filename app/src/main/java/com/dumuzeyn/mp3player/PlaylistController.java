@@ -15,6 +15,7 @@ final class PlaylistController {
     private int previewGeneration = -1;
     private int playbackGeneration = -1;
     private boolean previewTickerScheduled;
+    private boolean uiActive = true;
     private final Runnable previewTicker = new Runnable() {
         @Override
         public void run() {
@@ -32,6 +33,13 @@ final class PlaylistController {
 
     PlaylistController(MainActivityCore host) {
         this.host = host;
+    }
+
+    void setUiActive(boolean active) {
+        uiActive = active;
+        host.uiHandler.removeCallbacks(previewTicker);
+        previewTickerScheduled = false;
+        if (active) schedulePreviewTicker();
     }
 
     void beginPlaybackBindings(int generation) {
@@ -121,7 +129,7 @@ final class PlaylistController {
     }
 
     private void schedulePreviewTicker() {
-        if (host.appearanceState.playlistTickerSpeed <= 0) {
+        if (!uiActive || host.appearanceState.playlistTickerSpeed <= 0) {
             host.uiHandler.removeCallbacks(previewTicker);
             previewTickerScheduled = false;
             return;

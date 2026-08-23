@@ -58,7 +58,7 @@ class MainActivityCore extends Activity {
     final AppearanceState appearanceState = new AppearanceState();
     private final LocalizationController localization = new LocalizationController(this);
     final PlaybackUiState playbackUiState = new PlaybackUiState();
-    private ParticleEffectsView particleEffectsView;
+    ParticleEffectsView particleEffectsView;
     final Handler uiHandler = new Handler(Looper.getMainLooper());
     final Handler playbackHandler = new Handler(Looper.getMainLooper());
     final SongRowStateRegistry songRows = new SongRowStateRegistry();
@@ -120,7 +120,6 @@ class MainActivityCore extends Activity {
     final GlobalSearchController globalSearchController =
             new GlobalSearchController(this.uiHandler);
     final LyricsRepository lyricsRepository = new LyricsRepository(this, this.uiHandler);
-    final LyricsOverlayController lyricsOverlayController = new LyricsOverlayController(this);
     final MetadataEditorController metadataEditorController = new MetadataEditorController(this);
     final LibraryRepository libraryRepository = new LibraryRepository(
             this.libraryState.tracks, this.libraryState.favorites,

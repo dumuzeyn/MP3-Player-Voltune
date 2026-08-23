@@ -84,6 +84,7 @@ public final class Media3PlayerService extends MediaLibraryService {
         player = new ExoPlayer.Builder(this)
                 .setAudioAttributes(attributes, !uninterrupted)
                 .setHandleAudioBecomingNoisy(!uninterrupted)
+                .setWakeMode(C.WAKE_MODE_LOCAL)
                 .build();
         player.addListener(new PlayerEvents());
         commandHandler = new Media3SessionCommandHandler(player, sleepTimer, stateManager,

@@ -25,6 +25,7 @@ final class ParticleEffectsView extends View {
     private float lastTouchY;
     private boolean attached;
     private boolean windowVisible;
+    private boolean uiActive = true;
 
     private final Runnable ambientEmitter = new Runnable() {
         @Override
@@ -79,6 +80,12 @@ final class ParticleEffectsView extends View {
         invalidate();
     }
 
+    void setUiActive(boolean active) {
+        uiActive = active;
+        updateEmitter();
+        if (active) invalidate();
+    }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         return false;
@@ -110,7 +117,7 @@ final class ParticleEffectsView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (!host.appearanceState.particlesEnabled) {
+        if (!uiActive || !host.appearanceState.particlesEnabled) {
             particles.clear();
             return;
         }
@@ -144,7 +151,8 @@ final class ParticleEffectsView extends View {
 
     private void updateEmitter() {
         removeCallbacks(ambientEmitter);
-        if (attached && windowVisible && host.appearanceState.particlesEnabled) {
+        if (attached && windowVisible && uiActive
+                && host.appearanceState.particlesEnabled) {
             postDelayed(ambientEmitter, 350L);
         } else {
             particles.clear();
