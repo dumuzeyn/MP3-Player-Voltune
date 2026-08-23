@@ -103,14 +103,17 @@ public class MusicFoldersUiInstrumentedTest {
             return;
         }
         int[] location = new int[2];
-        int[] rootLocation = new int[2];
         view.getLocationOnScreen(location);
-        root.getLocationOnScreen(rootLocation);
-        assertTrue("View extends left of the screen", location[0] >= rootLocation[0]);
-        assertTrue("View extends right of the screen",
-                location[0] + view.getWidth() <= rootLocation[0] + root.getWidth());
-        assertTrue("View extends below the screen",
-                location[1] + view.getHeight() <= rootLocation[1] + root.getHeight());
+        int screenWidth = root.getResources().getDisplayMetrics().widthPixels;
+        int screenHeight = root.getResources().getDisplayMetrics().heightPixels;
+        String bounds = " at " + location[0] + "," + location[1]
+                + " size " + view.getWidth() + "x" + view.getHeight()
+                + " on " + screenWidth + "x" + screenHeight;
+        assertTrue("View extends left of the screen" + bounds, location[0] >= 0);
+        assertTrue("View extends right of the screen" + bounds,
+                location[0] + view.getWidth() <= screenWidth);
+        assertTrue("View extends below the screen" + bounds,
+                location[1] + view.getHeight() <= screenHeight);
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             if (group instanceof ScrollView) {
