@@ -21,6 +21,7 @@ final class PlayerGradientBackground extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final int startColor;
     private final int endColor;
+    private boolean uiActive = true;
 
     PlayerGradientBackground(Context context, Config config, int startColor, int endColor) {
         super(context);
@@ -29,10 +30,15 @@ final class PlayerGradientBackground extends View {
         this.endColor = endColor;
     }
 
+    void setUiActive(boolean active) {
+        uiActive = active;
+        if (active) invalidate();
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        float phase = config.animationsEnabled()
+        float phase = uiActive && config.animationsEnabled()
                 ? (SystemClock.uptimeMillis() % 12000L) / 12000.0f
                 : 0.18f;
         double angle = phase * Math.PI * 2.0;
@@ -50,7 +56,7 @@ final class PlayerGradientBackground extends View {
                 new int[]{baseColor, purpleTint, yellowTint, baseColor},
                 new float[]{0.0f, 0.38f, 0.68f, 1.0f}, Shader.TileMode.CLAMP));
         canvas.drawRect(0.0f, 0.0f, getWidth(), getHeight(), paint);
-        if (config.animationsEnabled() && isAttachedToWindow()) {
+        if (uiActive && config.animationsEnabled() && isAttachedToWindow()) {
             postInvalidateDelayed(40L);
         }
     }

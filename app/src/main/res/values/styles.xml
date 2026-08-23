@@ -16,15 +16,35 @@
         <item name="android:navigationBarColor">#000000</item>
         <item name="android:windowBackground">#000000</item>
     </style>
-    <style name="AppThemeCustomBlueLight" parent="AppTheme" />
-    <style name="AppThemeCustomBlueDark" parent="AppTheme.Dark" />
-    <style name="AppThemeCustomRedLight" parent="AppTheme" />
-    <style name="AppThemeCustomRedDark" parent="AppTheme.Dark" />
-    <style name="AppThemeCustomGreenLight" parent="AppTheme" />
-    <style name="AppThemeCustomGreenDark" parent="AppTheme.Dark" />
-    <style name="AppThemeCustomPinkLight" parent="AppTheme" />
-    <style name="AppThemeCustomPinkDark" parent="AppTheme.Dark" />
-    <style name="AppThemeCustomOrangeLight" parent="AppTheme" />
-    <style name="AppThemeCustomOrangeDark" parent="AppTheme.Dark" />
+    <style name="AppThemeCustomBlueLight" parent="AppTheme">
+        <item name="android:windowBackground">@color/launcher_icon_blue_light_bg</item>
+    </style>
+    <style name="AppThemeCustomBlueDark" parent="AppTheme.Dark">
+        <item name="android:windowBackground">@color/launcher_icon_blue_dark_bg</item>
+    </style>
+    <style name="AppThemeCustomRedLight" parent="AppTheme">
+        <item name="android:windowBackground">@color/launcher_icon_red_light_bg</item>
+    </style>
+    <style name="AppThemeCustomRedDark" parent="AppTheme.Dark">
+        <item name="android:windowBackground">@color/launcher_icon_red_dark_bg</item>
+    </style>
+    <style name="AppThemeCustomGreenLight" parent="AppTheme">
+        <item name="android:windowBackground">@color/launcher_icon_green_light_bg</item>
+    </style>
+    <style name="AppThemeCustomGreenDark" parent="AppTheme.Dark">
+        <item name="android:windowBackground">@color/launcher_icon_green_dark_bg</item>
+    </style>
+    <style name="AppThemeCustomPinkLight" parent="AppTheme">
+        <item name="android:windowBackground">@color/launcher_icon_pink_light_bg</item>
+    </style>
+    <style name="AppThemeCustomPinkDark" parent="AppTheme.Dark">
+        <item name="android:windowBackground">@color/launcher_icon_pink_dark_bg</item>
+    </style>
+    <style name="AppThemeCustomOrangeLight" parent="AppTheme">
+        <item name="android:windowBackground">@color/launcher_icon_orange_light_bg</item>
+    </style>
+    <style name="AppThemeCustomOrangeDark" parent="AppTheme.Dark">
+        <item name="android:windowBackground">@color/launcher_icon_orange_dark_bg</item>
+    </style>
 </resources>
 

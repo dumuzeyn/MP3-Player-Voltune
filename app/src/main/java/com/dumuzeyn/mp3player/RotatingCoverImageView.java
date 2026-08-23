@@ -26,6 +26,7 @@ final class RotatingCoverImageView extends ImageView {
     private int seekStartPosition;
     private float seekStartRotation;
     private long rotationDurationMs = DEFAULT_ROTATION_DURATION_MS;
+    private boolean uiActive = true;
 
     RotatingCoverImageView(MainActivityCore host) {
         super(host);
@@ -74,6 +75,11 @@ final class RotatingCoverImageView extends ImageView {
         }
     }
 
+    void setUiActive(boolean active) {
+        uiActive = active;
+        updatePlaybackState();
+    }
+
     void bindTracks(ArrayList<Track> tracks) {
         bindSourceTracks(tracks, false);
     }
@@ -111,7 +117,8 @@ final class RotatingCoverImageView extends ImageView {
             }
             this.lastObservedTrackUri = currentUri;
         }
-        boolean shouldRotate = host.appearanceState.circularCovers && host.isPlaybackPlaying()
+        boolean shouldRotate = uiActive && host.appearanceState.circularCovers
+                && host.isPlaybackPlaying()
                 && currentIndex >= 0 && currentIndex < host.libraryState.tracks.size()
                 && trackUris.contains(host.libraryState.tracks.get(currentIndex).uri)
                 && (!requireActiveQueue || host.playbackQueueController.isCurrentCollection(sourceTracks));

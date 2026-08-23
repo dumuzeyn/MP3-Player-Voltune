@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/player_widget"
+    android:minHeight="72dp"
+    android:minResizeHeight="72dp"
+    android:minResizeWidth="250dp"
+    android:minWidth="250dp"
+    android:previewImage="@drawable/voltune_icon_master"
+    android:resizeMode="horizontal"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

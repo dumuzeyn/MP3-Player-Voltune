@@ -6,6 +6,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.widget.Button;
+import androidx.core.widget.TextViewCompat;
 
 final class ButtonFactory {
     private final MainActivityCore host;
@@ -28,6 +29,10 @@ final class ButtonFactory {
         button.setTranslationZ(0.0f);
         button.setMinWidth(0);
         button.setMinHeight(0);
+        button.setSingleLine(false);
+        button.setMaxLines(2);
+        TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+                button, 10, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP);
         button.setBackgroundColor(Color.TRANSPARENT);
         button.setForeground(new RippleDrawable(
                 ColorStateList.valueOf(Color.argb(42, Color.red(host.fg),
@@ -39,6 +44,9 @@ final class ButtonFactory {
 
     Button icon(String symbol) {
         Button button = button(symbol);
+        TextViewCompat.setAutoSizeTextTypeWithDefaults(
+                button, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE);
+        button.setSingleLine(true);
         button.setTextSize(24.0f);
         return button;
     }

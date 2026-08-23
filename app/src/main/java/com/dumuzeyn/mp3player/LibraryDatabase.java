@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,8 +16,7 @@ import java.util.Set;
 
 final class LibraryDatabase extends SQLiteOpenHelper {
     static final String DB_NAME = "mp3_player_library.db";
-    static final int DB_VERSION = 2;
-    private static final String DEBUG_TAG = "VoltuneDebug";
+    static final int DB_VERSION = 5;
     private static final String PREFS_STORE = "mp3_player_store";
     private static final String PREFS_UI = "mp3_player_ui";
     private static final String PREFS_MIGRATED = "sqlite_migrated";
@@ -29,14 +27,12 @@ final class LibraryDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        createVersion2(db);
+        LibraryDatabaseSchema.createLatest(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 2) {
-            migrateVersion1To2(db);
-        }
+        LibraryDatabaseSchema.migrate(db, oldVersion, newVersion);
     }
 
     static void migrateLegacyIfNeeded(Context context) {
@@ -64,7 +60,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
             db.setTransactionSuccessful();
             storePrefs.edit().putBoolean(PREFS_MIGRATED, true).apply();
         } catch (Exception error) {
-            Log.w(DEBUG_TAG, "sqlite_migration_failed error=" + error.getMessage());
+            VoltuneLog.failure("sqlite_migration_failed", error);
         } finally {
             db.endTransaction();
             database.close();
@@ -81,7 +77,23 @@ final class LibraryDatabase extends SQLiteOpenHelper {
                 tracks.add(trackFromCursor(cursor));
             }
         } catch (Exception error) {
-            Log.w(DEBUG_TAG, "sqlite_track_load_failed error=" + error.getMessage());
+            VoltuneLog.failure("sqlite_track_load_failed", error);
+        } finally {
+            closeQuietly(cursor);
+        }
+        return tracks;
+    }
+
+    ArrayList<Track> loadTracksNeedingMetadataRefresh(int revision) {
+        ArrayList<Track> tracks = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = getReadableDatabase().query("tracks", null,
+                    "metadata_revision<?", new String[]{String.valueOf(revision)},
+                    null, null, "title COLLATE NOCASE ASC");
+            while (cursor.moveToNext()) {
+                tracks.add(trackFromCursor(cursor));
+            }
         } finally {
             closeQuietly(cursor);
         }
@@ -106,7 +118,9 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     }
 
     void upsertTrack(Track track) {
-        getWritableDatabase().insertWithOnConflict("tracks", null, trackValues(track),
+        ContentValues values = trackValues(track);
+        values.put("metadata_revision", LibraryMaintenanceController.METADATA_REVISION);
+        getWritableDatabase().insertWithOnConflict("tracks", null, values,
                 SQLiteDatabase.CONFLICT_REPLACE);
     }
 
@@ -116,6 +130,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         try {
             db.delete("favorites", "track_id=?", new String[]{trackId});
             db.delete("playlist_tracks", "track_id=?", new String[]{trackId});
+            db.delete("track_sources", "track_id=?", new String[]{trackId});
             db.delete("tracks", "track_id=?", new String[]{trackId});
             db.setTransactionSuccessful();
         } finally {
@@ -126,8 +141,25 @@ final class LibraryDatabase extends SQLiteOpenHelper {
     void updateTrackMetadata(Track track) {
         ContentValues values = trackValues(track);
         values.remove("track_id");
+        values.put("metadata_revision", LibraryMaintenanceController.METADATA_REVISION);
         getWritableDatabase().update("tracks", values, "track_id=?",
                 new String[]{track.trackId});
+    }
+
+    void updateTrackMetadata(List<Track> tracks) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            for (Track track : tracks) {
+                ContentValues values = trackValues(track);
+                values.remove("track_id");
+                values.put("metadata_revision", LibraryMaintenanceController.METADATA_REVISION);
+                db.update("tracks", values, "track_id=?", new String[]{track.trackId});
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     void updateTrackLocation(Track track) {
@@ -145,6 +177,61 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put("availability_reason", reason == null ? "" : reason);
         getWritableDatabase().update("tracks", values, "track_id=?", new String[]{trackId});
+    }
+
+    void applyMaintenance(List<Track> refreshed, Set<String> checkedTrackIds,
+            List<Track> unavailable, int revision) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            for (Track track : refreshed) {
+                ContentValues values = trackValues(track);
+                values.remove("track_id");
+                values.put("metadata_revision", revision);
+                db.update("tracks", values, "track_id=?", new String[]{track.trackId});
+            }
+            ContentValues checked = new ContentValues();
+            checked.put("metadata_revision", revision);
+            for (String trackId : checkedTrackIds) {
+                db.update("tracks", checked, "track_id=?", new String[]{trackId});
+            }
+            for (Track track : unavailable) {
+                db.delete("favorites", "track_id=?", new String[]{track.trackId});
+                db.delete("playlist_tracks", "track_id=?", new String[]{track.trackId});
+                db.delete("track_sources", "track_id=?", new String[]{track.trackId});
+                db.delete("tracks", "track_id=?", new String[]{track.trackId});
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    void recordPlayed(String trackId, boolean completed, long timestamp) {
+        ContentValues values = new ContentValues();
+        values.put("last_played_at", Math.max(0L, timestamp));
+        if (completed) {
+            values.put("last_completed_at", Math.max(0L, timestamp));
+        }
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            if (!completed) {
+                db.execSQL("UPDATE tracks SET play_count=play_count+1, last_played_at=? "
+                        + "WHERE track_id=?", new Object[]{timestamp, trackId});
+            } else {
+                db.update("tracks", values, "track_id=?", new String[]{trackId});
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    void recordSkipped(String trackId, long timestamp) {
+        getWritableDatabase().execSQL(
+                "UPDATE tracks SET skip_count=skip_count+1 WHERE track_id=?",
+                new Object[]{trackId});
     }
 
     HashSet<String> loadFavorites() {
@@ -231,101 +318,6 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         }
     }
 
-    private static void createVersion2(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE tracks (track_id TEXT PRIMARY KEY NOT NULL, "
-                + "uri TEXT UNIQUE NOT NULL, title TEXT NOT NULL, artist TEXT NOT NULL, "
-                + "album TEXT NOT NULL, genre TEXT NOT NULL, duration_ms INTEGER NOT NULL "
-                + "DEFAULT 0, file_size INTEGER NOT NULL DEFAULT -1, last_modified INTEGER "
-                + "NOT NULL DEFAULT 0, fingerprint TEXT NOT NULL DEFAULT '', "
-                + "availability_reason TEXT NOT NULL DEFAULT '')");
-        db.execSQL("CREATE TABLE favorites (track_id TEXT PRIMARY KEY NOT NULL)");
-        db.execSQL("CREATE TABLE playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + "name TEXT NOT NULL, position INTEGER NOT NULL)");
-        db.execSQL("CREATE TABLE playlist_tracks (playlist_id INTEGER NOT NULL, "
-                + "track_id TEXT NOT NULL, position INTEGER NOT NULL, "
-                + "PRIMARY KEY (playlist_id, track_id))");
-    }
-
-    private static void migrateVersion1To2(SQLiteDatabase db) {
-        db.execSQL("ALTER TABLE tracks RENAME TO tracks_v1");
-        db.execSQL("ALTER TABLE favorites RENAME TO favorites_v1");
-        db.execSQL("ALTER TABLE playlist_tracks RENAME TO playlist_tracks_v1");
-        db.execSQL("CREATE TABLE tracks (track_id TEXT PRIMARY KEY NOT NULL, "
-                + "uri TEXT UNIQUE NOT NULL, title TEXT NOT NULL, artist TEXT NOT NULL, "
-                + "album TEXT NOT NULL, genre TEXT NOT NULL, duration_ms INTEGER NOT NULL "
-                + "DEFAULT 0, file_size INTEGER NOT NULL DEFAULT -1, last_modified INTEGER "
-                + "NOT NULL DEFAULT 0, fingerprint TEXT NOT NULL DEFAULT '', "
-                + "availability_reason TEXT NOT NULL DEFAULT '')");
-        db.execSQL("CREATE TABLE favorites (track_id TEXT PRIMARY KEY NOT NULL)");
-        db.execSQL("CREATE TABLE playlist_tracks (playlist_id INTEGER NOT NULL, "
-                + "track_id TEXT NOT NULL, position INTEGER NOT NULL, "
-                + "PRIMARY KEY (playlist_id, track_id))");
-
-        Map<String, String> ids = new HashMap<>();
-        Cursor tracks = db.query("tracks_v1", null, null, null, null, null, null);
-        try {
-            while (tracks.moveToNext()) {
-                String uri = tracks.getString(tracks.getColumnIndexOrThrow("uri"));
-                String trackId = TrackIdentity.fromLegacyUri(uri);
-                ids.put(uri, trackId);
-                ContentValues values = new ContentValues();
-                values.put("track_id", trackId);
-                values.put("uri", uri);
-                values.put("title", tracks.getString(tracks.getColumnIndexOrThrow("title")));
-                values.put("artist", tracks.getString(tracks.getColumnIndexOrThrow("artist")));
-                values.put("album", tracks.getString(tracks.getColumnIndexOrThrow("album")));
-                values.put("genre", tracks.getString(tracks.getColumnIndexOrThrow("genre")));
-                values.put("duration_ms",
-                        tracks.getInt(tracks.getColumnIndexOrThrow("duration_ms")));
-                db.insertOrThrow("tracks", null, values);
-            }
-        } finally {
-            tracks.close();
-        }
-        copyFavorites(db, ids);
-        copyPlaylistTracks(db, ids);
-        db.execSQL("DROP TABLE tracks_v1");
-        db.execSQL("DROP TABLE favorites_v1");
-        db.execSQL("DROP TABLE playlist_tracks_v1");
-    }
-
-    private static void copyFavorites(SQLiteDatabase db, Map<String, String> ids) {
-        Cursor cursor = db.query("favorites_v1", new String[]{"uri"}, null, null, null,
-                null, null);
-        try {
-            while (cursor.moveToNext()) {
-                String trackId = ids.get(cursor.getString(0));
-                if (trackId != null) {
-                    ContentValues values = new ContentValues();
-                    values.put("track_id", trackId);
-                    db.insertOrThrow("favorites", null, values);
-                }
-            }
-        } finally {
-            cursor.close();
-        }
-    }
-
-    private static void copyPlaylistTracks(SQLiteDatabase db, Map<String, String> ids) {
-        Cursor cursor = db.query("playlist_tracks_v1",
-                new String[]{"playlist_id", "uri", "position"}, null, null, null, null,
-                null);
-        try {
-            while (cursor.moveToNext()) {
-                String trackId = ids.get(cursor.getString(1));
-                if (trackId != null) {
-                    ContentValues values = new ContentValues();
-                    values.put("playlist_id", cursor.getLong(0));
-                    values.put("track_id", trackId);
-                    values.put("position", cursor.getInt(2));
-                    db.insertOrThrow("playlist_tracks", null, values);
-                }
-            }
-        } finally {
-            cursor.close();
-        }
-    }
-
     private static void saveTracks(SQLiteDatabase db, List<Track> tracks) {
         HashMap<String, Track> storedById = new HashMap<>();
         Cursor cursor = db.query("tracks", null, null, null, null, null, null);
@@ -350,6 +342,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         for (String removedTrackId : storedById.keySet()) {
             db.delete("favorites", "track_id=?", new String[]{removedTrackId});
             db.delete("playlist_tracks", "track_id=?", new String[]{removedTrackId});
+            db.delete("track_sources", "track_id=?", new String[]{removedTrackId});
             db.delete("tracks", "track_id=?", new String[]{removedTrackId});
         }
     }
@@ -358,10 +351,19 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         return left.durationMs == right.durationMs
                 && left.fileSize == right.fileSize
                 && left.lastModified == right.lastModified
+                && left.year == right.year
+                && left.trackNumber == right.trackNumber
+                && left.discNumber == right.discNumber
+                && left.playCount == right.playCount
+                && left.skipCount == right.skipCount
+                && left.dateAdded == right.dateAdded
+                && left.lastPlayedAt == right.lastPlayedAt
+                && left.lastCompletedAt == right.lastCompletedAt
                 && equal(left.uri, right.uri)
                 && equal(left.title, right.title)
                 && equal(left.artist, right.artist)
                 && equal(left.album, right.album)
+                && equal(left.albumArtist, right.albumArtist)
                 && equal(left.genre, right.genre)
                 && equal(left.fingerprint, right.fingerprint);
     }
@@ -370,19 +372,28 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         return left == null ? right == null : left.equals(right);
     }
 
-    private static ContentValues trackValues(Track track) {
+    static ContentValues trackValues(Track track) {
         ContentValues values = new ContentValues();
         values.put("track_id", track.trackId);
         values.put("uri", track.uri);
         values.put("title", track.title);
         values.put("artist", track.artist);
         values.put("album", track.album);
+        values.put("album_artist", track.albumArtist);
         values.put("genre", track.genre);
+        values.put("year", track.year);
+        values.put("track_number", track.trackNumber);
+        values.put("disc_number", track.discNumber);
         values.put("duration_ms", track.durationMs);
         values.put("file_size", track.fileSize);
         values.put("last_modified", track.lastModified);
         values.put("fingerprint", track.fingerprint);
         values.put("availability_reason", "");
+        values.put("play_count", track.playCount);
+        values.put("skip_count", track.skipCount);
+        values.put("date_added", track.dateAdded);
+        values.put("last_played_at", track.lastPlayedAt);
+        values.put("last_completed_at", track.lastCompletedAt);
         return values;
     }
 
@@ -392,11 +403,20 @@ final class LibraryDatabase extends SQLiteOpenHelper {
                 cursor.getString(cursor.getColumnIndexOrThrow("title")),
                 cursor.getString(cursor.getColumnIndexOrThrow("artist")),
                 cursor.getString(cursor.getColumnIndexOrThrow("album")),
+                cursor.getString(cursor.getColumnIndexOrThrow("album_artist")),
                 cursor.getString(cursor.getColumnIndexOrThrow("genre")),
+                cursor.getInt(cursor.getColumnIndexOrThrow("year")),
+                cursor.getInt(cursor.getColumnIndexOrThrow("track_number")),
+                cursor.getInt(cursor.getColumnIndexOrThrow("disc_number")),
                 cursor.getInt(cursor.getColumnIndexOrThrow("duration_ms")),
                 cursor.getLong(cursor.getColumnIndexOrThrow("file_size")),
                 cursor.getLong(cursor.getColumnIndexOrThrow("last_modified")),
-                cursor.getString(cursor.getColumnIndexOrThrow("fingerprint")));
+                cursor.getString(cursor.getColumnIndexOrThrow("fingerprint")),
+                cursor.getInt(cursor.getColumnIndexOrThrow("play_count")),
+                cursor.getInt(cursor.getColumnIndexOrThrow("skip_count")),
+                cursor.getLong(cursor.getColumnIndexOrThrow("date_added")),
+                cursor.getLong(cursor.getColumnIndexOrThrow("last_played_at")),
+                cursor.getLong(cursor.getColumnIndexOrThrow("last_completed_at")));
     }
 
     private static Map<String, String> idsByUri(SQLiteDatabase db) {

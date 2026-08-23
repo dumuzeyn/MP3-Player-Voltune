@@ -8,4 +8,5 @@ final class LibraryState {
     final ArrayList<Track> tracks = new ArrayList<>();
     final HashSet<String> favorites = new HashSet<>();
     final ArrayList<Playlist> playlists = new ArrayList<>();
+    HomeContent homeContent = HomeContent.empty();
 }

@@ -6,6 +6,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -40,6 +41,24 @@ final class UiFactory {
         text.setSingleLine(false);
         host.themeController.applyTextOutline(text);
         return text;
+    }
+
+    TextView dialogTitle(String value) {
+        return dialogTitle(value, 22);
+    }
+
+    TextView dialogTitle(String value, int size) {
+        TextView title = text(value, size, true);
+        title.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        title.setMinHeight(host.dp(46));
+        title.setPadding(0, host.dp(4), 0, host.dp(10));
+        return title;
+    }
+
+    LinearLayout.LayoutParams dialogTitleParams() {
+        return new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
     }
 
     void makeMarquee(TextView text) {

@@ -9,7 +9,6 @@ import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +35,6 @@ final class TrackLoudnessNormalizer {
     static final String REDUCE_ONLY = "reduce_only";
     static final String TARGET_LUFS = "target_lufs";
     private static final String ANALYSIS_PROFILE = "kweight-400ms-100ms-gates70-10-peak4";
-    private static final String DEBUG_TAG = "VoltuneDebug";
     private static final String RESULT_PREFIX = "r128_result_";
     private static final String ERROR_PREFIX = "r128_error_";
     private static final long MAX_ANALYSIS_US = 15L * 60L * 1_000_000L;
@@ -196,14 +194,11 @@ final class TrackLoudnessNormalizer {
                     .putString(RESULT_PREFIX + cacheKeyFor(track), encoded)
                     .remove(ERROR_PREFIX + track.trackId)
                     .apply();
-            Log.i(DEBUG_TAG, "r128_analyzed lufs=" + result.integratedLufs
-                    + " peakDbfs=" + result.peakDbfs + " trackId="
-                    + PlaybackEventLogger.opaqueMediaId(track.trackId));
+            VoltuneLog.info("r128_analyzed");
             return true;
         } catch (Exception error) {
             recordError(track, error.getClass().getSimpleName());
-            Log.w(DEBUG_TAG, "r128_analysis_failed category="
-                    + error.getClass().getSimpleName());
+            VoltuneLog.failure("r128_analysis_failed", error);
             return false;
         }
     }

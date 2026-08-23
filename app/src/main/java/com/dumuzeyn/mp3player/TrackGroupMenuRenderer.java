@@ -7,7 +7,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -18,7 +17,7 @@ abstract class TrackGroupMenuRenderer implements MenuRenderer {
         this.host = host;
     }
 
-    abstract String groupValue(Track track);
+    abstract Map<String, ArrayList<Track>> groupedTracks();
 
     abstract String unknownGroupName();
 
@@ -33,30 +32,15 @@ abstract class TrackGroupMenuRenderer implements MenuRenderer {
     public void render() {
         String query = host.navigationState.search.trim().toLowerCase(Locale.ROOT);
         for (Map.Entry<String, ArrayList<Track>> entry : groupedTracks().entrySet()) {
+            String name = entry.getKey().trim().isEmpty()
+                    ? unknownGroupName() : entry.getKey();
             if (!query.isEmpty()
-                    && !host.containsSearch(entry.getKey(), query)
+                    && !host.containsSearch(name, query)
                     && !containsTrack(entry.getValue(), query)) {
                 continue;
             }
-            host.list.addView(host.uiFactory.spaced(groupCard(entry.getKey(), entry.getValue())));
+            host.list.addView(host.uiFactory.spaced(groupCard(name, entry.getValue())));
         }
-    }
-
-    private Map<String, ArrayList<Track>> groupedTracks() {
-        Map<String, ArrayList<Track>> result = new LinkedHashMap<>();
-        for (Track track : host.libraryState.tracks) {
-            String rawValue = groupValue(track);
-            String name = rawValue == null || rawValue.trim().isEmpty()
-                    ? unknownGroupName()
-                    : rawValue.trim();
-            ArrayList<Track> group = result.get(name);
-            if (group == null) {
-                group = new ArrayList<>();
-                result.put(name, group);
-            }
-            group.add(track);
-        }
-        return result;
     }
 
     private boolean containsTrack(ArrayList<Track> tracks, String query) {

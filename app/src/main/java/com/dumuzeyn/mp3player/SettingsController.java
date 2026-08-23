@@ -21,9 +21,15 @@ final class SettingsController {
     private static final int EXPORT_PLAYBACK_DIAGNOSTICS = 5205;
     private static final String SUPPORT_URL = "https://pay.cloudtips.ru/p/54e5a4f9";
     private final MainActivityCore host;
+    private final MusicFoldersController musicFolders;
 
     SettingsController(MainActivityCore host) {
         this.host = host;
+        this.musicFolders = new MusicFoldersController(host);
+    }
+
+    void openMusicFolders() {
+        musicFolders.open();
     }
 
     String resumeWindowText() {
@@ -41,8 +47,8 @@ final class SettingsController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Language", "Язык"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(50)));
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Language", "Язык")),
+                host.uiFactory.dialogTitleParams());
         addChoice(panel, "English", "en".equals(host.appearanceState.language), () -> applyLanguage("en", shade));
         addChoice(panel, "Русский", "ru".equals(host.appearanceState.language), () -> applyLanguage("ru", shade));
         addDoneButton(panel, shade);
@@ -55,8 +61,9 @@ final class SettingsController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Mini-player memory", "Память мини-плеера"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(50)));
+        panel.addView(host.uiFactory.dialogTitle(
+                        host.tr("Mini-player memory", "Память мини-плеера")),
+                host.uiFactory.dialogTitleParams());
         int[] values = {30, 60, 120, 240, 480, 0};
         for (final int value : values) {
             String label = value == 0
@@ -158,19 +165,11 @@ final class SettingsController {
     void confirmDeleteAllSongs() {
         host.showConfirmPanel(
                 host.tr("Delete all songs?", "Удалить все песни?"),
-                host.tr("Songs will disappear only from this app. Files on the phone will stay untouched.",
-                        "Песни исчезнут только из приложения. Файлы на телефоне останутся."),
-                () -> {
-                    host.stopPlaybackAndClearQueue();
-                    host.libraryState.tracks.clear();
-                    host.libraryState.favorites.clear();
-                    for (Playlist playlist : host.libraryState.playlists) {
-                        playlist.uris.clear();
-                    }
-                    TrackStore.save(host, host.libraryState.tracks);
-                    host.saveState();
-                    host.render();
-                });
+                host.tr("Songs and imported folder links will disappear from Voltune. "
+                                + "Files on the phone will stay untouched.",
+                        "Песни и связи с импортированными папками исчезнут из Voltune. "
+                                + "Файлы на телефоне останутся без изменений."),
+                () -> host.playbackQueueController.clearLibrary());
     }
 
     void exportLibraryBackup() {
@@ -293,6 +292,7 @@ final class SettingsController {
                     host.libraryState.playlists.clear();
                     host.libraryState.playlists.addAll(imported.playlists);
                     host.saveState();
+                    host.librarySnapshotApplier.rebuildDerivedAndRender();
                     host.rebuildUi();
                 } else {
                     ThemePresetCodec.decodeInto(encoded,
@@ -312,9 +312,12 @@ final class SettingsController {
     }
 
     void confirmRemoveUnavailableSongs() {
-        LibraryFileAccessManager.Result result = LibraryFileAccessManager.inspect(host,
-                host.libraryState.tracks);
-        if (result.unavailable.isEmpty()) {
+        host.libraryMaintenanceController.inspectUnavailable(host.libraryState.tracks,
+                this::showUnavailableResult);
+    }
+
+    private void showUnavailableResult(java.util.List<Track> unavailable) {
+        if (unavailable.isEmpty()) {
             host.showConfirmPanel(
                     host.tr("File access", "Доступ к файлам"),
                     host.tr("All library files are available.",
@@ -326,14 +329,12 @@ final class SettingsController {
         host.showConfirmPanel(
                 host.tr("Remove unavailable songs?", "Удалить недоступные песни?"),
                 host.tr("Unavailable records: ", "Недоступных записей: ")
-                        + result.unavailable.size() + "\n\n"
+                        + unavailable.size() + "\n\n"
                         + host.tr("The audio files themselves will not be deleted.",
                                 "Сами аудиофайлы удалены не будут."),
                 () -> {
-                    LibraryFileAccessManager.removeUnavailable(host, host.libraryState.tracks,
-                            host.libraryState.favorites, host.libraryState.playlists);
-                    host.saveState();
-                    host.render();
+                    host.libraryMaintenanceController.removeUnavailable(unavailable, () ->
+                            host.librarySnapshotApplier.applyRemovedRecords(unavailable));
                 });
     }
 
@@ -344,7 +345,7 @@ final class SettingsController {
                 () -> {
                     host.libraryState.playlists.clear();
                     host.saveState();
-                    host.render();
+                    host.librarySnapshotApplier.rebuildDerivedAndRender();
                 });
     }
 

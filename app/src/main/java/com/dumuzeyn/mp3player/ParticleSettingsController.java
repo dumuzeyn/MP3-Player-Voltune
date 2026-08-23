@@ -20,8 +20,9 @@ final class ParticleSettingsController {
         FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Particle settings", "Настройка частиц"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(48)));
+        panel.addView(host.uiFactory.dialogTitle(
+                        host.tr("Particle settings", "Настройка частиц")),
+                host.uiFactory.dialogTitleParams());
         addSlider(panel, host.tr("Frequency", "Частота"), 10, 100, host.appearanceState.particleFrequency,
                 value -> host.appearanceState.particleFrequency = value);
         addSlider(panel, host.tr("Size", "Размер"), 60, 150, host.appearanceState.particleSize,
@@ -76,7 +77,7 @@ final class ParticleSettingsController {
             host.overlayHost.removeAllViews();
             openColorPicker(primary);
         });
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(40));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(48));
         params.setMargins(0, host.dp(3), 0, host.dp(3));
         panel.addView(button, params);
     }
@@ -86,10 +87,10 @@ final class ParticleSettingsController {
         FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(primary
+        panel.addView(host.uiFactory.dialogTitle(primary
                         ? host.tr("Primary particle color", "Основной цвет частиц")
                         : host.tr("Secondary particle color", "Дополнительный цвет частиц"),
-                21, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
+                21), host.uiFactory.dialogTitleParams());
 
         View preview = new View(host);
         preview.setBackgroundColor(selectedColor(primary));

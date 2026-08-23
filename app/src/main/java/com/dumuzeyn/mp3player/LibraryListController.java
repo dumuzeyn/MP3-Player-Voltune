@@ -10,17 +10,12 @@ final class LibraryListController {
     }
 
     ArrayList<Track> currentVisibleTracks() {
-        return host.navigationState.tabIndex == 1 ? filter(favoriteTracks()) : filter(host.libraryState.tracks);
+        return host.navigationState.tabIndex == LibraryTabs.FAVORITES
+                ? filter(favoriteTracks()) : filter(host.libraryState.tracks);
     }
 
     ArrayList<Track> favoriteTracks() {
-        ArrayList<Track> result = new ArrayList<>();
-        for (Track track : host.libraryState.tracks) {
-            if (host.libraryState.favorites.contains(track.uri)) {
-                result.add(track);
-            }
-        }
-        return result;
+        return new ArrayList<>(host.libraryState.homeContent.allFavorites);
     }
 
     ArrayList<Track> filter(ArrayList<Track> source) {

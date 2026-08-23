@@ -19,7 +19,7 @@ final class OutlinedButton extends Button {
     void setTextOutline(boolean enabled, int color, float width) {
         outlineEnabled = enabled;
         outlineColor = color;
-        outlineWidth = Math.max(1.0f, width);
+        outlineWidth = Math.max(0.5f, width);
         setShadowLayer(0.0f, 0.0f, 0.0f, 0);
         invalidate();
     }
@@ -38,7 +38,7 @@ final class OutlinedButton extends Button {
     @SuppressLint("WrongCall")
     private void drawOutlined(Canvas canvas) {
         ColorStateList originalColors = getTextColors();
-        float offset = Math.max(1.0f, outlineWidth * 0.65f);
+        float offset = Math.max(0.5f, outlineWidth * 0.55f);
         setTextColor(outlineColor);
         float[] directions = {-offset, 0.0f, offset};
         for (float dx : directions) {

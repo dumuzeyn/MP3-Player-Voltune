@@ -50,8 +50,8 @@ final class EqualizerController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Equalizer", "Эквалайзер"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Equalizer", "Эквалайзер")),
+                host.uiFactory.dialogTitleParams());
 
         Button enabled = host.uiFactory.button(enabled()
                 ? host.tr("Enabled", "Включён")
@@ -146,8 +146,9 @@ final class EqualizerController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Equalizer profile", "Профиль эквалайзера"), 21, true),
-                new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.dialogTitle(
+                        host.tr("Equalizer profile", "Профиль эквалайзера"), 21),
+                host.uiFactory.dialogTitleParams());
         String selected = activePreset();
         for (String presetId : PRESET_IDS) {
             Button choice = host.uiFactory.button(presetName(presetId));

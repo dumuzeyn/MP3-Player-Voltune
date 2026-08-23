@@ -1,13 +1,12 @@
 package com.dumuzeyn.mp3player.library;
 
 import android.content.Context;
-import android.util.Log;
 import com.dumuzeyn.mp3player.Track;
 import com.dumuzeyn.mp3player.TrackStore;
+import com.dumuzeyn.mp3player.VoltuneLog;
 import java.util.List;
 
 public final class SongDiagnostics {
-    private static final String DEBUG_TAG = "VoltuneDebug";
     private static final int MAX_PROBLEM_TITLES_LENGTH = 500;
 
     private SongDiagnostics() {
@@ -39,7 +38,7 @@ public final class SongDiagnostics {
 
         Result result = new Result(
                 available, unavailable, withDuration, withoutDuration, problemTitles.toString());
-        Log.i(DEBUG_TAG, result.toLogMessage());
+        VoltuneLog.info(result.toLogMessage());
         return result;
     }
 

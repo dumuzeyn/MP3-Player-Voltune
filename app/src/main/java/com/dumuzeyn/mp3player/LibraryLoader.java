@@ -2,7 +2,6 @@ package com.dumuzeyn.mp3player;
 
 import android.content.Context;
 import android.os.Handler;
-import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
@@ -15,20 +14,28 @@ final class LibraryLoader implements AutoCloseable {
         void loaded(Snapshot snapshot);
     }
 
+    interface HomeCallback {
+        void loaded(HomeContent content);
+    }
+
     static final class Snapshot {
         final ArrayList<Track> tracks;
         final HashSet<String> favorites;
         final ArrayList<Playlist> playlists;
+        final HomeContent homeContent;
+        final long contentVersion;
 
         Snapshot(ArrayList<Track> tracks, HashSet<String> favorites,
-                ArrayList<Playlist> playlists) {
+                ArrayList<Playlist> playlists, long contentVersion) {
             this.tracks = new ArrayList<>(tracks);
             this.favorites = new HashSet<>(favorites);
             this.playlists = new ArrayList<>(playlists);
+            this.homeContent = new HomeContentBuilder().build(
+                    this.tracks, this.favorites, this.playlists);
+            this.contentVersion = contentVersion;
         }
     }
 
-    private static final String TAG = "VoltuneDebug";
 
     private final Context context;
     private final Handler mainHandler;
@@ -55,6 +62,51 @@ final class LibraryLoader implements AutoCloseable {
         }
     }
 
+    void refreshHome(java.util.Set<String> favorites, java.util.List<Playlist> playlists,
+            HomeCallback callback) {
+        HashSet<String> favoriteSnapshot = new HashSet<>(favorites);
+        ArrayList<Playlist> playlistSnapshot = new ArrayList<>(playlists);
+        try {
+            executor.execute(() -> {
+                LibraryDatabase database = new LibraryDatabase(context.getApplicationContext());
+                HomeContent content;
+                try {
+                    content = new HomeContentBuilder().build(database.loadTracks(),
+                            favoriteSnapshot, playlistSnapshot);
+                } finally {
+                    database.close();
+                }
+                mainHandler.post(() -> {
+                    if (!closed) {
+                        callback.loaded(content);
+                    }
+                });
+            });
+        } catch (RejectedExecutionException ignored) {
+            // Activity is already closing.
+        }
+    }
+
+    void deriveHome(java.util.List<Track> tracks, java.util.Set<String> favorites,
+            java.util.List<Playlist> playlists, HomeCallback callback) {
+        ArrayList<Track> trackSnapshot = new ArrayList<>(tracks);
+        HashSet<String> favoriteSnapshot = new HashSet<>(favorites);
+        ArrayList<Playlist> playlistSnapshot = new ArrayList<>(playlists);
+        try {
+            executor.execute(() -> {
+                HomeContent content = new HomeContentBuilder().build(
+                        trackSnapshot, favoriteSnapshot, playlistSnapshot);
+                mainHandler.post(() -> {
+                    if (!closed) {
+                        callback.loaded(content);
+                    }
+                });
+            });
+        } catch (RejectedExecutionException ignored) {
+            // Activity is already closing.
+        }
+    }
+
     @Override
     public void close() {
         closed = true;
@@ -72,13 +124,14 @@ final class LibraryLoader implements AutoCloseable {
             LibraryDatabase database = new LibraryDatabase(appContext);
             try {
                 return new Snapshot(database.loadTracks(), database.loadFavorites(),
-                        database.loadPlaylists());
+                        database.loadPlaylists(), LibraryContentVersion.read(appContext));
             } finally {
                 database.close();
             }
         } catch (RuntimeException error) {
-            Log.e(TAG, "library_load_failed error=" + error.getMessage(), error);
-            return new Snapshot(new ArrayList<>(), new HashSet<>(), new ArrayList<>());
+            VoltuneLog.failure("library_load_failed", error);
+            return new Snapshot(new ArrayList<>(), new HashSet<>(), new ArrayList<>(),
+                    LibraryContentVersion.read(context));
         }
     }
 }

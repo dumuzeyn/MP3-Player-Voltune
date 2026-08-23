@@ -152,6 +152,7 @@ public class BackgroundPlaybackInstrumentedTest {
 
     @Test
     public void controllerCanReconnectWithoutLosingQueueOrPosition() throws Exception {
+        activity = launchMainActivity();
         startQueue(Arrays.asList(firstTrack, secondTrack), Player.REPEAT_MODE_ALL);
         waitForPlayingUri("First reconnect track did not start", firstTrack.uri);
         InstrumentedTestSupport.waitFor("Playback position did not advance before reconnect",

@@ -40,8 +40,8 @@ final class BackgroundSettingsController {
         FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(14), host.dp(12), host.dp(14), host.dp(12));
-        panel.addView(host.uiFactory.text(host.tr("Background", "Фон"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(44)));
+        TextView dialogTitle = host.uiFactory.dialogTitle(host.tr("Background", "Фон"));
+        panel.addView(dialogTitle, host.uiFactory.dialogTitleParams());
 
         ScrollView scroll = new ScrollView(host);
         LinearLayout rows = new LinearLayout(host);
@@ -72,8 +72,11 @@ final class BackgroundSettingsController {
         rows.measure(
                 View.MeasureSpec.makeMeasureSpec(contentWidth, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        dialogTitle.measure(
+                View.MeasureSpec.makeMeasureSpec(contentWidth, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
         int desiredHeight = panel.getPaddingTop() + panel.getPaddingBottom()
-                + host.dp(44) + rows.getMeasuredHeight() + host.dp(56);
+                + dialogTitle.getMeasuredHeight() + rows.getMeasuredHeight() + host.dp(56);
         shade.addView(panel, host.centerParams(host.dp(360), Math.min(maxHeight, desiredHeight)));
         host.overlayHost.addView(shade);
         host.playerUiController.updateMini();
@@ -223,7 +226,8 @@ final class BackgroundSettingsController {
         FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(title, 21, true), new LinearLayout.LayoutParams(-1, host.dp(44)));
+        panel.addView(host.uiFactory.dialogTitle(title, 21),
+                host.uiFactory.dialogTitleParams());
         View preview = new View(host);
         preview.setBackgroundColor(initialColor);
         panel.addView(preview, new LinearLayout.LayoutParams(-1, host.dp(34)));

@@ -50,11 +50,18 @@ final class TabsController {
         page.addView(container, new LinearLayout.LayoutParams(-1, host.dp(50)));
 
         addTabButtons();
-        scrollView.post(new Runnable() {
+        scrollView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
-            public void run() {
-                attachInfiniteScrollLoop();
-                positionIndicatorToActive();
+            public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                    int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                if (right <= left || host.tabRow.getWidth() <= 0) {
+                    return;
+                }
+                view.removeOnLayoutChangeListener(this);
+                scrollView.post(() -> {
+                    attachInfiniteScrollLoop();
+                    positionIndicatorToActive();
+                });
             }
         });
     }

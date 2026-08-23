@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MP3 Player Voltune</string>
+    <string name="widget_description">Voltune player controls</string>
+    <string name="widget_artwork">Album artwork</string>
+    <string name="widget_previous">Previous</string>
+    <string name="widget_play_pause">Play or pause</string>
+    <string name="widget_next">Next</string>
 </resources>
 

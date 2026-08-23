@@ -126,8 +126,8 @@ final class ThemeController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Theme", "Тема"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(42)));
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Theme", "Тема")),
+                host.uiFactory.dialogTitleParams());
         LinearLayout controls = new LinearLayout(host);
         controls.setOrientation(LinearLayout.VERTICAL);
         addChoice(controls, host.tr("Light", "Светлая"), "light");
@@ -235,8 +235,8 @@ final class ThemeController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(colorTargetName(target), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.dialogTitle(colorTargetName(target)),
+                host.uiFactory.dialogTitleParams());
         final View preview = new View(host);
         preview.setBackgroundColor(colorForTarget(target));
         panel.addView(preview, new LinearLayout.LayoutParams(-1, host.dp(34)));
@@ -322,7 +322,7 @@ final class ThemeController {
             boolean lightTheme = "light".equals(host.appearanceState.themeMode);
             boolean darkTheme = "dark".equals(host.appearanceState.themeMode);
             float width = host.getResources().getDisplayMetrics().density
-                    * (lightTheme || darkTheme ? 1.0f : 0.35f);
+                    * (lightTheme || darkTheme ? 0.65f : 0.25f);
             ((OutlinedTextView) text).setTextOutline(
                     lightTheme || darkTheme || host.appearanceState.textOutlineEnabled,
                     lightTheme ? Color.WHITE
@@ -331,7 +331,7 @@ final class ThemeController {
             boolean lightTheme = "light".equals(host.appearanceState.themeMode);
             boolean darkTheme = "dark".equals(host.appearanceState.themeMode);
             float width = host.getResources().getDisplayMetrics().density
-                    * (lightTheme || darkTheme ? 1.0f : 0.35f);
+                    * (lightTheme || darkTheme ? 0.65f : 0.25f);
             ((OutlinedButton) text).setTextOutline(
                     lightTheme || darkTheme || host.appearanceState.textOutlineEnabled,
                     lightTheme ? Color.WHITE
@@ -400,11 +400,7 @@ final class ThemeController {
     }
 
     private Bitmap launcherPreviewIcon() {
-        boolean useDark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
-        ComponentName launcher = LauncherComponents.forPalette(
-                host, host.appearanceState.themeMode, useDark, host.purple, host.yellow);
-        return AppIconRenderer.renderLauncherPreview(
-                host, launcher, host.bg, host.purple, host.yellow,
+        return AppIconRenderer.renderPreview(host, host.bg, host.purple, host.yellow,
                 Math.max(1, host.dp(64)));
     }
 

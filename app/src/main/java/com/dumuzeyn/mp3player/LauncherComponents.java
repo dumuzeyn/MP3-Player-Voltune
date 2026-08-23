@@ -6,7 +6,7 @@ import android.graphics.Color;
 
 /** Selects the closest prebuilt launcher palette for Android's static icon resources. */
 final class LauncherComponents {
-    private static final String PACKAGE_NAME = MainActivity.class.getPackage().getName();
+    private static final String CLASS_PACKAGE = MainActivity.class.getPackage().getName();
     private static final Palette[] CUSTOM_PALETTES = {
             new Palette("", 0xff8a2cc8, 0xffffd000),
             new Palette("CustomBlue", 0xff3478f6, 0xff40d7ff),
@@ -20,7 +20,7 @@ final class LauncherComponents {
     }
 
     static ComponentName forTheme(Context context, boolean dark) {
-        return component(dark ? "Dark" : "Light");
+        return component(context, dark ? "Dark" : "Light");
     }
 
     static ComponentName forPalette(Context context, String theme,
@@ -41,7 +41,7 @@ final class LauncherComponents {
         if (closest.suffix.length() == 0) {
             return forTheme(context, dark);
         }
-        return component(closest.suffix + (dark ? "Dark" : "Light"));
+        return component(context, closest.suffix + (dark ? "Dark" : "Light"));
     }
 
     static ComponentName[] all(Context context) {
@@ -51,14 +51,15 @@ final class LauncherComponents {
         components[index++] = forTheme(context, true);
         for (int paletteIndex = 1; paletteIndex < CUSTOM_PALETTES.length; paletteIndex++) {
             String suffix = CUSTOM_PALETTES[paletteIndex].suffix;
-            components[index++] = component(suffix + "Light");
-            components[index++] = component(suffix + "Dark");
+            components[index++] = component(context, suffix + "Light");
+            components[index++] = component(context, suffix + "Dark");
         }
         return components;
     }
 
-    private static ComponentName component(String suffix) {
-        return new ComponentName(PACKAGE_NAME, PACKAGE_NAME + ".Launcher" + suffix);
+    private static ComponentName component(Context context, String suffix) {
+        return new ComponentName(context.getPackageName(),
+                CLASS_PACKAGE + ".Launcher" + suffix);
     }
 
     private static long colorDistance(int first, int second) {

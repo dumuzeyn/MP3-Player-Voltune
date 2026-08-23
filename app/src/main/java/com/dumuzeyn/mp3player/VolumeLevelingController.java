@@ -39,8 +39,9 @@ final class VolumeLevelingController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(14), host.dp(16), host.dp(14));
-        panel.addView(host.uiFactory.text(host.tr("Volume leveling", "Единая громкость"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(44)));
+        panel.addView(host.uiFactory.dialogTitle(
+                        host.tr("Volume leveling", "Единая громкость")),
+                host.uiFactory.dialogTitleParams());
 
         Button enabledButton = dialogButton(settingLabel());
         enabledButton.setOnClickListener(view -> {
@@ -59,7 +60,8 @@ final class VolumeLevelingController {
         panel.addView(reduceOnly, rowParams());
 
         TextView targetLabel = host.uiFactory.text(targetLabel(), 14, false);
-        panel.addView(targetLabel, new LinearLayout.LayoutParams(-1, host.dp(28)));
+        targetLabel.setMinHeight(host.dp(28));
+        panel.addView(targetLabel, new LinearLayout.LayoutParams(-1, -2));
         SeekBar target = new SeekBar(host);
         target.setMax(14);
         target.setProgress(targetLufs() + 24);
@@ -87,7 +89,8 @@ final class VolumeLevelingController {
         panel.addView(target, new LinearLayout.LayoutParams(-1, host.dp(36)));
 
         TextView status = host.uiFactory.text(statusText(normalizer), 14, false);
-        panel.addView(status, new LinearLayout.LayoutParams(-1, host.dp(50)));
+        status.setMinHeight(host.dp(50));
+        panel.addView(status, new LinearLayout.LayoutParams(-1, -2));
 
         Button analyze = dialogButton(host.tr("Analyze library", "Анализировать медиатеку"));
         analyze.setOnClickListener(view -> normalizer.analyzeLibrary(host.libraryState.tracks,
@@ -158,12 +161,13 @@ final class VolumeLevelingController {
     private Button dialogButton(String text) {
         Button button = host.uiFactory.button(text);
         button.setTextSize(15.0f);
+        button.setMinHeight(host.dp(44));
         host.uiFactory.applySecondaryButtonStyle(button);
         return button;
     }
 
     private LinearLayout.LayoutParams rowParams() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(44));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
         params.setMargins(0, host.dp(2), 0, host.dp(2));
         return params;
     }

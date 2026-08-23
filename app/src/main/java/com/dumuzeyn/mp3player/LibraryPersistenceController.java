@@ -1,7 +1,6 @@
 package com.dumuzeyn.mp3player;
 
 import android.content.Context;
-import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.concurrent.RejectedExecutionException;
 
 /** Persists collection edits without blocking taps, scrolling, or overlay animations. */
 final class LibraryPersistenceController {
-    private static final String TAG = "VoltuneDebug";
 
     private final Context context;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -60,7 +58,7 @@ final class LibraryPersistenceController {
             try {
                 database.saveCollections(snapshot.favorites, snapshot.playlists);
             } catch (RuntimeException error) {
-                Log.e(TAG, "collection_save_failed error=" + error.getMessage(), error);
+                VoltuneLog.failure("collection_save_failed", error);
             } finally {
                 database.close();
             }

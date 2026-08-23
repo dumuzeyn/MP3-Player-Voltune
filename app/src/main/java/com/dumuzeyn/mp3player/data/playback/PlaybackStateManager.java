@@ -6,8 +6,10 @@ import com.dumuzeyn.mp3player.MiniPlayerRetentionPolicy;
 import com.dumuzeyn.mp3player.Track;
 import com.dumuzeyn.mp3player.PlaybackSnapshot;
 import com.dumuzeyn.mp3player.RepeatModeMapper;
+import com.dumuzeyn.mp3player.QueueRemovalPlan;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.json.JSONArray;
 
 /** Persists the playback session independently from the service and UI. */
@@ -100,6 +102,21 @@ public final class PlaybackStateManager {
         preferences.edit().clear().apply();
     }
 
+    public void removeTracks(Set<String> trackIds, Set<String> trackUris) {
+        State state = load();
+        QueueRemovalPlan plan = QueueRemovalPlan.create(
+                state.queueUris, state.index, trackIds);
+        if (plan.remaining.isEmpty()) {
+            clear();
+            return;
+        }
+        boolean currentRemoved = trackUris.contains(state.uri)
+                || plan.currentRemoved;
+        save(new Snapshot(currentRemoved ? "" : state.uri,
+                currentRemoved ? 0 : state.position, state.duration, plan.currentIndex,
+                state.loopMode, state.playing, state.shuffle, plan.remaining), true);
+    }
+
     public static final class State {
         public final String uri;
         public final int position;
@@ -143,7 +160,7 @@ public final class PlaybackStateManager {
             this(uri, position, duration, index, loopMode, playing, shuffle, trackIds(queue));
         }
 
-        private Snapshot(String uri, int position, int duration, int index, int loopMode,
+        public Snapshot(String uri, int position, int duration, int index, int loopMode,
                 boolean playing, boolean shuffle, ArrayList<String> queueIds) {
             this.uri = uri == null ? "" : uri;
             this.position = position;

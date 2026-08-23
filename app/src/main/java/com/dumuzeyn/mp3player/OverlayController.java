@@ -1,16 +1,13 @@
 package com.dumuzeyn.mp3player;
 
-import android.graphics.Color;
 import android.text.Editable;
 import android.text.InputFilter;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -18,15 +15,23 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-final class OverlayController {
-    private interface SelectionDone {
+final class OverlayController implements AutoCloseable {
+    interface SelectionDone {
         void done(Set<String> selected);
     }
 
     private final MainActivityCore host;
+    private final QueueOverlayController queueController;
+    private final GlobalSearchOverlayController searchController;
+    private final TrackSelectionOverlayController selectionController;
+    private final TrackDeletionController deletionController;
 
     OverlayController(MainActivityCore host) {
         this.host = host;
+        this.queueController = new QueueOverlayController(host, this);
+        this.searchController = new GlobalSearchOverlayController(host, this);
+        this.selectionController = new TrackSelectionOverlayController(host);
+        this.deletionController = new TrackDeletionController(host);
     }
 
     void openGroup(String title, ArrayList<Track> tracks) {
@@ -110,60 +115,7 @@ final class OverlayController {
     }
 
     void openQueue() {
-        int currentIndex = host.currentTrackIndex();
-        if (host.playbackUiState.queue.isEmpty() && currentIndex >= 0
-                && currentIndex < host.libraryState.tracks.size()) {
-            host.playbackUiState.queue.add(host.libraryState.tracks.get(currentIndex));
-        }
-        final FrameLayout shade = host.uiFactory.shade();
-        LinearLayout panel = host.uiFactory.panelCard();
-        LinearLayout header = host.uiFactory.row();
-        header.addView(host.uiFactory.text(host.tr("Now playing", "Список проигрывания"), 20, true),
-                new LinearLayout.LayoutParams(0, host.dp(58), 1.0f));
-        Button add = host.uiFactory.icon("+");
-        add.setOnClickListener(view -> {
-            host.overlayHost.removeView(shade);
-            openSelection(host.tr("Add to queue", "Добавить в список"), new HashSet<>(), selected -> {
-                int activeIndex = host.currentTrackIndex();
-                if (host.playbackUiState.queue.isEmpty() && activeIndex >= 0
-                        && activeIndex < host.libraryState.tracks.size()) {
-                    host.playbackUiState.queue.add(host.libraryState.tracks.get(activeIndex));
-                }
-                for (String uri : selected) {
-                    Track track = host.findTrack(uri);
-                    if (track != null && !isInQueue(track)) {
-                        host.playbackUiState.queue.add(track);
-                    }
-                }
-                openQueue();
-            });
-        });
-        header.addView(add, host.uiFactory.square(52));
-        Button close = host.uiFactory.icon("×");
-        close.setOnClickListener(view -> close(shade));
-        header.addView(close, host.uiFactory.square(52));
-        panel.addView(header);
-        ScrollView scroll = new ScrollView(host);
-        LinearLayout rows = new LinearLayout(host);
-        rows.setOrientation(LinearLayout.VERTICAL);
-        for (Track track : new ArrayList<>(host.playbackQueueController.activeQueue())) {
-            rows.addView(host.songsRenderer.queueRow(track,
-                    () -> {
-                        removeFromQueue(track);
-                        host.overlayHost.removeView(shade);
-                        openQueue();
-                    },
-                    () -> {
-                        playQueueTrack(track);
-                        host.overlayHost.removeView(shade);
-                        openQueue();
-                    }));
-        }
-        scroll.addView(rows);
-        panel.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1.0f));
-        shade.addView(panel, host.bottomParams());
-        host.overlayHost.addView(shade);
-        host.playerUiController.updateMini();
+        queueController.open();
     }
 
     void openAddFavorites() {
@@ -171,9 +123,7 @@ final class OverlayController {
                 new HashSet<>(), selected -> {
                     host.libraryState.favorites.addAll(selected);
                     host.saveLibraryState();
-                    if (host.navigationState.tabIndex == 1) {
-                        host.render();
-                    }
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
                 });
     }
 
@@ -186,121 +136,8 @@ final class OverlayController {
                 });
     }
 
-    private void openSelection(String title, HashSet<String> selected, SelectionDone done) {
-        final FrameLayout shade = host.uiFactory.shade();
-        final String searchOwner = "selection-"
-                + Integer.toHexString(System.identityHashCode(shade));
-        shade.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-            @Override
-            public void onViewAttachedToWindow(View view) {
-            }
-
-            @Override
-            public void onViewDetachedFromWindow(View view) {
-                host.trackSearchController.cancel(searchOwner);
-            }
-        });
-        LinearLayout panel = host.uiFactory.panelCard();
-        LinearLayout header = host.uiFactory.row();
-        header.addView(host.uiFactory.text(title, 20, true), new LinearLayout.LayoutParams(0, host.dp(58), 1.0f));
-        Button complete = host.uiFactory.icon("✔");
-        complete.setOnClickListener(view -> {
-            host.trackSearchController.cancel(searchOwner);
-            host.overlayHost.removeView(shade);
-            done.done(selected);
-            host.playerUiController.updateMini();
-        });
-        header.addView(complete, host.uiFactory.square(52));
-        Button close = host.uiFactory.icon("×");
-        close.setOnClickListener(view -> {
-            host.trackSearchController.cancel(searchOwner);
-            close(shade);
-        });
-        header.addView(close, host.uiFactory.square(52));
-        panel.addView(header);
-        EditText search = searchField(host.tr("Search songs", "Поиск песен"));
-        panel.addView(search, searchParams());
-        ScrollView scroll = new ScrollView(host);
-        LinearLayout rows = new LinearLayout(host);
-        rows.setOrientation(LinearLayout.VERTICAL);
-        renderSelectionRows(rows, selected, host.libraryState.tracks);
-        search.addTextChangedListener(new SimpleTextWatcher() {
-            @Override
-            public void onTextChanged(CharSequence value, int start, int before, int count) {
-                host.trackSearchController.filter(
-                        searchOwner, host.libraryState.tracks,
-                        value == null ? "" : value.toString(),
-                        filtered -> {
-                            if (shade.getParent() != null) {
-                                renderSelectionRows(rows, selected, filtered);
-                            }
-                        });
-            }
-        });
-        scroll.addView(rows);
-        panel.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1.0f));
-        shade.addView(panel, host.bottomParams());
-        host.overlayHost.addView(shade);
-        host.playerUiController.updateMini();
-    }
-
-    private void renderSelectionRows(LinearLayout parent, HashSet<String> selected,
-            java.util.List<Track> tracks) {
-        parent.removeAllViews();
-        for (Track track : tracks) {
-            LinearLayout row = host.uiFactory.row();
-            row.setPadding(host.dp(10), host.dp(8), host.dp(10), host.dp(8));
-            ImageView cover = host.uiFactory.coverView();
-            int fallback = Color.rgb(host.appearanceState.dark ? 28 : 235, host.appearanceState.dark ? 28 : 235,
-                    host.appearanceState.dark ? 28 : 235);
-            host.artworkUi.loadUnregisteredCover(
-                    cover, track, fallback, CoverLoader.THUMB_SIZE);
-            row.addView(cover, host.uiFactory.square(58));
-            TextView title = host.uiFactory.text(track.title, 17, true);
-            title.setSingleLine(true);
-            title.setEllipsize(TextUtils.TruncateAt.END);
-            title.setPadding(host.dp(12), 0, host.dp(8), 0);
-            row.addView(title, new LinearLayout.LayoutParams(0, host.dp(70), 1.0f));
-            Button mark = host.uiFactory.icon("");
-            row.addView(mark, host.uiFactory.square(48));
-            Button play = host.uiFactory.icon(host.isCurrent(track) && host.isPlaybackPlaying()
-                    ? "Ⅱ" : "▶");
-            play.setOnClickListener(view -> {
-                if (host.isCurrent(track)) {
-                    host.playbackQueueController.toggleOrStart();
-                } else {
-                    host.playbackQueueController.playTrack(track, false);
-                }
-                renderSelectionRows(parent, selected, tracks);
-            });
-            row.addView(play, host.uiFactory.square(48));
-            Runnable refreshSelection = () -> applySelectionAppearance(
-                    row, cover, title, mark, play, selected.contains(track.uri));
-            mark.setOnClickListener(view -> {
-                if (!selected.add(track.uri)) {
-                    selected.remove(track.uri);
-                }
-                refreshSelection.run();
-            });
-            refreshSelection.run();
-            parent.addView(host.uiFactory.spaced(row));
-        }
-    }
-
-    private void applySelectionAppearance(LinearLayout row, ImageView cover, TextView title,
-            Button mark, Button play, boolean selected) {
-        int selectedSurface = host.appearanceState.dark ? host.purpleDark : host.purpleSoft;
-        int selectedContent = ThemeManager.readableOn(selectedSurface);
-        int contentColor = selected ? selectedContent : host.fg;
-        host.uiFactory.setSurface(row, selected ? selectedSurface : host.panel, false);
-        cover.setBackgroundColor(selected
-                ? selectedSurface
-                : Color.rgb(host.appearanceState.dark ? 28 : 235, host.appearanceState.dark ? 28 : 235,
-                        host.appearanceState.dark ? 28 : 235));
-        title.setTextColor(contentColor);
-        mark.setText(selected ? "✔" : "+");
-        host.uiFactory.applyPlainIconStyle(mark, selected ? selectedContent : host.purple);
-        host.uiFactory.applyPlainIconStyle(play, selected ? selectedContent : host.purple);
+    void openSelection(String title, HashSet<String> selected, SelectionDone done) {
+        this.selectionController.open(title, selected, done);
     }
 
     void openSongActions(Track track) {
@@ -321,17 +158,22 @@ final class OverlayController {
                 : host.tr("Add to favorites", "Добавить в избранное"), () -> {
             host.toggleFavorite(track);
             close(shade);
-            if (host.navigationState.tabIndex == 1) {
-                host.render();
-            }
         });
         addCompactPanelButton(panel, host.tr("Add to playlist", "Добавить в плейлист"), () -> {
             host.overlayHost.removeView(shade);
             choosePlaylist(track);
         });
-        addCompactPanelButton(panel, host.tr("Add to queue", "Добавить в очередь"), () -> {
+        addCompactPanelButton(panel, host.tr("Play next", "Играть следующим"), () -> {
+            host.playbackQueueController.playNext(track);
+            close(shade);
+        });
+        addCompactPanelButton(panel, host.tr("Add to end of queue", "В конец очереди"), () -> {
             host.playbackQueueController.add(track);
             close(shade);
+        });
+        addCompactPanelButton(panel, host.tr("Edit metadata", "Изменить метаданные"), () -> {
+            close(shade);
+            host.metadataEditorController.open(track);
         });
         if (sourcePlaylist != null) {
             addCompactPanelButton(panel, host.tr("Remove from playlist", "Убрать из плейлиста"), () -> {
@@ -341,10 +183,17 @@ final class OverlayController {
                 openPlaylist(sourcePlaylist);
             });
         }
-        addCompactPanelButton(panel, host.tr("Remove from app", "Удалить из приложения"), () -> {
+        addCompactPanelButton(panel, host.tr("Remove from library", "Убрать из медиатеки"), () -> {
             host.overlayHost.removeView(shade);
-            confirmDeleteTrack(track);
+            confirmRemoveTrack(track);
         });
+        if (deletionController.canDeleteFile(track)) {
+            addCompactPanelButton(panel, host.tr("Delete file from device",
+                    "Удалить файл с устройства"), () -> {
+                host.overlayHost.removeView(shade);
+                confirmDeleteFile(track);
+            });
+        }
         addCompactPanelButton(panel, host.tr("Close", "Закрыть"), () -> close(shade));
         shade.addView(panel, compactSongActionsParams());
         host.overlayHost.addView(shade);
@@ -362,10 +211,10 @@ final class OverlayController {
     private void openCollectionChooser(Track track, boolean includeFavorites) {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
-        panel.addView(host.uiFactory.text(includeFavorites
+        panel.addView(host.uiFactory.dialogTitle(includeFavorites
                         ? host.tr("Save track", "Сохранить песню")
-                        : host.tr("Add to playlist", "Добавить в плейлист"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(48)));
+                        : host.tr("Add to playlist", "Добавить в плейлист")),
+                host.uiFactory.dialogTitleParams());
         ScrollView scroll = new ScrollView(host);
         LinearLayout rows = new LinearLayout(host);
         rows.setOrientation(LinearLayout.VERTICAL);
@@ -375,7 +224,7 @@ final class OverlayController {
                     : host.tr("Add to favorites", "Добавить в избранное"), () -> {
                 host.toggleFavorite(track);
                 close(shade);
-                if (host.navigationState.tabIndex == 1) {
+                if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
                     host.render();
                 }
                 host.playerUiController.syncPlaybackUi();
@@ -388,7 +237,7 @@ final class OverlayController {
                     : playlist.name, () -> {
                 host.playlistController.addTrackToPlaylist(playlist, track);
                 close(shade);
-                if (host.navigationState.tabIndex == 2) {
+                if (host.navigationState.tabIndex == LibraryTabs.PLAYLISTS) {
                     host.render();
                 }
                 host.playerUiController.syncPlaybackUi();
@@ -400,7 +249,7 @@ final class OverlayController {
                     host.tr("Playlist name", "Название плейлиста"), "", false,
                     value -> {
                         host.playlistController.createPlaylistWithTrack(value, track);
-                        if (host.navigationState.tabIndex == 2) {
+                        if (host.navigationState.tabIndex == LibraryTabs.PLAYLISTS) {
                             host.render();
                         }
                     });
@@ -416,7 +265,7 @@ final class OverlayController {
                 host.tr("Playlist name", "Название плейлиста"), "", false,
                 value -> {
                     host.playlistController.createPlaylist(value);
-                    if (host.navigationState.tabIndex == 2) {
+                    if (host.navigationState.tabIndex == LibraryTabs.PLAYLISTS) {
                         host.render();
                     }
                 });
@@ -440,62 +289,35 @@ final class OverlayController {
                 });
     }
 
-    private void confirmDeleteTrack(Track track) {
-        host.showConfirmPanel(host.tr("Delete song?", "Удалить песню?"),
+    private void confirmRemoveTrack(Track track) {
+        host.showConfirmPanel(host.tr("Remove from library?", "Убрать из медиатеки?"),
                 host.tr("The song will disappear from the app, but the file will stay on the phone.",
                         "Песня исчезнет из приложения, но файл останется на телефоне."), () -> {
                     host.playbackQueueController.removeFromLibrary(track);
                 });
     }
 
+    private void confirmDeleteFile(Track track) {
+        host.showConfirmPanel(host.tr("Delete file from device?",
+                        "Удалить файл с устройства?"),
+                host.tr("This cannot be undone. The song will also be removed from the library.",
+                        "Это действие нельзя отменить. Песня также исчезнет из медиатеки."),
+                () -> deletionController.deleteFile(track));
+    }
+
+    boolean handleActivityResult(int requestCode, int resultCode) {
+        return deletionController.handleActivityResult(requestCode, resultCode);
+    }
+
     void openSearch() {
-        final FrameLayout shade = host.uiFactory.shade();
-        LinearLayout panel = host.uiFactory.panelCard();
-        panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Search", "Поиск"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(48)));
-        EditText input = searchField(host.tr("Find", "Найти"));
-        input.setText(host.navigationState.search);
-        input.addTextChangedListener(new SimpleTextWatcher() {
-            @Override
-            public void onTextChanged(CharSequence value, int start, int before, int count) {
-                if (host.navigationState.tabIndex == 0 && host.songsView != null) {
-                    host.navigationState.search =
-                            value == null ? "" : value.toString();
-                    host.songsView.show(
-                            host.libraryState.tracks, host.navigationState.search);
-                }
-            }
-        });
-        panel.addView(input, searchParams());
-        LinearLayout actions = host.uiFactory.row();
-        Button reset = host.uiFactory.button(host.tr("Reset", "Сброс"));
-        reset.setOnClickListener(view -> {
-            host.navigationState.search = "";
-            close(shade);
-            host.render();
-        });
-        actions.addView(reset, new LinearLayout.LayoutParams(0, host.dp(54), 1.0f));
-        Button find = host.uiFactory.button(host.tr("Find", "Найти"));
-        host.uiFactory.applyPrimaryButtonStyle(find);
-        find.setOnClickListener(view -> {
-            host.navigationState.search = input.getText().toString();
-            close(shade);
-            host.render();
-        });
-        actions.addView(find, new LinearLayout.LayoutParams(0, host.dp(54), 1.0f));
-        panel.addView(actions);
-        shade.addView(panel, host.centerParams(host.dp(330), host.dp(230)));
-        host.overlayHost.addView(shade);
-        input.requestFocus();
-        host.playerUiController.updateMini();
+        searchController.open();
     }
 
     void showInput(String title, String hint, String value, boolean numeric, MainActivityCore.InputDone done) {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(title, 22, true), new LinearLayout.LayoutParams(-1, host.dp(48)));
+        panel.addView(host.uiFactory.dialogTitle(title), host.uiFactory.dialogTitleParams());
         EditText input = searchField(hint);
         input.setText(value);
         input.setSelection(input.length());
@@ -514,7 +336,7 @@ final class OverlayController {
         });
         actions.addView(save, new LinearLayout.LayoutParams(0, host.dp(54), 1.0f));
         panel.addView(actions);
-        shade.addView(panel, host.centerParams(host.dp(330), host.dp(230)));
+        shade.addView(panel, host.centerParams(host.dp(330), -2));
         host.overlayHost.addView(shade);
         input.requestFocus();
     }
@@ -582,6 +404,11 @@ final class OverlayController {
             host.overlayHost.removeView(shade);
         }
         host.playerUiController.updateMini();
+    }
+
+    @Override
+    public void close() {
+        deletionController.close();
     }
 
     private abstract static class SimpleTextWatcher implements TextWatcher {
