@@ -17,7 +17,8 @@ final class DeviceMusicScanner {
     private DeviceMusicScanner() {
     }
 
-    static ArrayList<Track> scan(Context context, Set<String> knownUris) {
+    static ArrayList<Track> scan(Context context, Set<String> knownUris,
+            ExcludedTrackIndex exclusions) {
         ArrayList<Track> tracks = new ArrayList<>();
         ContentResolver resolver = context.getContentResolver();
         Uri collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
@@ -41,6 +42,9 @@ final class DeviceMusicScanner {
                 long id = longValue(cursor, MediaStore.Audio.Media._ID);
                 Uri uri = ContentUris.withAppendedId(collection, id);
                 if (knownUris.contains(uri.toString())) {
+                    continue;
+                }
+                if (exclusions.containsIdentity(TrackOrigin.uriIdentity(uri.toString()))) {
                     continue;
                 }
                 Track track = trackFromCursor(context, cursor, uri);

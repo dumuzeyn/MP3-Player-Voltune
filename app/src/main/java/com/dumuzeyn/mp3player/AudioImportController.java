@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -114,9 +116,20 @@ final class AudioImportController {
         }
         try {
             importExecutor.execute(() -> {
-                ArrayList<Track> imported = DeviceMusicScanner.scan(host, knownUris);
-                for (Track track : imported) {
-                    TrackStore.upsert(host, track);
+                LibraryImportStore store = new LibraryImportStore(host);
+                ArrayList<Track> imported;
+                try {
+                    LibrarySourceStore sources = new LibrarySourceStore(host);
+                    ExcludedTrackIndex exclusions;
+                    try {
+                        exclusions = new ExcludedTrackIndex(sources.exclusions(null));
+                    } finally {
+                        sources.close();
+                    }
+                    imported = store.commitStandalone(
+                            DeviceMusicScanner.scan(host, knownUris, exclusions), false);
+                } finally {
+                    store.close();
                 }
                 publishImportedTracks(imported);
             });
@@ -129,14 +142,19 @@ final class AudioImportController {
             HashSet<String> knownUris, ArrayList<Track> existingTracks) {
         ArrayList<Track> imported = new ArrayList<>();
         if (treeUri != null) {
-            importFolder(treeUri, permissionFlags, knownUris, imported, existingTracks);
+            imported.addAll(importFolder(treeUri, permissionFlags, knownUris, existingTracks));
         } else {
             for (Uri uri : selectedUris) {
                 Track track = readTrack(uri, permissionFlags, true, knownUris, existingTracks);
                 if (track != null) {
                     imported.add(track);
-                    TrackStore.upsert(host, track);
                 }
+            }
+            LibraryImportStore store = new LibraryImportStore(host);
+            try {
+                imported = store.commitStandalone(imported, true);
+            } finally {
+                store.close();
             }
         }
         publishImportedTracks(imported);
@@ -164,30 +182,52 @@ final class AudioImportController {
         });
     }
 
-    private void importFolder(Uri treeUri, int flags, HashSet<String> knownUris,
-            ArrayList<Track> importedTracks, ArrayList<Track> existingTracks) {
+    private ArrayList<Track> importFolder(Uri treeUri, int flags, HashSet<String> knownUris,
+            ArrayList<Track> existingTracks) {
+        ArrayList<Track> importedTracks = new ArrayList<>();
         if (treeUri == null || !"content".equalsIgnoreCase(treeUri.getScheme())) {
-            return;
+            return importedTracks;
         }
         int takeFlags = flags & Intent.FLAG_GRANT_READ_URI_PERMISSION;
         try {
             host.getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
-            PersistedFolderStore.remember(host, treeUri);
         } catch (RuntimeException error) {
             VoltuneLog.failure("persist_folder_permission_failed", error);
         }
+        LibrarySource source = PersistedFolderStore.remember(host, treeUri,
+                queryDisplayName(treeUri), true);
+        if (source == null) {
+            return importedTracks;
+        }
+        LibraryImportStore store = new LibraryImportStore(host);
+        SourceScanSession session;
+        try {
+            session = store.session(source);
+        } finally {
+            store.close();
+        }
+        ArrayList<DiscoveredTrack> discovered = new ArrayList<>();
+        HashMap<String, Track> existingByUri = indexByUri(existingTracks);
         int[] imported = {0};
         try {
             scanDocumentTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri), imported,
-                    knownUris, importedTracks, existingTracks);
+                    knownUris, discovered, existingTracks, existingByUri, session);
         } catch (RuntimeException error) {
             VoltuneLog.failure("folder_import_failed", error);
         }
+        store = new LibraryImportStore(host);
+        try {
+            importedTracks.addAll(store.commitSource(session, discovered));
+        } finally {
+            store.close();
+        }
+        return importedTracks;
     }
 
     private void scanDocumentTree(Uri treeUri, String documentId, int[] imported,
-            HashSet<String> knownUris, ArrayList<Track> importedTracks,
-            ArrayList<Track> existingTracks) {
+            HashSet<String> knownUris, ArrayList<DiscoveredTrack> discovered,
+            ArrayList<Track> existingTracks, Map<String, Track> existingByUri,
+            SourceScanSession session) {
         if (closed || imported[0] >= MAX_FOLDER_IMPORT) {
             return;
         }
@@ -205,13 +245,22 @@ final class AudioImportController {
                 String displayName = cursor.getString(2);
                 Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId);
                 if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)) {
-                    scanDocumentTree(treeUri, childId, imported, knownUris, importedTracks,
-                            existingTracks);
+                    scanDocumentTree(treeUri, childId, imported, knownUris, discovered,
+                            existingTracks, existingByUri, session);
                 } else if (isAudioDocument(mimeType, displayName)) {
+                    String identity = TrackOrigin.identity(session.source.sourceId, childId);
+                    if (session.exclusions.containsIdentity(identity)) {
+                        continue;
+                    }
+                    Track existing = existingByUri.get(childUri.toString());
+                    if (existing != null) {
+                        discovered.add(new DiscoveredTrack(existing, session.source, childId));
+                        imported[0]++;
+                        continue;
+                    }
                     Track track = readTrack(childUri, 0, false, knownUris, existingTracks);
-                    if (track != null) {
-                        importedTracks.add(track);
-                        TrackStore.upsert(host, track);
+                    if (track != null && !session.exclusions.contains(identity, track)) {
+                        discovered.add(new DiscoveredTrack(track, session.source, childId));
                         imported[0]++;
                     }
                 }
@@ -287,8 +336,13 @@ final class AudioImportController {
     }
 
     void rescanPersistedFolders() {
-        ArrayList<Uri> trees = new ArrayList<>(PersistedFolderStore.readableTrees(host));
-        if (trees.isEmpty()) {
+        ArrayList<LibrarySource> sources = new ArrayList<>();
+        for (LibrarySource source : PersistedFolderStore.list(host)) {
+            if (PersistedFolderStore.hasReadPermission(host, source.asUri())) {
+                sources.add(source);
+            }
+        }
+        if (sources.isEmpty()) {
             openFolder();
             return;
         }
@@ -298,10 +352,39 @@ final class AudioImportController {
             knownUris.add(track.uri);
         }
         importExecutor.execute(() -> {
-            for (Uri tree : trees) {
-                processImport(new ArrayList<Uri>(), tree, 0, knownUris, existing);
+            for (LibrarySource source : sources) {
+                processRescan(source, knownUris, existing);
             }
         });
+    }
+
+    private void processRescan(LibrarySource source, HashSet<String> knownUris,
+            ArrayList<Track> existingTracks) {
+        LibraryImportStore store = new LibraryImportStore(host);
+        SourceScanSession session;
+        try {
+            session = store.session(source);
+        } finally {
+            store.close();
+        }
+        ArrayList<DiscoveredTrack> discovered = new ArrayList<>();
+        HashMap<String, Track> existingByUri = indexByUri(existingTracks);
+        int[] imported = {0};
+        try {
+            scanDocumentTree(source.asUri(),
+                    DocumentsContract.getTreeDocumentId(source.asUri()), imported,
+                    knownUris, discovered, existingTracks, existingByUri, session);
+        } catch (RuntimeException error) {
+            VoltuneLog.failure("folder_rescan_failed", error);
+        }
+        store = new LibraryImportStore(host);
+        ArrayList<Track> accepted;
+        try {
+            accepted = store.commitSource(session, discovered);
+        } finally {
+            store.close();
+        }
+        publishImportedTracks(accepted);
     }
 
     private static int indexOfTrackId(List<Track> tracks, String trackId) {
@@ -311,6 +394,14 @@ final class AudioImportController {
             }
         }
         return -1;
+    }
+
+    private static HashMap<String, Track> indexByUri(List<Track> tracks) {
+        HashMap<String, Track> result = new HashMap<>();
+        for (Track track : tracks) {
+            result.put(track.uri, track);
+        }
+        return result;
     }
 
     private void confirmAmbiguousImport(Track track, int candidateCount) {
@@ -328,7 +419,12 @@ final class AudioImportController {
                 host.tr("Import separately", "Импортировать отдельно"),
                 true,
                 () -> {
-                    TrackStore.upsert(host, track);
+                    LibraryImportStore store = new LibraryImportStore(host);
+                    try {
+                        store.commitStandalone(java.util.Collections.singletonList(track), true);
+                    } finally {
+                        store.close();
+                    }
                     if (host.findTrack(track.uri) == null) {
                         host.libraryState.tracks.add(track);
                         TrackStore.sort(host.libraryState.tracks);

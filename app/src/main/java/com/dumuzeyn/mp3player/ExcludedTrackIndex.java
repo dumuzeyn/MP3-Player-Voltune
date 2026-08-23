@@ -27,4 +27,8 @@ final class ExcludedTrackIndex {
         return sameContent != null && track.fileSize > 0L
                 && sameContent.fileSize == track.fileSize;
     }
+
+    boolean containsIdentity(String identityKey) {
+        return byIdentity.containsKey(identityKey);
+    }
 }

@@ -369,7 +369,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         return left == null ? right == null : left.equals(right);
     }
 
-    private static ContentValues trackValues(Track track) {
+    static ContentValues trackValues(Track track) {
         ContentValues values = new ContentValues();
         values.put("track_id", track.trackId);
         values.put("uri", track.uri);
