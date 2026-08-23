@@ -31,6 +31,7 @@ final class LibraryDatabaseSchema {
         db.execSQL("CREATE TABLE playlist_tracks (playlist_id INTEGER NOT NULL, "
                 + "track_id TEXT NOT NULL, position INTEGER NOT NULL, "
                 + "PRIMARY KEY (playlist_id, track_id))");
+        createLibrarySources(db);
     }
 
     static void migrate(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -45,7 +46,28 @@ final class LibraryDatabaseSchema {
         }
         if (version < 4 && newVersion >= 4) {
             addColumn(db, "metadata_revision INTEGER NOT NULL DEFAULT 0");
+            version = 4;
         }
+        if (version < 5 && newVersion >= 5) {
+            createLibrarySources(db);
+        }
+    }
+
+    private static void createLibrarySources(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE library_sources (source_id TEXT PRIMARY KEY NOT NULL, "
+                + "tree_uri TEXT UNIQUE NOT NULL, display_name TEXT NOT NULL, "
+                + "revision INTEGER NOT NULL DEFAULT 1, added_at INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE TABLE track_sources (track_id TEXT PRIMARY KEY NOT NULL, "
+                + "source_id TEXT NOT NULL, document_id TEXT NOT NULL, "
+                + "identity_key TEXT UNIQUE NOT NULL)");
+        db.execSQL("CREATE INDEX index_track_sources_source ON track_sources(source_id)");
+        db.execSQL("CREATE TABLE excluded_tracks (identity_key TEXT PRIMARY KEY NOT NULL, "
+                + "source_id TEXT NOT NULL DEFAULT '', document_id TEXT NOT NULL DEFAULT '', "
+                + "uri TEXT NOT NULL DEFAULT '', file_size INTEGER NOT NULL DEFAULT -1, "
+                + "last_modified INTEGER NOT NULL DEFAULT 0, fingerprint TEXT NOT NULL DEFAULT '', "
+                + "removed_at INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE INDEX index_excluded_source ON excluded_tracks(source_id)");
+        db.execSQL("CREATE INDEX index_excluded_fingerprint ON excluded_tracks(fingerprint)");
     }
 
     private static void migrateVersion2To3(SQLiteDatabase db) {

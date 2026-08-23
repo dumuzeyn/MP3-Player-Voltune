@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -168,5 +169,47 @@ public class LibraryDatabaseMigrationInstrumentedTest {
                 "Song", "Artist", "Album", "Artist", "Rock", 0, 0, 0));
         assertEquals(0, migrated.loadTracksNeedingMetadataRefresh(1).size());
         migrated.close();
+    }
+
+    @Test
+    public void versionFourMigrationKeepsLibraryAndAddsSourceTables() {
+        SQLiteDatabase old = context.openOrCreateDatabase(LibraryDatabase.DB_NAME, 0, null);
+        LibraryDatabaseSchema.createLatest(old);
+        old.execSQL("DROP TABLE excluded_tracks");
+        old.execSQL("DROP TABLE track_sources");
+        old.execSQL("DROP TABLE library_sources");
+        ContentValues track = new ContentValues();
+        track.put("track_id", "stable-v4");
+        track.put("uri", "content://migration/v4");
+        track.put("title", "Preserved song");
+        track.put("artist", "Artist");
+        track.put("album", "Album");
+        track.put("album_artist", "Artist");
+        track.put("genre", "Rock");
+        old.insertOrThrow("tracks", null, track);
+        ContentValues favorite = new ContentValues();
+        favorite.put("track_id", "stable-v4");
+        old.insertOrThrow("favorites", null, favorite);
+        old.setVersion(4);
+        old.close();
+
+        LibraryDatabase migrated = new LibraryDatabase(context);
+        assertEquals(1, migrated.loadTracks().size());
+        assertEquals(1, migrated.loadFavorites().size());
+        assertTrue(tableExists(migrated.getReadableDatabase(), "library_sources"));
+        assertTrue(tableExists(migrated.getReadableDatabase(), "track_sources"));
+        assertTrue(tableExists(migrated.getReadableDatabase(), "excluded_tracks"));
+        migrated.close();
+    }
+
+    private static boolean tableExists(SQLiteDatabase database, String name) {
+        android.database.Cursor cursor = database.rawQuery(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                new String[]{name});
+        try {
+            return cursor.moveToFirst();
+        } finally {
+            cursor.close();
+        }
     }
 }
