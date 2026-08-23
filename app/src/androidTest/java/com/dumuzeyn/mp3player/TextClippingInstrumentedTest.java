@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.text.Layout;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -110,6 +111,7 @@ public class TextClippingInstrumentedTest {
     }
 
     private void checkDialog(MainActivityCore host, String name, Runnable openDialog) {
+        Log.i("VoltuneClippingTest", "Checking " + name);
         instrumentation.runOnMainSync(() -> {
             host.overlayHost.removeAllViews();
             openDialog.run();
@@ -121,8 +123,10 @@ public class TextClippingInstrumentedTest {
             scaleText(host.overlayHost, LARGE_TEXT_SCALE);
             host.overlayHost.requestLayout();
         });
-        instrumentation.waitForIdleSync();
+        InstrumentedTestSupport.waitFor(name + " did not finish layout", 5000L,
+                () -> !host.overlayHost.isLayoutRequested());
         assertNoClipping(name, host.overlayHost);
+        Log.i("VoltuneClippingTest", "Finished " + name);
     }
 
     private void checkAllLibrarySections(MainActivityCore host) {
@@ -132,7 +136,8 @@ public class TextClippingInstrumentedTest {
                 host.navigationState.tabIndex = tabIndex;
                 host.render();
             });
-            instrumentation.waitForIdleSync();
+            InstrumentedTestSupport.waitFor("Tab did not finish layout", 5000L,
+                    () -> !host.root.isLayoutRequested());
             assertNoClipping("tab " + host.tabs[index], host.root);
         }
     }

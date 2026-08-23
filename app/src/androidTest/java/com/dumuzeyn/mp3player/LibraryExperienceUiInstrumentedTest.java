@@ -128,6 +128,7 @@ public class LibraryExperienceUiInstrumentedTest {
                 .putBoolean("sqlite_migrated", true)
                 .commit();
         context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
+                .putString("language", "ru")
                 .putBoolean("animations", false)
                 .putBoolean("particlesEnabled", false)
                 .commit();
