@@ -17,6 +17,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.viewpager2.widget.ViewPager2;
+import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.After;
 import org.junit.Test;
@@ -130,17 +131,23 @@ public class LibraryExperienceUiInstrumentedTest {
                 .putBoolean("animations", false)
                 .putBoolean("particlesEnabled", false)
                 .commit();
+        ArrayList<Track> tracks = new ArrayList<>();
+        for (int index = 0; index < 10; index++) {
+            tracks.add(new Track("content://voltune.ui/track/" + index,
+                    "UI song " + index, "UI artist", "UI album", "UI genre", 180000));
+        }
+        TrackStore.save(context, tracks);
         Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(
                 MainActivity.class.getName(), null, false);
         Intent intent = new Intent(context, MainActivity.class)
-                .putExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 10)
+                .putExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, tracks.size())
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         context.startActivity(intent);
         activity = monitor.waitForActivityWithTimeout(15000L);
         instrumentation.removeMonitor(monitor);
         assertNotNull(activity);
         MainActivityCore host = (MainActivityCore) activity;
-        InstrumentedTestSupport.waitFor("Benchmark library did not load", 10000L,
+        InstrumentedTestSupport.waitFor("Test library did not load", 10000L,
                 () -> host.libraryState.tracks.size() >= 10 && host.root != null);
         return host;
     }
