@@ -12,10 +12,12 @@ import java.util.Random;
 final class PlaybackQueueController {
     private final MainActivityCore host;
     private final PlaybackController playback;
+    private final LibraryMutationController mutations;
 
     PlaybackQueueController(MainActivityCore host, PlaybackController playback) {
         this.host = host;
         this.playback = playback;
+        this.mutations = new LibraryMutationController(host);
     }
 
     void playTrack(Track track, boolean refreshList) {
@@ -110,14 +112,28 @@ final class PlaybackQueueController {
         if (stored == null) {
             return;
         }
-        remove(stored);
-        host.libraryState.tracks.remove(stored);
-        host.libraryRepository.reindex();
-        host.libraryState.favorites.remove(stored.uri);
-        host.playlistController.removeTrackFromAllPlaylists(stored);
-        TrackStore.delete(host, stored);
-        host.saveLibraryState();
-            host.librarySnapshotApplier.rebuildDerivedAndRender();
+        mutations.removeTrack(stored);
+    }
+
+    void removeSource(LibrarySource source) {
+        mutations.removeSource(source);
+    }
+
+    void clearLibrary() {
+        mutations.clearLibrary();
+    }
+
+    void close() {
+        mutations.close();
+    }
+
+    void removeCommitted(java.util.Set<String> trackIds, java.util.Set<String> trackUris) {
+        if (trackIds.isEmpty()) {
+            return;
+        }
+        new PlaybackStateManager(host).removeTracks(trackIds, trackUris);
+        host.playbackUiState.queue.removeIf(track -> trackIds.contains(track.trackId));
+        playback.removeQueueItems(trackIds);
     }
 
     void playIndex(int index, int position) {

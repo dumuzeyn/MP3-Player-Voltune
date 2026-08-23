@@ -161,18 +161,7 @@ final class SettingsController {
                 host.tr("Delete all songs?", "Удалить все песни?"),
                 host.tr("Songs will disappear only from this app. Files on the phone will stay untouched.",
                         "Песни исчезнут только из приложения. Файлы на телефоне останутся."),
-                () -> {
-                    host.stopPlaybackAndClearQueue();
-                    host.libraryState.tracks.clear();
-                    host.libraryState.favorites.clear();
-                    for (Playlist playlist : host.libraryState.playlists) {
-                        playlist.uris.clear();
-                    }
-                    TrackStore.save(host, host.libraryState.tracks);
-                    host.saveState();
-                    host.libraryRepository.reindex();
-            host.librarySnapshotApplier.rebuildDerivedAndRender();
-                });
+                () -> host.playbackQueueController.clearLibrary());
     }
 
     void exportLibraryBackup() {

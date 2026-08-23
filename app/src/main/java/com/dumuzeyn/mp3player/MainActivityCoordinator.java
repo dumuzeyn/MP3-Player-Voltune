@@ -34,6 +34,7 @@ final class MainActivityCoordinator {
         closeables.add(host.songsRenderer::close);
         closeables.add(host.backgroundSettingsController::close);
         closeables.add(host.audioImportController::close);
+        closeables.add(host.playbackQueueController::close);
     }
 
     void onCreate(Bundle savedInstanceState) {

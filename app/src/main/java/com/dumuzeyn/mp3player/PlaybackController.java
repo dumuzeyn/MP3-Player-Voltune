@@ -256,6 +256,21 @@ final class PlaybackController implements Player.Listener {
         });
     }
 
+    void removeQueueItems(java.util.Set<String> mediaIds) {
+        java.util.HashSet<String> removed = new java.util.HashSet<>(mediaIds);
+        whenConnected(() -> {
+            for (int index = controller.getMediaItemCount() - 1; index >= 0; index--) {
+                if (removed.contains(controller.getMediaItemAt(index).mediaId)) {
+                    controller.removeMediaItem(index);
+                }
+            }
+            if (controller.getMediaItemCount() == 0) {
+                controller.stop();
+                controller.sendCustomCommand(Media3Commands.CLEAR_QUEUE_COMMAND, Bundle.EMPTY);
+            }
+        });
+    }
+
     private int indexOfMediaId(String mediaId) {
         for (int index = 0; index < controller.getMediaItemCount(); index++) {
             if (mediaId.equals(controller.getMediaItemAt(index).mediaId)) {
