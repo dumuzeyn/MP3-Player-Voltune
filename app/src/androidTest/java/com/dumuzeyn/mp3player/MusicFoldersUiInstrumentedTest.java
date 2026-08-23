@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import android.app.Instrumentation;
+import android.content.pm.ActivityInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -67,6 +68,20 @@ public class MusicFoldersUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Removal confirmation did not open", 5000L,
                 () -> containsText(activity.overlayHost,
                         "Файлы на устройстве останутся без изменений."));
+        assertViewTreeInside(activity.overlayHost, activity.root);
+    }
+
+    @Test
+    public void folderListFitsShortLandscapeWindow() {
+        activity = launch();
+        instrumentation.runOnMainSync(() -> activity.setRequestedOrientation(
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE));
+        InstrumentedTestSupport.waitFor("Landscape layout did not settle", 10000L,
+                () -> activity.root.getWidth() > activity.root.getHeight());
+        instrumentation.runOnMainSync(activity.settingsController::openMusicFolders);
+        InstrumentedTestSupport.waitFor("Landscape folder list did not open", 5000L,
+                () -> activity.overlayHost.getChildCount() > 0
+                        && activity.overlayHost.getChildAt(0).getWidth() > 0);
         assertViewTreeInside(activity.overlayHost, activity.root);
     }
 
