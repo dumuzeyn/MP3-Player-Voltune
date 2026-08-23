@@ -5,7 +5,9 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 final class HomeMenuRenderer implements MenuRenderer {
     private final MainActivityCore host;
@@ -25,15 +27,19 @@ final class HomeMenuRenderer implements MenuRenderer {
             return;
         }
         Track current = host.playbackStateProvider.currentTrack();
+        Set<String> shownTracks = new HashSet<>();
         if (current != null) {
             addTracks(host.tr("Continue listening", "Продолжить прослушивание"),
-                    java.util.Collections.singletonList(current));
+                    java.util.Collections.singletonList(current), shownTracks);
         }
         HomeContent content = host.libraryState.homeContent;
-        addTracks(host.tr("Recently played", "Недавно слушали"), content.recentlyPlayed);
-        addTracks(host.tr("Recently added", "Недавно добавленные"), content.recentlyAdded);
-        addTracks(host.tr("Most played", "Часто слушаемые"), content.mostPlayed);
-        addTracks(host.tr("Favorites", "Избранное"), content.favorites);
+        addTracks(host.tr("Recently played", "Недавно слушали"),
+                content.recentlyPlayed, shownTracks);
+        addTracks(host.tr("Recently added", "Недавно добавленные"),
+                content.recentlyAdded, shownTracks);
+        addTracks(host.tr("Most played", "Часто слушаемые"),
+                content.mostPlayed, shownTracks);
+        addTracks(host.tr("Favorites", "Избранное"), content.favorites, shownTracks);
         addPlaylists(content.playlists);
         addGroups(host.tr("Artists", "Исполнители"), content.artists, true);
         addGroups(host.tr("Albums", "Альбомы"), content.albums, false);
@@ -44,12 +50,13 @@ final class HomeMenuRenderer implements MenuRenderer {
         return true;
     }
 
-    private void addTracks(String title, List<Track> tracks) {
-        if (tracks.isEmpty()) {
+    private void addTracks(String title, List<Track> tracks, Set<String> shownTracks) {
+        ArrayList<Track> unique = HomeTrackVisibility.takeUnseen(tracks, shownTracks);
+        if (unique.isEmpty()) {
             return;
         }
         addHeading(title);
-        for (Track track : tracks) {
+        for (Track track : unique) {
             host.list.addView(host.songsRenderer.songRow(track, true, false));
         }
     }
@@ -60,7 +67,8 @@ final class HomeMenuRenderer implements MenuRenderer {
         }
         addHeading(host.tr("Recent playlists", "Последние плейлисты"));
         for (Playlist playlist : playlists) {
-            addButton(playlist.name, () -> host.overlayController.openPlaylist(playlist));
+            addButton(playlist.name, host.appearanceState.playlistCardOpacity,
+                    () -> host.overlayController.openPlaylist(playlist));
         }
     }
 
@@ -74,9 +82,15 @@ final class HomeMenuRenderer implements MenuRenderer {
             Button button = host.uiFactory.button(value);
             button.setSingleLine(true);
             button.setEllipsize(TextUtils.TruncateAt.END);
+            host.uiFactory.applySecondaryButtonStyle(button,
+                    artist ? host.appearanceState.artistCardOpacity
+                            : host.appearanceState.albumCardOpacity);
             button.setOnClickListener(view -> host.overlayController.openGroup(
                     value, matchingTracks(value, artist)));
-            row.addView(button, new LinearLayout.LayoutParams(0, host.dp(52), 1.0f));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    0, host.dp(52), 1.0f);
+            params.setMargins(host.dp(2), 0, host.dp(2), 0);
+            row.addView(button, params);
         }
         host.list.addView(row);
     }
@@ -95,11 +109,14 @@ final class HomeMenuRenderer implements MenuRenderer {
         host.list.addView(heading, new LinearLayout.LayoutParams(-1, host.dp(50)));
     }
 
-    private void addButton(String label, Runnable action) {
+    private void addButton(String label, int opacity, Runnable action) {
         Button button = host.uiFactory.button(label);
         button.setSingleLine(true);
         button.setEllipsize(TextUtils.TruncateAt.END);
+        host.uiFactory.applySecondaryButtonStyle(button, opacity);
         button.setOnClickListener(view -> action.run());
-        host.list.addView(button, new LinearLayout.LayoutParams(-1, host.dp(52)));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(52));
+        params.setMargins(0, host.dp(2), 0, host.dp(2));
+        host.list.addView(button, params);
     }
 }

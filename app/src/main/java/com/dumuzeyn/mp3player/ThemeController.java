@@ -355,6 +355,7 @@ final class ThemeController {
         host.rebuildUiForTheme();
         openDialog();
         launcherUpdatePending = true;
+        updateLauncherIcon();
     }
 
     void onHostStopped() {
@@ -362,6 +363,11 @@ final class ThemeController {
             return;
         }
         launcherUpdatePending = false;
+        updateLauncherIcon();
+    }
+
+    void syncLauncherIcon() {
+        launcherUpdatePending = true;
         updateLauncherIcon();
     }
 

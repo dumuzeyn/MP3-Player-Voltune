@@ -81,6 +81,28 @@ public class LauncherIconInstrumentedTest {
         logo.recycle();
     }
 
+    @Test
+    public void customColorsSelectTheMatchingLauncherPalette() {
+        Context context = ApplicationProvider.getApplicationContext();
+        assertEquals("LauncherCustomBlueLight", simpleName(LauncherComponents.forPalette(
+                context, "custom", false, 0xff3478f6, 0xff40d7ff)));
+        assertEquals("LauncherCustomRedDark", simpleName(LauncherComponents.forPalette(
+                context, "custom", true, 0xffff4d67, 0xffffb23e)));
+        assertEquals("LauncherCustomGreenLight", simpleName(LauncherComponents.forPalette(
+                context, "custom", false, 0xff25b86b, 0xffc8f04b)));
+        assertEquals("LauncherCustomPinkDark", simpleName(LauncherComponents.forPalette(
+                context, "custom", true, 0xffe94baa, 0xff36d8d0)));
+        assertEquals("LauncherCustomOrangeLight", simpleName(LauncherComponents.forPalette(
+                context, "custom", false, 0xffff3545, 0xffd0e8ff)));
+        assertEquals("LauncherCustomBlueLight", simpleName(LauncherComponents.forPalette(
+                context, "custom", false, 0xff09094f, 0xff87dcec)));
+    }
+
+    private static String simpleName(ComponentName component) {
+        String className = component.getClassName();
+        return className.substring(className.lastIndexOf('.') + 1);
+    }
+
     private static void assertAliasIcon(PackageManager packageManager, Context context,
             String className, int expectedIcon) throws Exception {
         ComponentName component = new ComponentName(

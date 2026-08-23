@@ -50,6 +50,10 @@ final class LibraryDatabaseSchema {
         }
         if (version < 5 && newVersion >= 5) {
             createLibrarySources(db);
+            version = 5;
+        }
+        if (version < 6 && newVersion >= 6) {
+            LibraryDuplicateCleaner.clean(db);
         }
     }
 

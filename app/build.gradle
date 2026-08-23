@@ -33,8 +33,8 @@ android {
         applicationId "com.dumuzeyn.mp3player"
         minSdk 23
         targetSdk 35
-        versionCode 36
-        versionName "3.1.0"
+        versionCode 37
+        versionName "3.1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -130,27 +130,69 @@ tasks.register("checkLauncherIcon") {
         def manifestText = file("src/main/AndroidManifest.xml").getText("UTF-8")
         def styleText = file("src/main/res/values-v31/styles.xml").getText("UTF-8")
         def launcherIcons = [
-                'ic_launcher_home', 'ic_launcher_dark',
-                'ic_launcher_custom_blue_light', 'ic_launcher_custom_blue_dark',
-                'ic_launcher_custom_red_light', 'ic_launcher_custom_red_dark',
-                'ic_launcher_custom_green_light', 'ic_launcher_custom_green_dark',
-                'ic_launcher_custom_pink_light', 'ic_launcher_custom_pink_dark',
-                'ic_launcher_custom_orange_light', 'ic_launcher_custom_orange_dark'
+                'ic_launcher_home': 'voltune_icon_foreground_layer',
+                'ic_launcher_dark': 'voltune_icon_foreground_layer',
+                'ic_launcher_custom_blue_light': 'voltune_icon_foreground_blue_layer',
+                'ic_launcher_custom_blue_dark': 'voltune_icon_foreground_blue_layer',
+                'ic_launcher_custom_red_light': 'voltune_icon_foreground_red_layer',
+                'ic_launcher_custom_red_dark': 'voltune_icon_foreground_red_layer',
+                'ic_launcher_custom_green_light': 'voltune_icon_foreground_green_layer',
+                'ic_launcher_custom_green_dark': 'voltune_icon_foreground_green_layer',
+                'ic_launcher_custom_pink_light': 'voltune_icon_foreground_pink_layer',
+                'ic_launcher_custom_pink_dark': 'voltune_icon_foreground_pink_layer',
+                'ic_launcher_custom_orange_light': 'voltune_icon_foreground_orange_layer',
+                'ic_launcher_custom_orange_dark': 'voltune_icon_foreground_orange_layer'
         ]
-        launcherIcons.each { icon ->
+        launcherIcons.each { icon, foregroundName ->
             if (!manifestText.contains("@mipmap/${icon}")) {
                 throw new GradleException("Launcher alias is not mapped to ${icon}")
             }
             def adaptive = file("src/main/res/mipmap-anydpi-v26/${icon}.xml").getText("UTF-8")
-            if (!adaptive.contains('@drawable/voltune_icon_foreground_layer')) {
-                throw new GradleException("${icon} does not use the current Voltune artwork")
+            if (!adaptive.contains("@drawable/${foregroundName}")) {
+                throw new GradleException("${icon} does not use its Voltune palette artwork")
             }
             def themed = file("src/main/res/mipmap-anydpi-v33/${icon}.xml").getText("UTF-8")
+            if (!themed.contains("@drawable/${foregroundName}")) {
+                throw new GradleException("${icon} themed icon uses the wrong palette")
+            }
             if (!themed.contains('<monochrome android:drawable="@drawable/voltune_icon_monochrome"')) {
                 throw new GradleException("${icon} does not provide an Android 13 themed icon")
             }
+            if (icon.startsWith('ic_launcher_custom_')) {
+                def parts = icon.split('_')
+                def legacyName = "voltune_icon_legacy_${parts[3]}_${parts[4]}"
+                def legacy = file("src/main/res/mipmap-anydpi/${icon}.xml").getText("UTF-8")
+                if (!legacy.contains("@drawable/${legacyName}")) {
+                    throw new GradleException("${icon} legacy icon uses the wrong palette")
+                }
+            }
         }
-        if (styleText.count('@drawable/voltune_splash_icon') != 12
+        ['blue', 'red', 'green', 'pink', 'orange'].each { palette ->
+            def paletteFile = file("src/main/res/drawable-nodpi/voltune_icon_foreground_${palette}.png")
+            def paletteImage = javax.imageio.ImageIO.read(paletteFile)
+            if (paletteImage == null || paletteImage.width != foreground.width
+                    || paletteImage.height != foreground.height || !paletteImage.colorModel.hasAlpha()) {
+                throw new GradleException("${palette} launcher palette is missing or malformed")
+            }
+            int paletteMinX = paletteImage.width
+            int paletteMaxX = -1
+            for (int y = 0; y < paletteImage.height; y++) {
+                for (int x = 0; x < paletteImage.width; x++) {
+                    if (((paletteImage.getRGB(x, y) >>> 24) & 0xff) > 8) {
+                        paletteMinX = Math.min(paletteMinX, x)
+                        paletteMaxX = Math.max(paletteMaxX, x)
+                    }
+                }
+            }
+            double paletteWidth = (paletteMaxX - paletteMinX + 1d) / paletteImage.width * 0.64d
+            if (paletteWidth < 0.50d || paletteWidth > 0.70d) {
+                throw new GradleException("${palette} adaptive icon safe-zone width is ${paletteWidth}")
+            }
+            if (styleText.count("@drawable/voltune_icon_splash_${palette}") != 2) {
+                throw new GradleException("${palette} splash does not match both theme modes")
+            }
+        }
+        if (styleText.count('@drawable/voltune_splash_icon') != 2
                 || styleText.count('windowSplashScreenBackground') != 12) {
             throw new GradleException("Every launch theme must define a themed splash")
         }

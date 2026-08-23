@@ -63,10 +63,17 @@ final class LauncherComponents {
     }
 
     private static long colorDistance(int first, int second) {
-        long red = Color.red(first) - Color.red(second);
-        long green = Color.green(first) - Color.green(second);
-        long blue = Color.blue(first) - Color.blue(second);
-        return red * red + green * green + blue * blue;
+        float[] firstHsv = new float[3];
+        float[] secondHsv = new float[3];
+        Color.colorToHSV(first, firstHsv);
+        Color.colorToHSV(second, secondHsv);
+        float hue = Math.abs(firstHsv[0] - secondHsv[0]);
+        hue = Math.min(hue, 360.0f - hue) / 180.0f;
+        float saturation = firstHsv[1] - secondHsv[1];
+        float value = firstHsv[2] - secondHsv[2];
+        return Math.round(hue * hue * 1_000_000.0f
+                + saturation * saturation * 100_000.0f
+                + value * value * 10_000.0f);
     }
 
     private static final class Palette {

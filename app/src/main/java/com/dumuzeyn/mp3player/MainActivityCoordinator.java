@@ -45,6 +45,7 @@ final class MainActivityCoordinator {
             NotificationPermissionController.requestIfNeeded(host);
         }
         host.themeController.applyPalette();
+        host.themeController.syncLauncherIcon();
         host.buildUi();
         host.libraryLoader.load(
                 host.getIntent().getIntExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 0),
