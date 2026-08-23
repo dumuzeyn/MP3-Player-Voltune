@@ -135,6 +135,14 @@ final class BackgroundMediaView extends ImageView {
     }
 
     @Override
+    protected void onDetachedFromWindow() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            Api28Decoder.setAnimatedRunning(getDrawable(), false);
+        }
+        super.onDetachedFromWindow();
+    }
+
+    @Override
     protected void onDraw(android.graphics.Canvas canvas) {
         if (legacyMovie == null || !uiActive) {
             super.onDraw(canvas);

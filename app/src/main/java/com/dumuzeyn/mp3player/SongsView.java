@@ -23,7 +23,7 @@ final class SongsView extends FrameLayout implements AutoCloseable {
     private final Runnable progressTicker = new Runnable() {
         @Override
         public void run() {
-            if (getVisibility() != View.VISIBLE) {
+            if (!hostVisible || getVisibility() != View.VISIBLE) {
                 return;
             }
             if (host.isPlaybackPlaying()) {

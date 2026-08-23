@@ -9,6 +9,11 @@ final class UiVisibilityController {
     }
 
     static void apply(MainActivityCore host, boolean visible) {
+        if (!visible) {
+            host.tabsController.cancelScrollAnimation();
+            host.swipeController.cancelForBackground();
+            if (host.miniPlayer != null) host.miniPlayer.animate().cancel();
+        }
         if (host.particleEffectsView != null) {
             host.particleEffectsView.setUiActive(visible);
         }

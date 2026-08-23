@@ -34,7 +34,9 @@ final class FullPlayerPlaybackPage implements AutoCloseable {
         this.actions = actions;
         this.state = state;
         progress = new FullPlayerProgressController(host, state,
-                () -> refresh(true));
+                () -> refresh(true), () -> {
+                    if (timer != null) timer.setText(host.timerButtonText());
+                });
     }
 
     View createView() {

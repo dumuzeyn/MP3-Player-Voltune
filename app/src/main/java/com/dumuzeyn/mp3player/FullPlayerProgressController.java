@@ -9,6 +9,7 @@ final class FullPlayerProgressController implements AutoCloseable {
     private final MainActivityCore host;
     private final PlaybackStateProvider playbackState;
     private final Runnable trackChanged;
+    private final Runnable uiTick;
     private final Runnable ticker = this::tick;
     private View root;
     private SeekBar seek;
@@ -19,10 +20,11 @@ final class FullPlayerProgressController implements AutoCloseable {
     private boolean seekTracking;
 
     FullPlayerProgressController(MainActivityCore host,
-            PlaybackStateProvider playbackState, Runnable trackChanged) {
+            PlaybackStateProvider playbackState, Runnable trackChanged, Runnable uiTick) {
         this.host = host;
         this.playbackState = playbackState;
         this.trackChanged = trackChanged;
+        this.uiTick = uiTick;
     }
 
     void bind(View root, Track track, SeekBar seek, TextView elapsed, TextView remaining) {
@@ -60,6 +62,7 @@ final class FullPlayerProgressController implements AutoCloseable {
             trackChanged.run();
         }
         updateClock();
+        uiTick.run();
         host.uiHandler.postDelayed(ticker, 250L);
     }
 

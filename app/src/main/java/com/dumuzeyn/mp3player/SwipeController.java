@@ -136,6 +136,11 @@ final class SwipeController {
         animateOffset(0.0f, -direction * transitionDistance, true);
     }
 
+    void cancelForBackground() {
+        if (transitionAnimator != null) transitionAnimator.cancel();
+        if (host.navigationState.tabAnimating) finishCancelledTransition();
+    }
+
     private void prepareAdjacentTransition(int requestedDirection) {
         prepareTransition(adjacentIndex(requestedDirection), requestedDirection, true, "");
     }

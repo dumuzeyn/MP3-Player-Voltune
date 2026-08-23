@@ -73,7 +73,7 @@ class MainActivityCore extends Activity {
     private final SettingsRenderer settingsRenderer = new SettingsRenderer(this);
     final SettingsController settingsController = new SettingsController(this);
     final TabsController tabsController = new TabsController(this);
-    private final SwipeController swipeController = new SwipeController(this);
+    final SwipeController swipeController = new SwipeController(this);
     final AudioImportController audioImportController = new AudioImportController(this);
     final LibraryMaintenanceController libraryMaintenanceController =
             new LibraryMaintenanceController(this, this.uiHandler);

@@ -136,13 +136,17 @@ final class FullPlayerController {
             host.playerUiController.updateMini();
             return;
         }
-        releasePager();
+        if (pager != null) pager.setHostVisible(false);
         if (animate && host.appearanceState.animations) {
             sheet.animate().translationY(host.getResources().getDisplayMetrics().heightPixels)
                     .alpha(0.0f).setDuration(135L)
                     .setInterpolator(new DecelerateInterpolator())
-                    .withEndAction(() -> removeSheet(sheet)).start();
+                    .withEndAction(() -> {
+                        releasePager();
+                        removeSheet(sheet);
+                    }).start();
         } else {
+            releasePager();
             removeSheet(sheet);
         }
         if (sheet == currentSheet) {
