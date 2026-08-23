@@ -8,10 +8,8 @@ import android.media.audiofx.DynamicsProcessing;
 import android.media.audiofx.Equalizer;
 import android.media.audiofx.LoudnessEnhancer;
 import android.os.Build;
-import android.util.Log;
 
 final class AudioEffectsManager {
-    private static final String DEBUG_TAG = "VoltuneDebug";
 
     private final Context context;
     private Equalizer equalizer;
@@ -90,9 +88,9 @@ final class AudioEffectsManager {
             }
             effect.setEnabled(true);
             equalizer = effect;
-            Log.i(DEBUG_TAG, "equalizer_applied session=" + audioSessionId + " bands=" + bandCount);
+            VoltuneLog.info("equalizer_applied bands=" + bandCount);
         } catch (RuntimeException error) {
-            Log.w(DEBUG_TAG, "equalizer_unavailable session=" + audioSessionId + " error=" + error.getMessage());
+            VoltuneLog.failure("equalizer_unavailable", error);
         }
     }
 
@@ -106,11 +104,10 @@ final class AudioEffectsManager {
         }
         try {
             dynamicsProcessing = Api28VolumeLeveling.createCustom(audioSessionId);
-            Log.i(DEBUG_TAG, "volume_leveling_applied session=" + audioSessionId);
+            VoltuneLog.info("volume_leveling_applied");
         } catch (RuntimeException customConfigError) {
             customDynamicsUnsupported = true;
-            Log.w(DEBUG_TAG, "volume_leveling_custom_config_failed session=" + audioSessionId
-                    + " error=" + customConfigError.getMessage());
+            VoltuneLog.failure("volume_leveling_custom_config_failed", customConfigError);
             applyCompatibleVolumeLeveling(audioSessionId);
         }
     }
@@ -120,11 +117,10 @@ final class AudioEffectsManager {
         try {
             DynamicsProcessing effect = Api28VolumeLeveling.createCompatible(audioSessionId);
             dynamicsProcessing = effect;
-            Log.i(DEBUG_TAG, "volume_leveling_applied_compatible session=" + audioSessionId
-                    + " channels=" + effect.getChannelCount());
+            VoltuneLog.info("volume_leveling_applied_compatible channels="
+                    + effect.getChannelCount());
         } catch (RuntimeException defaultConfigError) {
-            Log.w(DEBUG_TAG, "volume_leveling_default_config_failed session=" + audioSessionId
-                    + " error=" + defaultConfigError.getMessage());
+            VoltuneLog.failure("volume_leveling_default_config_failed", defaultConfigError);
         }
     }
 
@@ -137,11 +133,9 @@ final class AudioEffectsManager {
             effect.setTargetGain(Math.round(Math.min(8.0f, gainDb) * 100.0f));
             effect.setEnabled(true);
             loudnessEnhancer = effect;
-            Log.i(DEBUG_TAG, "fixed_loudness_gain_applied session=" + audioSessionId
-                    + " gainDb=" + gainDb);
+            VoltuneLog.info("fixed_loudness_gain_applied");
         } catch (RuntimeException error) {
-            Log.w(DEBUG_TAG, "fixed_loudness_gain_unavailable session=" + audioSessionId
-                    + " error=" + error.getMessage());
+            VoltuneLog.failure("fixed_loudness_gain_unavailable", error);
         }
     }
 

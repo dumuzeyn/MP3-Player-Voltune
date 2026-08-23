@@ -93,4 +93,40 @@ public class LibraryDatabaseMigrationInstrumentedTest {
         assertEquals(uri, playlists.get(0).uris.get(0));
         assertEquals(lastUri, playlists.get(0).uris.get(1));
     }
+
+    @Test
+    public void versionTwoMigrationAddsStatisticsWithoutLosingLibraryData() {
+        SQLiteDatabase old = context.openOrCreateDatabase(LibraryDatabase.DB_NAME, 0, null);
+        old.execSQL("CREATE TABLE tracks (track_id TEXT PRIMARY KEY NOT NULL, "
+                + "uri TEXT UNIQUE NOT NULL, title TEXT NOT NULL, artist TEXT NOT NULL, "
+                + "album TEXT NOT NULL, genre TEXT NOT NULL, duration_ms INTEGER NOT NULL "
+                + "DEFAULT 0, file_size INTEGER NOT NULL DEFAULT -1, last_modified INTEGER "
+                + "NOT NULL DEFAULT 0, fingerprint TEXT NOT NULL DEFAULT '', "
+                + "availability_reason TEXT NOT NULL DEFAULT '')");
+        old.execSQL("CREATE TABLE favorites (track_id TEXT PRIMARY KEY NOT NULL)");
+        old.execSQL("CREATE TABLE playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "name TEXT NOT NULL, position INTEGER NOT NULL)");
+        old.execSQL("CREATE TABLE playlist_tracks (playlist_id INTEGER NOT NULL, "
+                + "track_id TEXT NOT NULL, position INTEGER NOT NULL, "
+                + "PRIMARY KEY (playlist_id, track_id))");
+        ContentValues values = new ContentValues();
+        values.put("track_id", "stable-v2");
+        values.put("uri", "content://migration/v2");
+        values.put("title", "Song");
+        values.put("artist", "Artist");
+        values.put("album", "Album");
+        values.put("genre", "Genre");
+        values.put("last_modified", 1234L);
+        old.insertOrThrow("tracks", null, values);
+        old.setVersion(2);
+        old.close();
+        LibraryDatabase migrated = new LibraryDatabase(context);
+        ArrayList<Track> tracks = migrated.loadTracks();
+        migrated.close();
+
+        assertEquals(1, tracks.size());
+        assertEquals("Song", tracks.get(0).title);
+        assertEquals(1234L, tracks.get(0).dateAdded);
+        assertEquals("Artist", tracks.get(0).albumArtist);
+    }
 }

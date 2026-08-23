@@ -7,8 +7,8 @@
         <item name="android:statusBarColor">#FFFFFF</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowBackground">#FFFFFF</item>
-        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_splash_user</item>
+        <item name="android:windowSplashScreenBackground">@color/voltune_icon_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppTheme.Dark" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:windowNoTitle">true</item>
@@ -17,37 +17,37 @@
         <item name="android:statusBarColor">#000000</item>
         <item name="android:navigationBarColor">#000000</item>
         <item name="android:windowBackground">#000000</item>
-        <item name="android:windowSplashScreenBackground">#000000</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_dark_splash_user</item>
+        <item name="android:windowSplashScreenBackground">@color/voltune_icon_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomBlueLight" parent="AppTheme">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_blue_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomBlueDark" parent="AppTheme.Dark">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_blue_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomRedLight" parent="AppTheme">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_red_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomRedDark" parent="AppTheme.Dark">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_red_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomGreenLight" parent="AppTheme">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_green_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomGreenDark" parent="AppTheme.Dark">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_green_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomPinkLight" parent="AppTheme">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_pink_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomPinkDark" parent="AppTheme.Dark">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_pink_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomOrangeLight" parent="AppTheme">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_orange_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
     <style name="AppThemeCustomOrangeDark" parent="AppTheme.Dark">
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_custom_orange_splash</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_splash_icon</item>
     </style>
 </resources>

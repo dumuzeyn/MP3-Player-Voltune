@@ -26,7 +26,7 @@ final class DialogController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(title, 22, true), new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.dialogTitle(title), host.uiFactory.dialogTitleParams());
         TextView messageView = host.uiFactory.text(message, 16, false);
         messageView.setTextColor(host.muted);
         messageView.setPadding(0, host.dp(4), 0, host.dp(14));

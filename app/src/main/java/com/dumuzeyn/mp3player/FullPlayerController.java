@@ -134,76 +134,7 @@ final class FullPlayerController {
     }
 
     private FrameLayout createSheet() {
-        return new FrameLayout(host) {
-            private boolean draggingDown = false;
-            private boolean closingDown = false;
-            private float startX = 0.0f;
-            private float startY = 0.0f;
-            private float startTranslationY = 0.0f;
-
-            @Override
-            public boolean dispatchTouchEvent(MotionEvent event) {
-                int action = event.getActionMasked();
-                if (action == MotionEvent.ACTION_DOWN) {
-                    draggingDown = false;
-                    closingDown = false;
-                    startX = event.getRawX();
-                    startY = event.getRawY();
-                    startTranslationY = getTranslationY();
-                    animate().cancel();
-                    setAlpha(1.0f);
-                    super.dispatchTouchEvent(event);
-                    return true;
-                }
-                if (action == MotionEvent.ACTION_MOVE) {
-                    if (closingDown) {
-                        return true;
-                    }
-                    float dx = event.getRawX() - startX;
-                    float dy = event.getRawY() - startY;
-                    if (!draggingDown && dy > host.dp(8) && dy > Math.abs(dx) * 0.75f) {
-                        draggingDown = true;
-                        MotionEvent cancelEvent = MotionEvent.obtain(event);
-                        cancelEvent.setAction(MotionEvent.ACTION_CANCEL);
-                        super.dispatchTouchEvent(cancelEvent);
-                        cancelEvent.recycle();
-                        getParent().requestDisallowInterceptTouchEvent(true);
-                    }
-                    if (draggingDown) {
-                        float drag = Math.max(0.0f, startTranslationY + dy);
-                        setTranslationY(drag);
-                        setAlpha(Math.max(0.55f, 1.0f - (drag / Math.max(1, getHeight()))));
-                        return true;
-                    }
-                    super.dispatchTouchEvent(event);
-                    return true;
-                }
-                if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                    if (closingDown) {
-                        return true;
-                    }
-                    if (draggingDown) {
-                        draggingDown = false;
-                        float dy = event.getRawY() - startY;
-                        float drag = Math.max(0.0f, startTranslationY + dy);
-                        if (action == MotionEvent.ACTION_UP && drag > host.dp(56)) {
-                            closingDown = true;
-                            close(this, true);
-                        } else if (host.appearanceState.animations) {
-                            animate().translationY(0.0f).alpha(1.0f).setDuration(120L).setInterpolator(new DecelerateInterpolator()).start();
-                        } else {
-                            setTranslationY(0.0f);
-                            setAlpha(1.0f);
-                        }
-                        return true;
-                    }
-                    super.dispatchTouchEvent(event);
-                    return true;
-                }
-                super.dispatchTouchEvent(event);
-                return true;
-            }
-        };
+        return new FullPlayerSheet(host, sheet -> close(sheet, true));
     }
 
     private void addHeader(LinearLayout content, FrameLayout sheet) {
@@ -214,7 +145,17 @@ final class FullPlayerController {
         back.setOnClickListener(view -> close(sheet, false));
         row.addView(back, host.uiFactory.square(58));
         row.addView(new View(host), new LinearLayout.LayoutParams(0, 1, 1.0f));
+        Button lyrics = host.uiFactory.icon("≋");
+        lyrics.setContentDescription(host.tr("Lyrics", "Текст"));
+        lyrics.setOnClickListener(view -> {
+            Track current = currentTrack();
+            if (current != null) {
+                host.lyricsOverlayController.open(current);
+            }
+        });
+        row.addView(lyrics, host.uiFactory.square(58));
         Button queue = host.uiFactory.icon("☰");
+        queue.setContentDescription(host.tr("Queue", "Очередь"));
         queue.setOnClickListener(view -> host.overlayController.openQueue());
         row.addView(queue, host.uiFactory.square(58));
         content.addView(row, new LinearLayout.LayoutParams(-1, host.dp(72)));

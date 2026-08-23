@@ -10,7 +10,8 @@ final class LibraryListController {
     }
 
     ArrayList<Track> currentVisibleTracks() {
-        return host.navigationState.tabIndex == 1 ? filter(favoriteTracks()) : filter(host.libraryState.tracks);
+        return host.navigationState.tabIndex == LibraryTabs.FAVORITES
+                ? filter(favoriteTracks()) : filter(host.libraryState.tracks);
     }
 
     ArrayList<Track> favoriteTracks() {

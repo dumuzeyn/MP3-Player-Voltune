@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
@@ -15,10 +14,9 @@ import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.session.DefaultMediaNotificationProvider;
-import androidx.media3.session.MediaSession;
-import androidx.media3.session.MediaSessionService;
+import androidx.media3.session.MediaLibraryService;
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession;
 import androidx.media3.session.SessionCommand;
-import androidx.media3.session.SessionCommands;
 import androidx.media3.session.SessionResult;
 import com.dumuzeyn.mp3player.data.playback.PlaybackStateManager;
 import com.dumuzeyn.mp3player.playback.service.PlaybackErrorRecovery;
@@ -28,8 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SuppressLint("UnsafeOptInUsageError")
-public final class Media3PlayerService extends MediaSessionService {
-    private static final String TAG = "VoltuneMedia3";
+public final class Media3PlayerService extends MediaLibraryService {
     private static final int NOTIFICATION_ID = 7;
     private static final long POSITION_SAVE_INTERVAL_MS = 7000L;
 
@@ -41,6 +38,7 @@ public final class Media3PlayerService extends MediaSessionService {
         @Override
         public void run() {
             if (player != null && player.isPlaying()) {
+                historyRecorder.sample(player.getDuration());
                 persistState(false);
                 handler.postDelayed(this, POSITION_SAVE_INTERVAL_MS);
             }
@@ -48,7 +46,7 @@ public final class Media3PlayerService extends MediaSessionService {
     };
 
     private ExoPlayer player;
-    private MediaSession mediaSession;
+    private MediaLibrarySession mediaSession;
     private MediaArtworkProvider artworkProvider;
     private PlaybackStateManager stateManager;
     private PlaybackSleepTimer sleepTimer;
@@ -56,6 +54,8 @@ public final class Media3PlayerService extends MediaSessionService {
     private TrackLoudnessNormalizer loudnessNormalizer;
     private Media3SessionCommandHandler commandHandler;
     private PlaybackEventLogger eventLogger;
+    private PlaybackHistoryRecorder historyRecorder;
+    private VoltuneMediaLibraryCallback libraryCallback;
     private PauseReason pauseReason = PauseReason.NONE;
     private StopReason stopReason = StopReason.NONE;
     @Nullable private PlaybackErrorInfo lastError;
@@ -71,6 +71,7 @@ public final class Media3PlayerService extends MediaSessionService {
         loudnessNormalizer = new TrackLoudnessNormalizer(this);
         artworkProvider = new MediaArtworkProvider(this);
         eventLogger = new PlaybackEventLogger(this);
+        historyRecorder = new PlaybackHistoryRecorder(this);
 
         boolean uninterrupted = getSharedPreferences(
                 UninterruptedPlaybackController.PREFS, MODE_PRIVATE)
@@ -88,9 +89,24 @@ public final class Media3PlayerService extends MediaSessionService {
         commandHandler = new Media3SessionCommandHandler(player, sleepTimer, stateManager,
                 this::applyAudioEffects, () -> stopReason = StopReason.USER,
                 this::snapshotBundle);
-        mediaSession = new MediaSession.Builder(this, player)
+        libraryCallback = new VoltuneMediaLibraryCallback(
+                new LibraryDatabase(this), mapper,
+                new VoltuneMediaLibraryCallback.CommandDelegate() {
+                    @Override
+                    public ListenableFuture<SessionResult> handle(
+                            SessionCommand command, Bundle args) {
+                        return commandHandler.handle(command, args);
+                    }
+
+                    @Override
+                    public void onCommand(String action) {
+                        int separator = action.lastIndexOf('.');
+                        logEvent("command_" + action.substring(separator + 1).toLowerCase(),
+                                "none");
+                    }
+                });
+        mediaSession = new MediaLibrarySession.Builder(this, player, libraryCallback)
                 .setBitmapLoader(artworkProvider)
-                .setCallback(new SessionCallback())
                 .setSessionActivity(PendingIntent.getActivity(this, 0,
                         new Intent(this, MainActivity.class),
                         PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT))
@@ -103,13 +119,15 @@ public final class Media3PlayerService extends MediaSessionService {
         setMediaNotificationProvider(provider);
         new PlaybackSessionRestorer(this, stateManager, mapper).restore(player);
         sleepTimer.restore();
+        PlayerWidgetProvider.updateFromPlayer(this, player);
         logEvent("service_created", "none");
-        Log.i(TAG, "service_created");
+        VoltuneLog.info("service_created");
     }
 
     @Nullable
     @Override
-    public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
+    public MediaLibrarySession onGetSession(
+            androidx.media3.session.MediaSession.ControllerInfo controllerInfo) {
         return mediaSession;
     }
 
@@ -151,6 +169,13 @@ public final class Media3PlayerService extends MediaSessionService {
         }
         if (artworkProvider != null) {
             artworkProvider.close();
+        }
+        if (historyRecorder != null) {
+            historyRecorder.close();
+        }
+        if (libraryCallback != null) {
+            libraryCallback.close();
+            libraryCallback = null;
         }
         super.onDestroy();
     }
@@ -311,6 +336,7 @@ public final class Media3PlayerService extends MediaSessionService {
     private final class PlayerEvents implements Player.Listener {
         @Override
         public void onIsPlayingChanged(boolean isPlaying) {
+            historyRecorder.playing(isPlaying);
             handler.removeCallbacks(positionSaver);
             if (isPlaying) {
                 pauseReason = PauseReason.NONE;
@@ -322,6 +348,7 @@ public final class Media3PlayerService extends MediaSessionService {
                 handler.postDelayed(positionSaver, POSITION_SAVE_INTERVAL_MS);
             }
             persistState(true);
+            PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
             logEvent(isPlaying ? "playback_started" : "playback_paused", "none");
         }
 
@@ -350,24 +377,30 @@ public final class Media3PlayerService extends MediaSessionService {
         public void onPlaybackStateChanged(int state) {
             if (state == Player.STATE_READY) {
                 errorRecovery.resetConsecutiveErrors();
+                historyRecorder.sample(player.getDuration());
                 TrackStore.updateDuration(Media3PlayerService.this, currentUri(),
                         safeInt(player.getDuration()));
             } else if (state == Player.STATE_ENDED
                     && player.getRepeatMode() == Player.REPEAT_MODE_OFF) {
                 stopReason = StopReason.QUEUE_ENDED;
+                historyRecorder.ended(player.getDuration());
             }
             persistState(true);
+            PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
             logEvent("playback_state_changed", "none");
         }
 
         @Override
         public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
+            historyRecorder.transition(mediaItem == null ? "" : mediaItem.mediaId,
+                    player.getDuration(), reason);
             audioEffects.release();
             errorRecovery.resetConsecutiveErrors();
             lastError = null;
             prefetchLoudness();
             applyAudioEffects();
             persistState(true);
+            PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
             logEvent("media_item_transition", "none");
         }
 
@@ -391,33 +424,6 @@ public final class Media3PlayerService extends MediaSessionService {
         @Override
         public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
             logEvent("shuffle_mode_changed", "none");
-        }
-    }
-
-    private final class SessionCallback implements MediaSession.Callback {
-        @Override
-        public MediaSession.ConnectionResult onConnect(MediaSession session,
-                MediaSession.ControllerInfo controller) {
-            SessionCommands commands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
-                    .buildUpon()
-                    .add(Media3Commands.TIMER_START_COMMAND)
-                    .add(Media3Commands.TIMER_CANCEL_COMMAND)
-                    .add(Media3Commands.AUDIO_EFFECTS_COMMAND)
-                    .add(Media3Commands.CLEAR_QUEUE_COMMAND)
-                    .add(Media3Commands.DIAGNOSTIC_SNAPSHOT_COMMAND)
-                    .build();
-            return new MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-                    .setAvailableSessionCommands(commands)
-                    .build();
-        }
-
-        @Override
-        public ListenableFuture<SessionResult> onCustomCommand(MediaSession session,
-                MediaSession.ControllerInfo controller, SessionCommand command, Bundle args) {
-            String action = command.customAction == null ? "unknown" : command.customAction;
-            int separator = action.lastIndexOf('.');
-            logEvent("command_" + action.substring(separator + 1).toLowerCase(), "none");
-            return commandHandler.handle(command, args);
         }
     }
 }

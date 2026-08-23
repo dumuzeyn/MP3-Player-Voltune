@@ -130,7 +130,7 @@ final class SongsRenderer {
         String title;
         String titleRu;
         if (tracks.isEmpty()) {
-            if (host.navigationState.tabIndex == 0) {
+            if (host.navigationState.tabIndex == LibraryTabs.SONGS) {
                 title = "Add MP3 or another audio file";
                 titleRu = "Добавьте MP3 или другой аудиофайл";
             } else {
@@ -299,7 +299,7 @@ final class SongsRenderer {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(16);
         row.setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4));
-        host.uiFactory.applyCardStyle(row, host.navigationState.tabIndex == 1
+        host.uiFactory.applyCardStyle(row, host.navigationState.tabIndex == LibraryTabs.FAVORITES
                 ? host.appearanceState.favoriteCardOpacity : host.appearanceState.songCardOpacity);
 
         View marker = new View(host);
@@ -344,7 +344,7 @@ final class SongsRenderer {
         textColumn.addView(metaRow);
         row.addView(textColumn, new LinearLayout.LayoutParams(0, host.dp(62), 1.0f));
 
-        if (host.navigationState.tabIndex == 1) {
+        if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
             Button favorite = host.uiFactory.icon(host.libraryState.favorites.contains(track.uri) ? "♥︎" : "♡︎");
             favorite.setTextSize(14.0f);
             host.uiFactory.applyPlainIconStyle(favorite, host.libraryState.favorites.contains(track.uri) ? host.purple : host.secondaryText);

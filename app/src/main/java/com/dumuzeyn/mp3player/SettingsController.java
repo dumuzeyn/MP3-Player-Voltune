@@ -41,8 +41,8 @@ final class SettingsController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Language", "Язык"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(50)));
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Language", "Язык")),
+                host.uiFactory.dialogTitleParams());
         addChoice(panel, "English", "en".equals(host.appearanceState.language), () -> applyLanguage("en", shade));
         addChoice(panel, "Русский", "ru".equals(host.appearanceState.language), () -> applyLanguage("ru", shade));
         addDoneButton(panel, shade);
@@ -55,8 +55,9 @@ final class SettingsController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Mini-player memory", "Память мини-плеера"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(50)));
+        panel.addView(host.uiFactory.dialogTitle(
+                        host.tr("Mini-player memory", "Память мини-плеера")),
+                host.uiFactory.dialogTitleParams());
         int[] values = {30, 60, 120, 240, 480, 0};
         for (final int value : values) {
             String label = value == 0

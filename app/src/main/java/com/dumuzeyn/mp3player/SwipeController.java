@@ -148,12 +148,12 @@ final class SwipeController {
         targetSearch = search == null ? "" : search;
         width = Math.max(1, host.contentHost.getWidth());
         transitionDistance = width + host.dp(12);
-        currentSurface = host.navigationState.tabIndex == 0 && host.songsView != null
+        currentSurface = host.navigationState.tabIndex == LibraryTabs.SONGS && host.songsView != null
                 ? host.songsView : host.contentScroll;
         host.navigationState.tabAnimating = true;
         host.tabsController.beginTransition(
                 host.navigationState.tabIndex, targetIndex, direction);
-        if (targetIndex == 0 && host.songsView != null) {
+        if (targetIndex == LibraryTabs.SONGS && host.songsView != null) {
             previewUsesSongsSurface = true;
             host.songsView.prepareForTransition(
                     host.libraryState.tracks, targetSearch);

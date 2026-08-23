@@ -11,8 +11,11 @@ Thank you for improving the project. Keep changes focused and preserve the exist
 5. Run:
 
 ```bash
-./gradlew testDebugUnitTest lintDebug assembleDebugAndroidTest assembleDebug
+./gradlew qualityCheck
 ```
+
+Production `.java` and `.kt` files are limited to 500 lines. Split responsibilities instead
+of compressing formatting when a file approaches the limit.
 
 Official release builds require private signing credentials and are produced only by the release workflow.
 

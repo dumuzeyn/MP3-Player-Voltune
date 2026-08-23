@@ -1,7 +1,7 @@
 <a id="russian"></a>
 
 <p align="center">
-  <img src="docs/brand/voltune-icon.svg" width="148" alt="Иконка MP3 Player Voltune">
+  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Иконка MP3 Player Voltune">
 </p>
 
 <h1 align="center">MP3 Player Voltune</h1>
@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.0.1-9b4dff?style=for-the-badge" alt="Скачать MP3 Player Voltune">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.1.0-9b4dff?style=for-the-badge" alt="Скачать MP3 Player Voltune">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -72,6 +72,12 @@ Voltune предлагает эквалайзер с готовыми профи
 
 ## Возможности
 
+- Стартовая «Главная» с продолжением прослушивания, историей, новыми и часто слушаемыми треками.
+- Умные плейлисты, глобальный поиск по пяти категориям и просмотр библиотеки по папкам.
+- Очередь Media3 с перетаскиванием, свайпом, «играть следующим» и сохранением в плейлист.
+- Локальные `.lrc`, обычные и встроенные ID3-тексты без сетевых запросов.
+- Безопасный редактор метаданных библиотеки, не изменяющий байты исходного аудиофайла.
+- Виджет рабочего стола и медиатека Android Auto через существующую Media3 session.
 - Импорт одной песни, нескольких аудиофайлов или целой папки через Android SAF.
 - Воспроизведение локальных аудиоформатов, которые поддерживаются медиадвижком Android Media3 на устройстве.
 - Разделы «Песни», «Избранное», «Плейлисты», «Жанры», «Исполнители» и «Альбомы».
@@ -133,8 +139,11 @@ flowchart LR
 Требуются JDK 17 и Android SDK:
 
 ```bash
-./gradlew testDebugUnitTest lintDebug assembleDebugAndroidTest
+./gradlew qualityCheck
 ```
+
+Команда проверяет лимит 500 строк, архитектурные инварианты, иконку, unit-тесты,
+Android lint, debug APK и компиляцию instrumentation-тестов.
 
 Официальная release-сборка подписывается закрытым ключом через GitHub Actions. Готовый APK публикуется только в [GitHub Releases](../../releases/latest).
 
@@ -155,7 +164,7 @@ flowchart LR
 <a id="english"></a>
 
 <p align="center">
-  <img src="docs/brand/voltune-icon.svg" width="148" alt="MP3 Player Voltune icon">
+  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="MP3 Player Voltune icon">
 </p>
 
 <h1 align="center">MP3 Player Voltune</h1>
@@ -170,7 +179,7 @@ flowchart LR
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_3.0.1-9b4dff?style=for-the-badge" alt="Download MP3 Player Voltune">
+    <img src="https://img.shields.io/badge/Download_APK-Version_3.1.0-9b4dff?style=for-the-badge" alt="Download MP3 Player Voltune">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
@@ -226,6 +235,12 @@ Light, Dark, and Custom themes support two accent colors plus independent text a
 
 ## Features
 
+- Home starts with listening continuity, history, recent additions, favorites, and quick access.
+- Smart playlists, five-category global search, and safe folder-based browsing.
+- A Media3-owned queue with drag, swipe, play-next, append, clear, and save-to-playlist actions.
+- Offline sidecar LRC, synchronized lyrics, plain text, and bounded embedded ID3 lyrics.
+- Library metadata editing that never mutates the source audio bytes.
+- A home-screen widget and Android Auto library backed by the existing Media3 session.
 - Import one song, multiple audio files, or a complete folder through Android SAF.
 - Play local audio formats supported by Android Media3 on the device.
 - Songs, Favorites, Playlists, Genres, Artists, and Albums sections.
@@ -287,8 +302,11 @@ Primary extension points:
 JDK 17 and the Android SDK are required:
 
 ```bash
-./gradlew testDebugUnitTest lintDebug assembleDebugAndroidTest
+./gradlew qualityCheck
 ```
+
+This gate checks the 500-line limit, architecture invariants, launcher assets, unit tests,
+Android lint, the debug APK, and instrumentation-test compilation.
 
 Official release builds are signed with a private key through GitHub Actions. Installable APK files are published only through [GitHub Releases](../../releases/latest).
 

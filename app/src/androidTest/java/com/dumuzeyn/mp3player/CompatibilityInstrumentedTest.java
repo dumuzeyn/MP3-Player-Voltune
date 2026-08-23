@@ -33,7 +33,8 @@ public class CompatibilityInstrumentedTest {
         ServiceInfo serviceInfo = context.getPackageManager().getServiceInfo(
                 new ComponentName(context, Media3PlayerService.class), 0);
         assertNotNull(serviceInfo);
-        assertTrue(!serviceInfo.exported);
+        assertTrue("MediaLibraryService must be exported for trusted car/media browsers",
+                serviceInfo.exported);
         if (Build.VERSION.SDK_INT >= 29) {
             assertTrue((serviceInfo.getForegroundServiceType()
                     & ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK) != 0);

@@ -7,7 +7,6 @@ def releaseKeyAlias = System.getenv("MP3_RELEASE_KEY_ALIAS")
 def releaseStorePass = System.getenv("MP3_RELEASE_STORE_PASS")
 def releaseKeyPass = System.getenv("MP3_RELEASE_KEY_PASS")
 def hasReleaseSigning = releaseKeystorePath && releaseKeyAlias && releaseStorePass && releaseKeyPass
-def ciDebugKeystore = rootProject.file(".github/ci-debug.keystore")
 
 if (hasReleaseSigning && !file(releaseKeystorePath).isFile()) {
     throw new GradleException("Release keystore was not found: ${releaseKeystorePath}")
@@ -34,19 +33,12 @@ android {
         applicationId "com.dumuzeyn.mp3player"
         minSdk 23
         targetSdk 35
-        versionCode 35
-        versionName "3.0.1"
+        versionCode 36
+        versionName "3.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
-        debug {
-            storeFile ciDebugKeystore
-            keyAlias "ci-debug"
-            storePassword "android"
-            keyPassword "android"
-        }
-
         if (hasReleaseSigning) {
             release {
                 storeFile file(releaseKeystorePath)
@@ -101,4 +93,106 @@ tasks.register("printVersionName") {
     doLast {
         println android.defaultConfig.versionName
     }
+}
+
+tasks.register("checkLauncherIcon") {
+    group = "verification"
+    description = "Checks launcher icon resolution, transparency, safe zone, and surfaces."
+    doLast {
+        def masterFile = file("src/main/res/drawable-nodpi/voltune_icon_master.png")
+        def foregroundFile = file("src/main/res/drawable-nodpi/voltune_icon_foreground.png")
+        def master = javax.imageio.ImageIO.read(masterFile)
+        def foreground = javax.imageio.ImageIO.read(foregroundFile)
+        if (master == null || foreground == null) {
+            throw new GradleException("Voltune launcher icon PNG could not be decoded")
+        }
+        if (master.width != master.height || master.width < 1024) {
+            throw new GradleException("Launcher master must be square and at least 1024 px")
+        }
+        if (!foreground.colorModel.hasAlpha()) {
+            throw new GradleException("Adaptive foreground must contain transparency")
+        }
+        int minX = foreground.width
+        int maxX = -1
+        for (int y = 0; y < foreground.height; y++) {
+            for (int x = 0; x < foreground.width; x++) {
+                if (((foreground.getRGB(x, y) >>> 24) & 0xff) > 8) {
+                    minX = Math.min(minX, x)
+                    maxX = Math.max(maxX, x)
+                }
+            }
+        }
+        double effectiveWidth = (maxX - minX + 1d) / foreground.width * 0.64d
+        if (effectiveWidth < 0.50d || effectiveWidth > 0.70d) {
+            throw new GradleException("Adaptive icon safe-zone width is ${effectiveWidth}")
+        }
+        def manifestText = file("src/main/AndroidManifest.xml").getText("UTF-8")
+        def styleText = file("src/main/res/values-v31/styles.xml").getText("UTF-8")
+        if (manifestText.count('@mipmap/ic_launcher_voltune') != 13) {
+            throw new GradleException("Every launcher alias must use the Voltune icon")
+        }
+        if (!styleText.contains('@drawable/voltune_splash_icon')) {
+            throw new GradleException("Android 12+ splash does not use the Voltune icon")
+        }
+        println "Launcher icon PASS: ${master.width}px master, safe-zone width ${String.format('%.3f', effectiveWidth)}"
+    }
+}
+
+tasks.register("checkSourceFileSize") {
+    group = "verification"
+    description = "Fails when a production Java or Kotlin source exceeds 500 lines."
+    doLast {
+        int limit = 500
+        def oversized = []
+        fileTree("src/main") {
+            include "**/*.java", "**/*.kt"
+            exclude "**/build/**", "**/generated/**"
+        }.files.sort().each { source ->
+            int lines = source.readLines("UTF-8").size()
+            if (lines > limit) {
+                oversized << "File: ${source}\nLines: ${lines}\nLimit: ${limit}"
+            }
+        }
+        if (!oversized.isEmpty()) {
+            throw new GradleException(oversized.join("\n\n"))
+        }
+        println "Source file size PASS: every production source is <= ${limit} lines"
+    }
+}
+
+tasks.register("checkArchitecture") {
+    group = "verification"
+    description = "Checks critical playback and local-only architecture invariants."
+    doLast {
+        def sources = fileTree("src/main/java") { include "**/*.java" }
+        int playerCreations = sources.files.sum { source ->
+            source.getText("UTF-8").count("new ExoPlayer.Builder")
+        } as int
+        if (playerCreations != 1) {
+            throw new GradleException("Expected exactly one ExoPlayer construction; found ${playerCreations}")
+        }
+        def core = file("src/main/java/com/dumuzeyn/mp3player/MainActivityCore.java")
+                .getText("UTF-8")
+        for (String forbidden : ["SQLiteDatabase", "ExoPlayer", "MediaMetadataRetriever"]) {
+            if (core.contains(forbidden)) {
+                throw new GradleException("MainActivityCore owns forbidden responsibility: ${forbidden}")
+            }
+        }
+        def manifest = file("src/main/AndroidManifest.xml").getText("UTF-8")
+        for (String permission : ["android.permission.INTERNET",
+                "android.permission.MANAGE_EXTERNAL_STORAGE"]) {
+            if (manifest.contains(permission)) {
+                throw new GradleException("Local-only manifest contains forbidden permission: ${permission}")
+            }
+        }
+        println "Architecture PASS: one player, separated core, local-only permissions"
+    }
+}
+
+tasks.register("qualityCheck") {
+    group = "verification"
+    description = "Runs Voltune's complete pre-commit quality gate."
+    dependsOn "checkSourceFileSize", "checkArchitecture", "checkLauncherIcon",
+            "testDebugUnitTest", "lintDebug", "assembleDebug",
+            "assembleDebugAndroidTest"
 }

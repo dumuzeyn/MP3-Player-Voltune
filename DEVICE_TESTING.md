@@ -24,7 +24,11 @@ Record the model, Android version, firmware version, app version, and APK SHA-25
 7. Reboot the device and verify that imported songs remain available through persisted SAF permissions.
 8. Use previous, play/pause, and next from the system media panel and confirm artwork, theme, and playback state synchronization.
 9. Let one complete playlist finish and confirm that repeat and stop-at-end behavior match the selected mode.
-10. Review the in-app crash-report count and attach sanitized logs if any scenario fails.
+10. Add the Voltune widget, then verify artwork, title, artist, previous, play/pause, and next while the Activity is closed.
+11. Connect Android Auto, browse songs, artists, albums, playlists and smart playlists, search, and start playback.
+12. Check the launcher icon in circle, rounded-square and vendor masks, the recent-apps screen, every theme alias, and Android 12+ splash. Confirm the V is neither cropped nor visually undersized.
+13. Open Home, Folders, Lyrics, Queue and metadata editing; rotate portrait/landscape and repeat on a tablet.
+14. Review the in-app crash-report count and attach sanitized logs if any scenario fails.
 
 ## Result record / Отчёт
 
@@ -36,7 +40,7 @@ Android and firmware / Android и прошивка:
 App version / Версия приложения:
 APK SHA-256:
 Date / Дата:
-Scenarios passed / Пройденные сценарии: 0/10
+Scenarios passed / Пройденные сценарии: 0/14
 Battery restrictions / Ограничения батареи:
 Bluetooth device / Bluetooth-устройство:
 Result / Результат: PASS | FAIL

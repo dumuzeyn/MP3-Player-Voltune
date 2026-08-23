@@ -17,7 +17,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import com.dumuzeyn.mp3player.library.SongDiagnostics;
 import com.dumuzeyn.mp3player.ui.player.PlaybackTimeFormatter;
 import com.dumuzeyn.mp3player.ui.layout.ResponsiveLayoutController;
 import java.util.ArrayList;
@@ -57,6 +56,7 @@ class MainActivityCore extends Activity {
     final LibraryState libraryState = new LibraryState();
     final NavigationState navigationState = new NavigationState();
     final AppearanceState appearanceState = new AppearanceState();
+    private final LocalizationController localization = new LocalizationController(this);
     final PlaybackUiState playbackUiState = new PlaybackUiState();
     private ParticleEffectsView particleEffectsView;
     final Handler uiHandler = new Handler(Looper.getMainLooper());
@@ -78,7 +78,10 @@ class MainActivityCore extends Activity {
     final UiFactory uiFactory = new UiFactory(this);
     final HeaderController headerController = new HeaderController(this);
     final OverlayController overlayController = new OverlayController(this);
-    private final DialogController dialogController = new DialogController(this);
+    private final LibraryDiagnosticsDialogController diagnosticsDialogs =
+            new LibraryDiagnosticsDialogController(this);
+    final LibrarySnapshotApplier librarySnapshotApplier =
+            new LibrarySnapshotApplier(this);
     final BackNavigationController backNavigationController = new BackNavigationController(this);
     final ThemeController themeController = new ThemeController(this);
     final PlaybackController playbackController = new PlaybackController(this);
@@ -112,6 +115,11 @@ class MainActivityCore extends Activity {
     final LibraryLoader libraryLoader = new LibraryLoader(this, this.uiHandler);
     final TrackSearchController trackSearchController =
             new TrackSearchController(this.uiHandler);
+    final GlobalSearchController globalSearchController =
+            new GlobalSearchController(this.uiHandler);
+    final LyricsRepository lyricsRepository = new LyricsRepository(this, this.uiHandler);
+    final LyricsOverlayController lyricsOverlayController = new LyricsOverlayController(this);
+    final MetadataEditorController metadataEditorController = new MetadataEditorController(this);
     final LibraryRepository libraryRepository = new LibraryRepository(
             this.libraryState.tracks, this.libraryState.favorites,
             this.libraryState.playlists,
@@ -125,6 +133,8 @@ class MainActivityCore extends Activity {
             this.songsRenderer, () -> new ParticleEffectsView(this),
             () -> this.appearanceState.animations,
             () -> this.appearanceState.dark, () -> this.bg);
+    private final MainActivityViewController activityViewController =
+            new MainActivityViewController(this, this.mainScreenView, this.mainScreenCallbacks);
     final TabTransitionCoordinator tabTransitionCoordinator =
             new TabTransitionCoordinator(this.navigationState,
                     this.mainScreenView, this.mainRenderer,
@@ -133,7 +143,7 @@ class MainActivityCore extends Activity {
                         this.contentScroll = scroll;
                         this.list = content;
                     });
-    private final MainActivityCoordinator activityCoordinator =
+    final MainActivityCoordinator activityCoordinator =
             new MainActivityCoordinator(this);
     Button sourcePlayButton;
 
@@ -194,27 +204,20 @@ class MainActivityCore extends Activity {
         this.swipeController.animateToTab(targetIndex, direction, false, previousSearch);
     }
 
-    private boolean english() {
-        return "en".equals(this.appearanceState.language);
-    }
-
     String tr(String str, String str2) {
-        return english() ? str : str2;
+        return this.localization.text(str, str2);
     }
 
     String tr3(String str, String str2, String str3) {
-        return english() ? str : str2;
+        return this.localization.text(str, str2);
     }
 
     String languageName() {
-        return english() ? "English" : "Русский";
+        return this.localization.languageName();
     }
 
-    private void refreshTabLabels() {
-        this.tabs = new String[]{tr3("Songs", "Песни", "♪"), tr3("Favorites", "Избранное", "♥"), tr3("Playlists", "Плейлисты", "▤"), tr3("Genres", "Жанры", "◇"), tr3("Artists", "Исполнители", "♙"), tr3("Albums", "Альбомы", "▣"), tr3("Settings", "Настройки", "⚙")};
-        if (this.navigationState.tabIndex >= this.tabs.length) {
-            this.navigationState.tabIndex = 0;
-        }
+    void refreshTabLabels() {
+        this.localization.refreshTabLabels();
     }
 
     void saveState() {
@@ -254,100 +257,24 @@ class MainActivityCore extends Activity {
         return this.playbackUiState.shuffleEnabled();
     }
 
-    private void colors() {
-        this.themeController.applyPalette();
-    }
-
     void refreshAfterTrackChange() {
-        refreshPlaybackChrome();
-    }
-
-    private void refreshPlaybackChrome() {
-        this.songRows.refresh(songRowStateResolver());
-        if (this.songsView != null) {
-            this.songsView.refreshPlayback();
-        }
-        this.playlistController.refreshPlaybackState();
-        if (this.sourcePlayButton != null) {
-            this.sourcePlayButton.setText(this.playbackQueueController.isPlayingSource(
-                    currentVisibleTracks()) ? "Ⅱ" : "▶");
-        }
-        this.playerUiController.updateMini();
+        this.activityViewController.refreshPlaybackChrome();
     }
 
     SongRowStateRegistry.StateResolver songRowStateResolver() {
-        return new SongRowStateRegistry.StateResolver() {
-            @Override
-            public Track findTrack(String uri) {
-                return MainActivityCore.this.findTrack(uri);
-            }
-
-            @Override
-            public boolean isCurrent(Track track) {
-                return MainActivityCore.this.isCurrent(track);
-            }
-
-            @Override
-            public boolean isPlaying() {
-                return MainActivityCore.this.isPlaybackPlaying();
-            }
-
-            @Override
-            public int activeColor() {
-                return MainActivityCore.this.purple;
-            }
-
-            @Override
-            public int secondaryActiveColor() {
-                return MainActivityCore.this.yellow;
-            }
-
-            @Override
-            public int inactiveColor() {
-                return MainActivityCore.this.purpleSoft;
-            }
-        };
+        return this.activityViewController.stateResolver();
     }
 
     void buildUi() {
-        colors();
-        this.themeController.applyWindow();
-        refreshTabLabels();
-        MainScreenView.Appearance appearance = new MainScreenView.Appearance(
-                this.appearanceState.mainSolidBackground == 0 ? this.bg : this.appearanceState.mainSolidBackground,
-                this.appearanceState.mainBackgroundMode, this.appearanceState.mainGradientStart, this.appearanceState.mainGradientEnd,
-                this.appearanceState.mainBackgroundMediaUri, this.appearanceState.mainBackgroundBlur);
-        MainScreenView.References views = this.mainScreenView.build(
-                appearance, this.mainScreenCallbacks);
-        this.root = views.root;
-        this.page = views.page;
-        this.contentHost = views.contentHost;
-        this.contentScroll = views.contentScroll;
-        this.list = views.contentList;
-        if (this.songsView != null) {
-            this.songsView.close();
-        }
-        this.songsView = new SongsView(this);
-        this.contentHost.addView(this.songsView,
-                new FrameLayout.LayoutParams(-1, -1));
-        this.overlayHost = views.overlayHost;
-        this.particleEffectsView = views.particles;
-        setContentView(this.root);
-        render();
+        this.activityViewController.build();
+    }
+
+    void setParticleEffectsView(ParticleEffectsView value) {
+        this.particleEffectsView = value;
     }
 
     void applyLibrarySnapshot(LibraryLoader.Snapshot snapshot) {
-        this.libraryState.tracks.clear();
-        this.libraryState.tracks.addAll(snapshot.tracks);
-        this.libraryState.favorites.clear();
-        this.libraryState.favorites.addAll(snapshot.favorites);
-        this.libraryState.playlists.clear();
-        this.libraryState.playlists.addAll(snapshot.playlists);
-        this.libraryRepository.reindex();
-        this.playbackController.restorePersistedUiState();
-        this.playbackController.connect();
-        render();
-        this.songsRenderer.refreshMissingMetadataAsync();
+        this.librarySnapshotApplier.apply(snapshot);
     }
 
     void rebuildUiForTheme() {
@@ -424,7 +351,7 @@ class MainActivityCore extends Activity {
     }
 
     ArrayList<Track> currentVisibleTracks() {
-        if (this.navigationState.tabIndex == 0 && this.songsView != null) {
+        if (this.navigationState.tabIndex == LibraryTabs.SONGS && this.songsView != null) {
             return new ArrayList<>(this.songsView.visibleTracks());
         }
         return this.libraryListController.currentVisibleTracks();
@@ -533,46 +460,26 @@ class MainActivityCore extends Activity {
     }
 
     void addMiniSpacerIfNeeded() {
-        int currentIndex = currentTrackIndex();
-        if (currentIndex < 0 || currentIndex >= this.libraryState.tracks.size()
-                || this.overlayHost.getChildCount() > 0) {
-            return;
-        }
-        View view = new View(this);
-        view.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(88)));
-        this.list.addView(view);
+        MiniPlayerSpacer.addIfNeeded(this);
     }
 
     void openSongDiagnostics() {
-        SongDiagnostics.Result result = SongDiagnostics.inspect(this, this.libraryState.tracks);
-        String message = tr("Available: ", "Доступно: ") + result.available
-                + "\n" + tr("Unavailable: ", "Недоступно: ") + result.unavailable
-                + "\n" + tr("With duration: ", "С длительностью: ") + result.withDuration
-                + "\n" + tr("Without duration: ", "Без длительности: ") + result.withoutDuration
-                + (result.problemTitles.isEmpty()
-                        ? ""
-                        : "\n" + tr("Problem tracks:", "Проблемные треки:") + result.problemTitles);
-        showConfirmPanel(tr("Song check", "Проверка песен"), message, new Runnable() {
-            @Override
-            public void run() {
-            }
-        });
+        this.diagnosticsDialogs.openSongDiagnostics();
     }
 
     void showConfirmPanel(String title, String message, Runnable yesAction) {
-        this.dialogController.showConfirmation(title, message, yesAction);
+        this.diagnosticsDialogs.confirm(title, message, yesAction);
     }
 
     void showActionPanel(String title, String message, String negativeLabel,
             String positiveLabel, Runnable action) {
-        this.dialogController.showConfirmation(
-                title, message, negativeLabel, positiveLabel, action);
+        this.diagnosticsDialogs.action(title, message, negativeLabel, positiveLabel, action);
     }
 
     void showActionPanel(String title, String message, String negativeLabel,
             String positiveLabel, boolean emphasizePositive, Runnable action) {
-        this.dialogController.showConfirmation(
-                title, message, negativeLabel, positiveLabel, emphasizePositive, action);
+        this.diagnosticsDialogs.action(title, message, negativeLabel, positiveLabel,
+                emphasizePositive, action);
     }
 
     FrameLayout.LayoutParams centerParams(int i, int i2) {

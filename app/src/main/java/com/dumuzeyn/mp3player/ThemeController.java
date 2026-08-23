@@ -126,8 +126,8 @@ final class ThemeController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(host.tr("Theme", "Тема"), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(42)));
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Theme", "Тема")),
+                host.uiFactory.dialogTitleParams());
         LinearLayout controls = new LinearLayout(host);
         controls.setOrientation(LinearLayout.VERTICAL);
         addChoice(controls, host.tr("Light", "Светлая"), "light");
@@ -235,8 +235,8 @@ final class ThemeController {
         final FrameLayout shade = host.uiFactory.shade();
         LinearLayout panel = host.uiFactory.panelCard();
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16));
-        panel.addView(host.uiFactory.text(colorTargetName(target), 22, true),
-                new LinearLayout.LayoutParams(-1, host.dp(46)));
+        panel.addView(host.uiFactory.dialogTitle(colorTargetName(target)),
+                host.uiFactory.dialogTitleParams());
         final View preview = new View(host);
         preview.setBackgroundColor(colorForTarget(target));
         panel.addView(preview, new LinearLayout.LayoutParams(-1, host.dp(34)));

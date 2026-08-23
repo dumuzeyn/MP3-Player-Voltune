@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 /** Owns library-facing queue decisions; ExoPlayer remains the active queue owner. */
@@ -70,6 +71,30 @@ final class PlaybackQueueController {
         playback.addQueueItem(track);
     }
 
+    void addAll(List<Track> tracks) {
+        ArrayList<Track> additions = new ArrayList<>();
+        HashSet<String> seen = new HashSet<>();
+        for (Track queued : activeQueue()) {
+            seen.add(queued.uri);
+        }
+        for (Track track : tracks) {
+            if (track != null && seen.add(track.uri)) {
+                additions.add(track);
+            }
+        }
+        playback.addQueueItems(additions);
+    }
+
+    void playNext(Track track) {
+        if (track != null) {
+            playback.playNext(track);
+        }
+    }
+
+    void move(int from, int to) {
+        playback.moveQueueItem(from, to);
+    }
+
     void remove(Track track) {
         if (track == null) {
             return;
@@ -101,6 +126,10 @@ final class PlaybackQueueController {
             playback.submitQueue(queue, Math.max(0, Math.min(index, queue.size() - 1)),
                     position, host.repeatMode(), true);
         }
+    }
+
+    void seekIndex(int index) {
+        playback.seekQueueItem(index);
     }
 
     String loopLabel() {

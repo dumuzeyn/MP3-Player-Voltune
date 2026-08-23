@@ -7,12 +7,13 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 
 /** Central renderer for every runtime Voltune icon used by the application UI. */
 final class AppIconRenderer {
-    private static final int SOURCE_PRIMARY = 0xff8a2cc8;
-    private static final int SOURCE_SECONDARY = 0xffffd000;
+    private static final int BRAND_BACKGROUND = 0xff090218;
 
     private AppIconRenderer() {
     }
@@ -20,10 +21,13 @@ final class AppIconRenderer {
     static Bitmap renderLogo(Context context, int primaryColor, int secondaryColor, int size) {
         int safeSize = Math.max(1, size);
         Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
-        Drawable logo = context.getResources().getDrawable(R.drawable.ic_music_vector_user);
-        logo.setBounds(0, 0, safeSize, safeSize);
-        logo.draw(new Canvas(bitmap));
-        replaceAccentColors(bitmap, primaryColor, secondaryColor);
+        Bitmap source = BitmapFactory.decodeResource(
+                context.getResources(), R.drawable.voltune_icon_foreground);
+        Canvas canvas = new Canvas(bitmap);
+        int inset = Math.round(safeSize * 0.08f);
+        canvas.drawBitmap(source, new Rect(0, 0, source.getWidth(), source.getHeight()),
+                new RectF(inset, inset, safeSize - inset, safeSize - inset), null);
+        source.recycle();
         return bitmap;
     }
 
@@ -33,11 +37,11 @@ final class AppIconRenderer {
         Bitmap bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
         Paint background = new Paint(Paint.ANTI_ALIAS_FLAG);
-        background.setColor(backgroundColor);
+        background.setColor(BRAND_BACKGROUND);
         float radius = safeSize * 0.22f;
         canvas.drawRoundRect(0, 0, safeSize, safeSize, radius, radius, background);
 
-        int inset = Math.round(safeSize * 0.08f);
+        int inset = Math.round(safeSize * 0.10f);
         Bitmap logo = renderLogo(context, primaryColor, secondaryColor, safeSize - inset * 2);
         canvas.drawBitmap(logo, inset, inset, null);
         logo.recycle();
@@ -69,29 +73,4 @@ final class AppIconRenderer {
         }
     }
 
-    private static void replaceAccentColors(Bitmap bitmap, int primaryColor, int secondaryColor) {
-        int width = bitmap.getWidth();
-        int height = bitmap.getHeight();
-        int[] pixels = new int[width * height];
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
-        for (int index = 0; index < pixels.length; index++) {
-            int pixel = pixels[index];
-            int alpha = Color.alpha(pixel);
-            if (alpha == 0) {
-                continue;
-            }
-            int replacement = colorDistance(pixel, SOURCE_SECONDARY)
-                    < colorDistance(pixel, SOURCE_PRIMARY) ? secondaryColor : primaryColor;
-            pixels[index] = Color.argb(alpha, Color.red(replacement),
-                    Color.green(replacement), Color.blue(replacement));
-        }
-        bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-    }
-
-    private static int colorDistance(int first, int second) {
-        int red = Color.red(first) - Color.red(second);
-        int green = Color.green(first) - Color.green(second);
-        int blue = Color.blue(first) - Color.blue(second);
-        return red * red + green * green + blue * blue;
-    }
 }

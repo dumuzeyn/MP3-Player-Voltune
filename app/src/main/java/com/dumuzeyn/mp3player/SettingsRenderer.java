@@ -154,6 +154,8 @@ final class SettingsRenderer {
 
     private void renderAdvanced() {
         section(host.tr("Advanced library", "Расширенная библиотека"));
+        addButton(host.tr("Batch edit metadata", "Массовое изменение метаданных"),
+                view -> host.metadataEditorController.openBatchSelection());
         addButton(host.tr("Remove unavailable songs", "Удалить недоступные песни"),
                 view -> host.settingsController.confirmRemoveUnavailableSongs());
         addButton(host.tr("Delete all songs from app", "Удалить все песни из приложения"),
