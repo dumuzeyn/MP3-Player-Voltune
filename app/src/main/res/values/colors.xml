@@ -1,8 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="voltune_icon_background">#090218</color>
-    <color name="launcher_icon_light_bg">#FFFFFF</color>
-    <color name="launcher_icon_dark_bg">#090218</color>
+    <color name="voltune_background_light">#FFFFFF</color>
+    <color name="voltune_background_dark">#111015</color>
+    <color name="voltune_surface_light">#FAF9FC</color>
+    <color name="voltune_surface_dark">#1A181F</color>
+    <color name="voltune_text_light">#18151D</color>
+    <color name="voltune_text_dark">#FFFFFF</color>
+    <color name="voltune_text_secondary_light">#76717D</color>
+    <color name="voltune_text_secondary_dark">#AAA4B2</color>
+    <color name="voltune_stroke_light">#E9E5EE</color>
+    <color name="voltune_stroke_dark">#332E3A</color>
+    <color name="voltune_primary_light">#7C32E8</color>
+    <color name="voltune_primary_dark">#A35CFF</color>
+    <color name="voltune_primary_strong_light">#6120C5</color>
+    <color name="voltune_primary_strong_dark">#7C32E8</color>
+    <color name="voltune_primary_soft_light">#EEE4FF</color>
+    <color name="voltune_primary_soft_dark">#2C233A</color>
+    <color name="voltune_secondary_light">#FFD000</color>
+    <color name="voltune_secondary_dark">#FFD438</color>
+    <color name="voltune_secondary_strong">#E7B900</color>
+    <color name="voltune_secondary_soft_light">#FFF5BE</color>
+    <color name="voltune_secondary_soft_dark">#483E21</color>
     <color name="launcher_icon_blue_light_bg">#F3F8FF</color>
     <color name="launcher_icon_blue_dark_bg">#071426</color>
     <color name="launcher_icon_red_light_bg">#FFF4F5</color>

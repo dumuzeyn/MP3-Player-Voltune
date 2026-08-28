@@ -246,6 +246,13 @@
             </intent-filter>
         </service>
         <receiver
+            android:name=".ThemeConfigurationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <receiver
             android:name=".PlayerWidgetProvider"
             android:exported="false">
             <intent-filter>

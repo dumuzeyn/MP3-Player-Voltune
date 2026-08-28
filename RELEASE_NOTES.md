@@ -1,31 +1,27 @@
-# MP3 Player Voltune 3.0.1
+# MP3 Player Voltune 3.1.1
 
 ## Русский
 
-Версия 3.0.1 ускоряет библиотеку и исправляет запуск релизной сборки.
+Версия 3.1.1 синхронизирует оформление приложения и исправляет повторное добавление музыки.
 
-- Раздел «Песни» переведён на `RecyclerView`: создаются только видимые карточки, а изменения воспроизведения обновляют отдельные строки.
-- Загрузка библиотеки и поиск выполняются вне основного потока, поиск запускается с небольшой задержкой после ввода.
-- Оптимизированы запросы SQLite, сохранение треков и загрузка обложек.
-- Добавлен кэш обложек в памяти и на диске; невидимые карточки больше не загружают полноразмерные изображения.
-- Исправлены два падения при открытии release-версии, вызванные слишком ранним обращением к контексту Android.
-- Из строки песни убрана отдельная кнопка избранного: действие осталось в свойствах песни.
-- Режим повтора в большом плеере теперь подписан «Повтор», «Песня» и «Список» без `1` и знака бесконечности.
-- Сборка проверена unit-тестами, lint и тестами совместимости на Android 8, Android 16 и планшетном интерфейсе.
+- Light Theme теперь использует единый фон `#FFFFFF`, а Dark Theme - `#111015` в интерфейсе, launcher icon, Splash Screen, стартовом окне и системных панелях.
+- Custom Theme выбирает ближайший статический фон значка по сохранённому `customBg` через LAB/Delta E, а не по цвету акцента.
+- Добавлен режим «Системная»: при смене дневного и ночного режима Android обновляются интерфейс, ярлык и следующий splash.
+- Иконки подготовлены для legacy Android, adaptive icons, Android 12 splash и Android 13 themed icons; логотип и безопасные отступы сохранены.
+- Удаляются существующие дубли одного файла из разных источников с сохранением избранного, плейлистов и статистики. Повторный импорт больше не создаёт такие дубли.
+- Последние плейлисты, исполнители и альбомы визуально отделены от фона главного экрана, а одна песня не повторяется в нескольких домашних блоках.
 
-Все функции версии 3.0 сохранены, включая Media3, фоновое воспроизведение, очередь, повтор, таймер сна, плейлисты, темы, эквалайзер и адаптивный планшетный интерфейс.
+Обычный adaptive launcher icon является статическим ресурсом Android. Поэтому произвольный `customBg` сопоставляется с ближайшим из десяти подготовленных Light/Dark-фонов; конкретная оболочка может показать обновление значка с небольшой задержкой из-за системного кэша.
 
 ## English
 
-Version 3.0.1 improves library responsiveness and fixes release startup.
+Version 3.1.1 synchronizes visual surfaces and prevents duplicate library entries.
 
-- Songs now uses `RecyclerView`, creating only visible rows and applying targeted playback-state updates.
-- Library loading and debounced search filtering run outside the UI thread.
-- SQLite reads, track persistence, and artwork loading have been optimized.
-- Artwork uses memory and disk caching, and off-screen rows no longer decode full-size images.
-- Fixed two release startup crashes caused by accessing Android context before the Activity was attached.
-- Removed the redundant favorite button from song rows; the action remains available in track properties.
-- The full-player repeat control now uses `Repeat`, `Song`, and `List` labels without numeric or infinity symbols.
-- The build passed unit tests, lint, and compatibility checks for Android 8, Android 16, and tablet layouts.
+- Light Theme now uses canonical `#FFFFFF`, while Dark Theme uses `#111015` across the app, launcher icon, splash, startup window, and system bars.
+- Custom Theme selects the closest static launcher background from the saved `customBg` using LAB/Delta E instead of accent colors.
+- Added a System theme that follows Android day/night changes for the UI, launcher alias, and next splash.
+- Added verified legacy, adaptive, Android 12 splash, and Android 13 themed icon assets without changing the Voltune logo or safe-zone sizing.
+- Existing cross-provider duplicates are merged while preserving favorites, playlists, and listening statistics, and imports no longer recreate them.
+- Recent playlists, artists, and albums are visually separated on Home, and tracks do not repeat across multiple Home sections.
 
-All 3.0 features remain available, including Media3 playback, background audio, queues, repeat, sleep timer, playlists, themes, equalizer, and adaptive tablet layouts.
+Android adaptive launcher icons are static resources. An arbitrary `customBg` is therefore matched to the nearest of ten prepared Light/Dark backgrounds; some launchers may display the updated resource after a short system-cache delay.

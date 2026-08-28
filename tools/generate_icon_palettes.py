@@ -1,4 +1,5 @@
 from pathlib import Path
+from xml.etree import ElementTree
 
 from PIL import Image, ImageChops, ImageDraw
 
@@ -7,13 +8,24 @@ ROOT = Path(__file__).resolve().parents[1]
 DRAWABLES = ROOT / "app/src/main/res/drawable-nodpi"
 PREVIEW = ROOT / "docs/brand/voltune-icon-palettes.png"
 SOURCE = DRAWABLES / "voltune_icon_foreground.png"
+COLORS = ROOT / "app/src/main/res/values/colors.xml"
 PALETTES = {
-    "blue": ((52, 120, 246), (64, 215, 255), (243, 248, 255), (7, 20, 38)),
-    "red": ((255, 77, 103), (255, 178, 62), (255, 244, 245), (33, 8, 13)),
-    "green": ((37, 184, 107), (200, 240, 75), (243, 252, 247), (7, 26, 17)),
-    "pink": ((233, 75, 170), (54, 216, 208), (255, 244, 251), (32, 9, 26)),
-    "orange": ((255, 53, 69), (208, 232, 255), (255, 246, 241), (33, 16, 8)),
+    "blue": ((52, 120, 246), (64, 215, 255)),
+    "red": ((255, 77, 103), (255, 178, 62)),
+    "green": ((37, 184, 107), (200, 240, 75)),
+    "pink": ((233, 75, 170), (54, 216, 208)),
+    "orange": ((255, 53, 69), (208, 232, 255)),
 }
+
+
+def resource_colors() -> dict[str, tuple[int, int, int]]:
+    colors = {}
+    for item in ElementTree.parse(COLORS).getroot().findall("color"):
+        value = (item.text or "").strip()
+        if value.startswith("#") and len(value) == 7:
+            colors[item.attrib["name"]] = tuple(
+                int(value[index:index + 2], 16) for index in (1, 3, 5))
+    return colors
 
 
 def horizontal_gradient(size: tuple[int, int], first: tuple[int, int, int],
@@ -55,11 +67,16 @@ def legacy_tile(foreground: Image.Image, background: tuple[int, int, int]) -> Im
 
 def main() -> None:
     source = Image.open(SOURCE).convert("RGBA")
+    colors = resource_colors()
+    for mode in ("light", "dark"):
+        legacy_tile(source, colors[f"voltune_background_{mode}"]).save(
+            DRAWABLES / f"voltune_icon_legacy_{mode}.png", optimize=True)
     previews = []
-    for name, (primary, secondary, light, dark) in PALETTES.items():
+    for name, (primary, secondary) in PALETTES.items():
         foreground = recolor(source, primary, secondary)
         foreground.save(DRAWABLES / f"voltune_icon_foreground_{name}.png", optimize=True)
-        for mode, background in (("light", light), ("dark", dark)):
+        for mode in ("light", "dark"):
+            background = colors[f"launcher_icon_{name}_{mode}_bg"]
             tile = legacy_tile(foreground, background)
             tile.save(DRAWABLES / f"voltune_icon_legacy_{name}_{mode}.png", optimize=True)
             previews.append(tile.resize((256, 256), Image.Resampling.LANCZOS))
@@ -69,7 +86,7 @@ def main() -> None:
         sheet.alpha_composite(preview, ((index // 2) * 256, (index % 2) * 256))
     PREVIEW.parent.mkdir(parents=True, exist_ok=True)
     sheet.convert("RGB").save(PREVIEW, quality=95)
-    print(f"Generated {len(PALETTES)} foregrounds and {len(previews)} legacy icons")
+    print(f"Generated {len(PALETTES)} foregrounds and {len(previews) + 2} legacy icons")
 
 
 if __name__ == "__main__":
