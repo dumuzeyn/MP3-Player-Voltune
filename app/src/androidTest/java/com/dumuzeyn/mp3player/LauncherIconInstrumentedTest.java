@@ -81,6 +81,55 @@ public class LauncherIconInstrumentedTest {
         logo.recycle();
     }
 
+    @Test
+    public void standardAndSystemThemesSelectCanonicalLauncherMode() {
+        Context context = ApplicationProvider.getApplicationContext();
+        assertEquals(0xffffffff, context.getColor(R.color.voltune_background_light));
+        assertEquals(0xff111015, context.getColor(R.color.voltune_background_dark));
+        assertEquals("LauncherLight", simpleName(LauncherComponents.forThemeState(
+                context, "light", false, Color.BLACK)));
+        assertEquals("LauncherDark", simpleName(LauncherComponents.forThemeState(
+                context, "dark", true, Color.WHITE)));
+        assertEquals("LauncherLight", simpleName(LauncherComponents.forThemeState(
+                context, "system", false, Color.BLACK)));
+        assertEquals("LauncherDark", simpleName(LauncherComponents.forThemeState(
+                context, "system", true, Color.WHITE)));
+        assertTrue(!ThemeController.isDarkTheme("system", Color.WHITE, false));
+        assertTrue(ThemeController.isDarkTheme("system", Color.WHITE, true));
+    }
+
+    @Test
+    public void customLauncherPresetDependsOnBackgroundInsteadOfAccent() {
+        Context context = ApplicationProvider.getApplicationContext();
+        int darkBlueBackground = 0xff182230;
+        ComponentName beforeAccentChange = LauncherComponents.forThemeState(
+                context, "custom", true, darkBlueBackground);
+        ComponentName afterAccentChange = LauncherComponents.forThemeState(
+                context, "custom", true, darkBlueBackground);
+        assertEquals("LauncherCustomBlueDark", simpleName(beforeAccentChange));
+        assertEquals(beforeAccentChange, afterAccentChange);
+        assertEquals("LauncherCustomPinkLight", simpleName(LauncherComponents.forThemeState(
+                context, "custom", false,
+                context.getColor(R.color.launcher_icon_pink_light_bg))));
+    }
+
+    @Test
+    public void launcherSelectionIsStableAcrossRestart() {
+        Context context = ApplicationProvider.getApplicationContext();
+        ComponentName first = LauncherComponents.forThemeState(
+                context, "custom", true, 0xff182230);
+        ComponentName restored = LauncherComponents.forThemeState(
+                context, "custom", true, 0xff182230);
+        assertEquals(first, restored);
+        assertTrue(LauncherComponents.perceptualDistance(0xff182230, 0xff071426)
+                < LauncherComponents.perceptualDistance(0xff182230, 0xff21080d));
+    }
+
+    private static String simpleName(ComponentName component) {
+        String className = component.getClassName();
+        return className.substring(className.lastIndexOf('.') + 1);
+    }
+
     private static void assertAliasIcon(PackageManager packageManager, Context context,
             String className, int expectedIcon) throws Exception {
         ComponentName component = new ComponentName(

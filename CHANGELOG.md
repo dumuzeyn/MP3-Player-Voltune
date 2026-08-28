@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.1.1 - Theme icon and Home library fixes
+
+- Unified Light and Dark app, launcher, splash, startup window, status bar, and navigation
+  bar backgrounds under canonical `#FFFFFF` and `#111015` theme tokens.
+- Made Custom launcher backgrounds follow `customBg` through perceptual LAB distance,
+  added System theme synchronization, and avoided redundant launcher alias changes.
+- Added matching high-resolution foreground, legacy launcher, and Android 12+ splash assets
+  for every built-in palette.
+- Removed existing physical-file duplicates during the database upgrade while preserving
+  favorites, playlist membership, source ownership, and listening statistics.
+- Prevented automatic scans and folder imports from adding the same file through another
+  content provider, and stopped songs from repeating across Home sections.
+- Added visible themed surfaces for recent playlists, artists, and albums on Home.
+- Added launcher safe-zone, palette mapping, duplicate migration, collection surface, and
+  text-clipping checks on a physical Android device.
+
 ## 3.1.0 - Library Experience
 
 - Added a Home start screen, persisted listening statistics, history, and six query-based smart playlists.

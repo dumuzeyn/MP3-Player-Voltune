@@ -16,10 +16,13 @@ local.properties
 !app/src/main/res/drawable-nodpi/
 !app/src/main/res/drawable-nodpi/voltune_icon_master.png
 !app/src/main/res/drawable-nodpi/voltune_icon_foreground.png
+!app/src/main/res/drawable-nodpi/voltune_icon_foreground_*.png
+!app/src/main/res/drawable-nodpi/voltune_icon_legacy_*.png
 !docs/
 !docs/brand/
 !docs/brand/voltune-icon-3.1.png
 !docs/brand/voltune-icon-preview.png
+!docs/brand/voltune-icon-palettes.png
 !docs/screenshots/
 !docs/screenshots/*.png
 !docs/screenshots/ru/

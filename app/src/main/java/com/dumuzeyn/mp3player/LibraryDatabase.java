@@ -16,7 +16,7 @@ import java.util.Set;
 
 final class LibraryDatabase extends SQLiteOpenHelper {
     static final String DB_NAME = "mp3_player_library.db";
-    static final int DB_VERSION = 5;
+    static final int DB_VERSION = 6;
     private static final String PREFS_STORE = "mp3_player_store";
     private static final String PREFS_UI = "mp3_player_ui";
     private static final String PREFS_MIGRATED = "sqlite_migrated";
@@ -397,7 +397,7 @@ final class LibraryDatabase extends SQLiteOpenHelper {
         return values;
     }
 
-    private static Track trackFromCursor(Cursor cursor) {
+    static Track trackFromCursor(Cursor cursor) {
         return new Track(cursor.getString(cursor.getColumnIndexOrThrow("track_id")),
                 cursor.getString(cursor.getColumnIndexOrThrow("uri")),
                 cursor.getString(cursor.getColumnIndexOrThrow("title")),

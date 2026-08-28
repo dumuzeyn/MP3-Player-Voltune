@@ -25,6 +25,7 @@ final class LibraryImportStore implements AutoCloseable {
     ArrayList<Track> commitSource(SourceScanSession session,
             List<DiscoveredTrack> discovered) {
         ArrayList<Track> accepted = new ArrayList<>();
+        ArrayList<Track> existing = database.loadTracks();
         SQLiteDatabase db = database.getWritableDatabase();
         db.beginTransaction();
         try {
@@ -39,15 +40,26 @@ final class LibraryImportStore implements AutoCloseable {
                         || exclusions.contains(item.identityKey, item.track)) {
                     continue;
                 }
-                upsert(db, item.track);
+                int sameLocation = TrackDuplicatePolicy.sameLocationIndex(existing, item.track);
+                Track acceptedTrack = item.track;
+                if (sameLocation >= 0) {
+                    acceptedTrack = TrackDuplicatePolicy.withStableIdentity(
+                            existing.get(sameLocation), item.track);
+                    existing.set(sameLocation, acceptedTrack);
+                } else if (TrackDuplicatePolicy.duplicateIndex(existing, item.track) >= 0) {
+                    continue;
+                } else {
+                    existing.add(item.track);
+                }
+                upsert(db, acceptedTrack);
                 ContentValues origin = new ContentValues();
-                origin.put("track_id", item.track.trackId);
+                origin.put("track_id", acceptedTrack.trackId);
                 origin.put("source_id", session.source.sourceId);
                 origin.put("document_id", item.documentId);
                 origin.put("identity_key", item.identityKey);
                 db.insertWithOnConflict("track_sources", null, origin,
                         SQLiteDatabase.CONFLICT_REPLACE);
-                accepted.add(item.track);
+                accepted.add(acceptedTrack);
             }
             db.setTransactionSuccessful();
             return accepted;
@@ -58,6 +70,7 @@ final class LibraryImportStore implements AutoCloseable {
 
     ArrayList<Track> commitStandalone(List<Track> discovered, boolean explicitImport) {
         ArrayList<Track> accepted = new ArrayList<>();
+        ArrayList<Track> existing = database.loadTracks();
         SQLiteDatabase db = database.getWritableDatabase();
         db.beginTransaction();
         try {
@@ -73,8 +86,19 @@ final class LibraryImportStore implements AutoCloseable {
                 } else if (exclusions.contains(identity, track)) {
                     continue;
                 }
-                upsert(db, track);
-                accepted.add(track);
+                int sameLocation = TrackDuplicatePolicy.sameLocationIndex(existing, track);
+                Track acceptedTrack = track;
+                if (sameLocation >= 0) {
+                    acceptedTrack = TrackDuplicatePolicy.withStableIdentity(
+                            existing.get(sameLocation), track);
+                    existing.set(sameLocation, acceptedTrack);
+                } else if (TrackDuplicatePolicy.duplicateIndex(existing, track) >= 0) {
+                    continue;
+                } else {
+                    existing.add(track);
+                }
+                upsert(db, acceptedTrack);
+                accepted.add(acceptedTrack);
             }
             db.setTransactionSuccessful();
             return accepted;

@@ -202,6 +202,68 @@ public class LibraryDatabaseMigrationInstrumentedTest {
         migrated.close();
     }
 
+    @Test
+    public void versionFiveMigrationCollapsesProviderDuplicatesAndKeepsCollections() {
+        SQLiteDatabase old = context.openOrCreateDatabase(LibraryDatabase.DB_NAME, 0, null);
+        LibraryDatabaseSchema.createLatest(old);
+        Track mediaStore = new Track("media", "content://media/audio/77", "Song",
+                "Artist", "Album", "Artist", "Rock", 2024, 1, 1, 120000,
+                4096L, 42L, "", 2, 1, 200L, 300L, 0L);
+        Track document = new Track("document", "content://documents/music/song", "Song",
+                "Artist", "Album", "Artist", "Rock", 2024, 1, 1, 120000,
+                4096L, 42L, "same-hash", 3, 2, 100L, 400L, 500L);
+        old.insertOrThrow("tracks", null, LibraryDatabase.trackValues(mediaStore));
+        old.insertOrThrow("tracks", null, LibraryDatabase.trackValues(document));
+        ContentValues favorite = new ContentValues();
+        favorite.put("track_id", document.trackId);
+        old.insertOrThrow("favorites", null, favorite);
+        ContentValues playlist = new ContentValues();
+        playlist.put("name", "Migration duplicates");
+        playlist.put("position", 0);
+        long playlistId = old.insertOrThrow("playlists", null, playlist);
+        ContentValues member = new ContentValues();
+        member.put("playlist_id", playlistId);
+        member.put("track_id", document.trackId);
+        member.put("position", 0);
+        old.insertOrThrow("playlist_tracks", null, member);
+        ContentValues source = new ContentValues();
+        source.put("source_id", "source");
+        source.put("tree_uri", "content://documents/tree/music");
+        source.put("display_name", "Music");
+        old.insertOrThrow("library_sources", null, source);
+        ContentValues ownership = new ContentValues();
+        ownership.put("track_id", document.trackId);
+        ownership.put("source_id", "source");
+        ownership.put("document_id", "song");
+        ownership.put("identity_key", "document:source:song");
+        old.insertOrThrow("track_sources", null, ownership);
+        old.setVersion(5);
+        old.close();
+
+        LibraryDatabase migrated = new LibraryDatabase(context);
+        ArrayList<Track> tracks = migrated.loadTracks();
+
+        assertEquals(1, tracks.size());
+        assertEquals("media", tracks.get(0).trackId);
+        assertEquals(5, tracks.get(0).playCount);
+        assertEquals(3, tracks.get(0).skipCount);
+        assertEquals(100L, tracks.get(0).dateAdded);
+        assertEquals(1, migrated.loadFavorites().size());
+        assertEquals(1, migrated.loadPlaylists().get(0).uris.size());
+        assertEquals(0, countRows(migrated.getReadableDatabase(), "track_sources"));
+        migrated.close();
+    }
+
+    private static int countRows(SQLiteDatabase database, String table) {
+        android.database.Cursor cursor = database.rawQuery(
+                "SELECT COUNT(*) FROM " + table, null);
+        try {
+            return cursor.moveToFirst() ? cursor.getInt(0) : 0;
+        } finally {
+            cursor.close();
+        }
+    }
+
     private static boolean tableExists(SQLiteDatabase database, String name) {
         android.database.Cursor cursor = database.rawQuery(
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",

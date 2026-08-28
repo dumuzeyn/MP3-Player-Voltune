@@ -9,8 +9,10 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import androidx.media3.common.Player;
 import androidx.test.core.app.ApplicationProvider;
@@ -50,6 +52,18 @@ public class LibraryExperienceUiInstrumentedTest {
             host.toggleFavorite(track);
             Playlist playlist = host.playlistController.createPlaylist("UI smoke");
             host.playlistController.addTrackToPlaylist(playlist, track);
+            host.navigationState.tabIndex = LibraryTabs.HOME;
+            host.librarySnapshotApplier.rebuildDerivedAndRender();
+        });
+        InstrumentedTestSupport.waitFor("Home collections did not render", 5000L,
+                () -> findText(host.list, Button.class, "UI smoke") != null
+                        && findText(host.list, Button.class, "UI album") != null);
+        assertTrue(findText(host.list, Button.class, "UI smoke").getBackground()
+                instanceof GradientDrawable);
+        assertTrue(findText(host.list, Button.class, "UI album").getBackground()
+                instanceof GradientDrawable);
+
+        instrumentation.runOnMainSync(() -> {
             host.switchTabAnimated(LibraryTabs.SONGS, 1);
         });
         InstrumentedTestSupport.waitFor("Songs tab did not open", 5000L,
@@ -114,6 +128,21 @@ public class LibraryExperienceUiInstrumentedTest {
             ViewGroup group = (ViewGroup) view;
             for (int index = 0; index < group.getChildCount(); index++) {
                 T found = find(group.getChildAt(index), type);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static <T extends TextView> T findText(View view, Class<T> type,
+            String expected) {
+        if (type.isInstance(view) && expected.contentEquals(((TextView) view).getText())) {
+            return type.cast(view);
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                T found = findText(group.getChildAt(index), type, expected);
                 if (found != null) return found;
             }
         }

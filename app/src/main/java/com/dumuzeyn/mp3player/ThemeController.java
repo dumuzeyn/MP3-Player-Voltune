@@ -3,7 +3,7 @@ package com.dumuzeyn.mp3player;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -38,6 +38,7 @@ final class ThemeController {
         host.appearanceState.themeMode = prefs.getString(THEME, "light");
         if (!"light".equals(host.appearanceState.themeMode)
                 && !"dark".equals(host.appearanceState.themeMode)
+                && !"system".equals(host.appearanceState.themeMode)
                 && !"custom".equals(host.appearanceState.themeMode)) {
             host.appearanceState.themeMode = "light";
         }
@@ -54,11 +55,15 @@ final class ThemeController {
         if ("custom".equals(host.appearanceState.themeMode)) {
             return host.tr("Custom", "Своя");
         }
+        if ("system".equals(host.appearanceState.themeMode)) {
+            return host.tr("System", "Системная");
+        }
         return host.tr("Light", "Светлая");
     }
 
     void applyPalette() {
-        host.appearanceState.dark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
+        host.appearanceState.dark = isDarkTheme(host.appearanceState.themeMode,
+                host.appearanceState.customBg, isSystemDark(host));
         if ("custom".equals(host.appearanceState.themeMode)) {
             host.bg = host.appearanceState.customBg;
             host.fg = host.appearanceState.customFg;
@@ -73,31 +78,31 @@ final class ThemeController {
             host.yellowDark = mixColor(host.appearanceState.customSecondaryAccent, host.appearanceState.customBg, 0.82f);
             host.yellowSoft = mixColor(host.appearanceState.customSecondaryAccent, host.appearanceState.customBg, 0.18f);
         } else if (host.appearanceState.dark) {
-            host.bg = Color.rgb(17, 16, 21);
-            host.fg = Color.WHITE;
-            host.primaryText = Color.WHITE;
-            host.secondaryText = Color.rgb(170, 164, 178);
-            host.card = Color.rgb(26, 24, 31);
-            host.cardStroke = Color.rgb(51, 46, 58);
-            host.purple = Color.rgb(163, 92, 255);
-            host.purpleDark = Color.rgb(124, 50, 232);
-            host.purpleSoft = Color.rgb(44, 35, 58);
-            host.yellow = Color.rgb(255, 212, 56);
-            host.yellowDark = Color.rgb(231, 185, 0);
-            host.yellowSoft = Color.rgb(72, 62, 33);
+            host.bg = host.getColor(R.color.voltune_background_dark);
+            host.fg = host.getColor(R.color.voltune_text_dark);
+            host.primaryText = host.getColor(R.color.voltune_text_dark);
+            host.secondaryText = host.getColor(R.color.voltune_text_secondary_dark);
+            host.card = host.getColor(R.color.voltune_surface_dark);
+            host.cardStroke = host.getColor(R.color.voltune_stroke_dark);
+            host.purple = host.getColor(R.color.voltune_primary_dark);
+            host.purpleDark = host.getColor(R.color.voltune_primary_strong_dark);
+            host.purpleSoft = host.getColor(R.color.voltune_primary_soft_dark);
+            host.yellow = host.getColor(R.color.voltune_secondary_dark);
+            host.yellowDark = host.getColor(R.color.voltune_secondary_strong);
+            host.yellowSoft = host.getColor(R.color.voltune_secondary_soft_dark);
         } else {
-            host.bg = Color.WHITE;
-            host.fg = Color.rgb(24, 21, 29);
-            host.primaryText = Color.rgb(24, 21, 29);
-            host.secondaryText = Color.rgb(118, 113, 125);
-            host.card = Color.rgb(250, 249, 252);
-            host.cardStroke = Color.rgb(233, 229, 238);
-            host.purple = Color.rgb(124, 50, 232);
-            host.purpleDark = Color.rgb(97, 32, 197);
-            host.purpleSoft = Color.rgb(238, 228, 255);
-            host.yellow = Color.rgb(255, 208, 0);
-            host.yellowDark = Color.rgb(231, 185, 0);
-            host.yellowSoft = Color.rgb(255, 245, 190);
+            host.bg = host.getColor(R.color.voltune_background_light);
+            host.fg = host.getColor(R.color.voltune_text_light);
+            host.primaryText = host.getColor(R.color.voltune_text_light);
+            host.secondaryText = host.getColor(R.color.voltune_text_secondary_light);
+            host.card = host.getColor(R.color.voltune_surface_light);
+            host.cardStroke = host.getColor(R.color.voltune_stroke_light);
+            host.purple = host.getColor(R.color.voltune_primary_light);
+            host.purpleDark = host.getColor(R.color.voltune_primary_strong_light);
+            host.purpleSoft = host.getColor(R.color.voltune_primary_soft_light);
+            host.yellow = host.getColor(R.color.voltune_secondary_light);
+            host.yellowDark = host.getColor(R.color.voltune_secondary_strong);
+            host.yellowSoft = host.getColor(R.color.voltune_secondary_soft_light);
         }
         if ("custom".equals(host.appearanceState.themeMode) && host.appearanceState.customTextColor != 0) {
             host.fg = host.appearanceState.customTextColor;
@@ -117,7 +122,12 @@ final class ThemeController {
         host.getWindow().setStatusBarColor(host.bg);
         host.getWindow().setNavigationBarColor(host.bg);
         if (Build.VERSION.SDK_INT >= 23) {
-            host.getWindow().getDecorView().setSystemUiVisibility(host.appearanceState.dark ? 0 : 8192);
+            int lightBars = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= 26) {
+                lightBars |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            host.getWindow().getDecorView().setSystemUiVisibility(
+                    host.appearanceState.dark ? 0 : lightBars);
         }
         updateTaskPreview();
     }
@@ -132,6 +142,7 @@ final class ThemeController {
         controls.setOrientation(LinearLayout.VERTICAL);
         addChoice(controls, host.tr("Light", "Светлая"), "light");
         addChoice(controls, host.tr("Dark", "Темная"), "dark");
+        addChoice(controls, host.tr("System", "Системная"), "system");
         addChoice(controls, host.tr("Custom", "Своя"), "custom");
         if ("custom".equals(host.appearanceState.themeMode)) {
             controls.addView(host.uiFactory.text(host.tr("Background", "Фон"), 16, true),
@@ -346,7 +357,8 @@ final class ThemeController {
 
     private void applyTheme(String mode) {
         host.appearanceState.themeMode = mode;
-        host.appearanceState.dark = isDarkTheme(mode, host.appearanceState.customBg);
+        host.appearanceState.dark = isDarkTheme(mode, host.appearanceState.customBg,
+                isSystemDark(host));
         host.saveState();
         host.refreshPlaybackAppearance();
         if (host.overlayHost != null) {
@@ -355,6 +367,7 @@ final class ThemeController {
         host.rebuildUiForTheme();
         openDialog();
         launcherUpdatePending = true;
+        updateLauncherIcon();
     }
 
     void onHostStopped() {
@@ -365,24 +378,19 @@ final class ThemeController {
         updateLauncherIcon();
     }
 
+    void syncLauncherIcon() {
+        launcherUpdatePending = true;
+        updateLauncherIcon();
+    }
+
     void updateLauncherIcon() {
-        PackageManager packageManager = host.getPackageManager();
-        boolean useDark = isDarkTheme(host.appearanceState.themeMode, host.appearanceState.customBg);
-        ComponentName selected = LauncherComponents.forPalette(
-                host, host.appearanceState.themeMode, useDark, host.purple, host.yellow);
+        boolean useDark = isDarkTheme(host.appearanceState.themeMode,
+                host.appearanceState.customBg, isSystemDark(host));
+        ComponentName selected = LauncherComponents.forThemeState(
+                host, host.appearanceState.themeMode, useDark,
+                host.appearanceState.customBg);
         try {
-            packageManager.setComponentEnabledSetting(
-                    selected,
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    PackageManager.DONT_KILL_APP);
-            for (ComponentName component : LauncherComponents.all(host)) {
-                if (!component.equals(selected)) {
-                    packageManager.setComponentEnabledSetting(
-                            component,
-                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                            PackageManager.DONT_KILL_APP);
-                }
-            }
+            LauncherComponents.apply(host, selected);
         } catch (RuntimeException ignored) {
             // A launcher may reject alias changes while the task is visible.
         }
@@ -409,9 +417,16 @@ final class ThemeController {
                 Color.red(color), Color.green(color), Color.blue(color));
     }
 
-    static boolean isDarkTheme(String themeMode, int customBackground) {
+    static boolean isDarkTheme(String themeMode, int customBackground, boolean systemDark) {
         return "dark".equals(themeMode)
+                || ("system".equals(themeMode) && systemDark)
                 || ("custom".equals(themeMode) && ThemeManager.isDarkColor(customBackground));
+    }
+
+    static boolean isSystemDark(android.content.Context context) {
+        int nightMode = context.getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK;
+        return nightMode == Configuration.UI_MODE_NIGHT_YES;
     }
 
     static int mixColor(int first, int second, float amount) {

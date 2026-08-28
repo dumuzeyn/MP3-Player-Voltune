@@ -88,6 +88,25 @@ public class LibraryImportStoreInstrumentedTest {
         sources.close();
     }
 
+    @Test
+    public void automaticScanSkipsSameFileFromAnotherProvider() {
+        Track document = track("document", "A");
+        LibraryDatabase database = new LibraryDatabase(context);
+        database.upsertTrack(document);
+        database.close();
+        Track mediaStore = new Track("track-media", "content://media/audio/77",
+                "Song", "Artist", "Album", "Rock", 120000, 2048L, 42L,
+                "fingerprint-A");
+        LibraryImportStore imports = new LibraryImportStore(context);
+
+        assertTrue(imports.commitStandalone(
+                Collections.singletonList(mediaStore), false).isEmpty());
+        imports.close();
+        database = new LibraryDatabase(context);
+        assertEquals(1, database.loadTracks().size());
+        database.close();
+    }
+
     private void addOwnedTrack(Track track, String documentId) {
         LibraryDatabase database = new LibraryDatabase(context);
         database.upsertTrack(track);

@@ -1,5 +1,6 @@
 package com.dumuzeyn.mp3player;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 /** Loads and persists UI preferences without coupling them to Activity lifecycle code. */
@@ -55,6 +56,16 @@ final class UiPreferencesStore {
 
     UiPreferencesStore(MainActivityCore host) {
         this.host = host;
+    }
+
+    static String readThemeMode(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getString(THEME, "light");
+    }
+
+    static int readCustomBackground(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(CUSTOM_BG, context.getColor(R.color.voltune_background_light));
     }
 
     void load() {
