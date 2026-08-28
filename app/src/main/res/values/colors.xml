@@ -31,4 +31,14 @@
     <color name="launcher_icon_pink_dark_bg">#20091A</color>
     <color name="launcher_icon_orange_light_bg">#FFF6F1</color>
     <color name="launcher_icon_orange_dark_bg">#211008</color>
+    <color name="launcher_foreground_blue_primary">#3478F6</color>
+    <color name="launcher_foreground_blue_secondary">#40D7FF</color>
+    <color name="launcher_foreground_red_primary">#FF4D67</color>
+    <color name="launcher_foreground_red_secondary">#FFB23E</color>
+    <color name="launcher_foreground_green_primary">#25B86B</color>
+    <color name="launcher_foreground_green_secondary">#C8F04B</color>
+    <color name="launcher_foreground_pink_primary">#E94BAA</color>
+    <color name="launcher_foreground_pink_secondary">#36D8D0</color>
+    <color name="launcher_foreground_orange_primary">#FF3545</color>
+    <color name="launcher_foreground_orange_secondary">#D0E8FF</color>
 </resources>

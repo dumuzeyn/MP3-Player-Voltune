@@ -45,6 +45,12 @@ public class LauncherIconInstrumentedTest {
                 R.mipmap.ic_launcher_custom_orange_light);
         assertAliasIcon(packageManager, context, "LauncherCustomOrangeDark",
                 R.mipmap.ic_launcher_custom_orange_dark);
+        assertAliasIcon(packageManager, context,
+                "LauncherCustomRedLightForegroundBlue",
+                R.mipmap.ic_launcher_custom_red_light_foreground_blue);
+        assertAliasIcon(packageManager, context,
+                "LauncherCustomBlueDarkForegroundOrange",
+                R.mipmap.ic_launcher_custom_blue_dark_foreground_orange);
     }
 
     @Test
@@ -87,39 +93,50 @@ public class LauncherIconInstrumentedTest {
         assertEquals(0xffffffff, context.getColor(R.color.voltune_background_light));
         assertEquals(0xff111015, context.getColor(R.color.voltune_background_dark));
         assertEquals("LauncherLight", simpleName(LauncherComponents.forThemeState(
-                context, "light", false, Color.BLACK)));
+                context, "light", false, Color.BLACK, Color.RED, Color.GREEN)));
         assertEquals("LauncherDark", simpleName(LauncherComponents.forThemeState(
-                context, "dark", true, Color.WHITE)));
+                context, "dark", true, Color.WHITE, Color.RED, Color.GREEN)));
         assertEquals("LauncherLight", simpleName(LauncherComponents.forThemeState(
-                context, "system", false, Color.BLACK)));
+                context, "system", false, Color.BLACK, Color.RED, Color.GREEN)));
         assertEquals("LauncherDark", simpleName(LauncherComponents.forThemeState(
-                context, "system", true, Color.WHITE)));
+                context, "system", true, Color.WHITE, Color.RED, Color.GREEN)));
         assertTrue(!ThemeController.isDarkTheme("system", Color.WHITE, false));
         assertTrue(ThemeController.isDarkTheme("system", Color.WHITE, true));
     }
 
     @Test
-    public void customLauncherPresetDependsOnBackgroundInsteadOfAccent() {
+    public void customLauncherSeparatesBackgroundFromForegroundAccents() {
         Context context = ApplicationProvider.getApplicationContext();
-        int darkBlueBackground = 0xff182230;
-        ComponentName beforeAccentChange = LauncherComponents.forThemeState(
-                context, "custom", true, darkBlueBackground);
-        ComponentName afterAccentChange = LauncherComponents.forThemeState(
-                context, "custom", true, darkBlueBackground);
-        assertEquals("LauncherCustomBlueDark", simpleName(beforeAccentChange));
-        assertEquals(beforeAccentChange, afterAccentChange);
-        assertEquals("LauncherCustomPinkLight", simpleName(LauncherComponents.forThemeState(
-                context, "custom", false,
-                context.getColor(R.color.launcher_icon_pink_light_bg))));
+        int blueBackground = context.getColor(R.color.launcher_icon_blue_dark_bg);
+        assertEquals("LauncherCustomBlueDark", simpleName(LauncherComponents.forThemeState(
+                context, "custom", true, blueBackground,
+                context.getColor(R.color.launcher_foreground_blue_primary),
+                context.getColor(R.color.launcher_foreground_blue_secondary))));
+        assertEquals("LauncherCustomBlueDarkForegroundRed",
+                simpleName(LauncherComponents.forThemeState(
+                        context, "custom", true, blueBackground,
+                        context.getColor(R.color.launcher_foreground_red_primary),
+                        context.getColor(R.color.launcher_foreground_red_secondary))));
+        assertEquals("LauncherCustomBlueDarkForegroundOrange",
+                simpleName(LauncherComponents.forThemeState(
+                        context, "custom", true, blueBackground,
+                        context.getColor(R.color.launcher_foreground_orange_primary),
+                        context.getColor(R.color.launcher_foreground_orange_secondary))));
+
+        assertEquals("LauncherCustomRedLightForegroundBlue",
+                simpleName(LauncherComponents.forThemeState(
+                        context, "custom", false,
+                        context.getColor(R.color.launcher_icon_red_light_bg),
+                        0xff10213b, 0xff25c8e8)));
     }
 
     @Test
     public void launcherSelectionIsStableAcrossRestart() {
         Context context = ApplicationProvider.getApplicationContext();
         ComponentName first = LauncherComponents.forThemeState(
-                context, "custom", true, 0xff182230);
+                context, "custom", true, 0xff182230, 0xff10213b, 0xff25c8e8);
         ComponentName restored = LauncherComponents.forThemeState(
-                context, "custom", true, 0xff182230);
+                context, "custom", true, 0xff182230, 0xff10213b, 0xff25c8e8);
         assertEquals(first, restored);
         assertTrue(LauncherComponents.perceptualDistance(0xff182230, 0xff071426)
                 < LauncherComponents.perceptualDistance(0xff182230, 0xff21080d));

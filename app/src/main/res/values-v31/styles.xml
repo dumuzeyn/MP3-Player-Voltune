@@ -92,4 +92,286 @@
         <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_dark_bg</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
     </style>
+    <!-- GENERATED CUSTOM FOREGROUND STYLES START -->
+    <style name="AppThemeCustomBlueLightForegroundRed" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomBlueLightForegroundGreen" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomBlueLightForegroundPink" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomBlueLightForegroundOrange" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomBlueDarkForegroundRed" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomBlueDarkForegroundGreen" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomBlueDarkForegroundPink" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomBlueDarkForegroundOrange" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_blue_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomRedLightForegroundBlue" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomRedLightForegroundGreen" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomRedLightForegroundPink" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomRedLightForegroundOrange" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomRedDarkForegroundBlue" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomRedDarkForegroundGreen" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomRedDarkForegroundPink" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomRedDarkForegroundOrange" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_red_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomGreenLightForegroundBlue" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomGreenLightForegroundRed" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomGreenLightForegroundPink" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomGreenLightForegroundOrange" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomGreenDarkForegroundBlue" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomGreenDarkForegroundRed" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomGreenDarkForegroundPink" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomGreenDarkForegroundOrange" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_green_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomPinkLightForegroundBlue" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomPinkLightForegroundRed" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomPinkLightForegroundGreen" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomPinkLightForegroundOrange" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomPinkDarkForegroundBlue" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomPinkDarkForegroundRed" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomPinkDarkForegroundGreen" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomPinkDarkForegroundOrange" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_pink_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_orange</item>
+    </style>
+    <style name="AppThemeCustomOrangeLightForegroundBlue" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomOrangeLightForegroundRed" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomOrangeLightForegroundGreen" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomOrangeLightForegroundPink" parent="AppTheme">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_light_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+    <style name="AppThemeCustomOrangeDarkForegroundBlue" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_blue</item>
+    </style>
+    <style name="AppThemeCustomOrangeDarkForegroundRed" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_red</item>
+    </style>
+    <style name="AppThemeCustomOrangeDarkForegroundGreen" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_green</item>
+    </style>
+    <style name="AppThemeCustomOrangeDarkForegroundPink" parent="AppTheme.Dark">
+        <item name="android:statusBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:navigationBarColor">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_icon_orange_dark_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/voltune_icon_splash_pink</item>
+    </style>
+<!-- GENERATED CUSTOM FOREGROUND STYLES END -->
 </resources>

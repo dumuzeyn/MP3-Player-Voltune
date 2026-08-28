@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.2 - Safe launcher alias lifecycle
+
+- Deferred launcher alias changes until the Activity is no longer visible, preventing a
+  one-time return to the home screen after an update or Custom background change.
+- Avoided alias changes over a foreground Activity during Android system theme updates.
+- Separated Custom launcher background matching from foreground accent matching, so the
+  Voltune V follows the app's primary and secondary accent colors independently.
+
 ## 3.1.1 - Theme icon and Home library fixes
 
 - Unified Light and Dark app, launcher, splash, startup window, status bar, and navigation

@@ -33,8 +33,8 @@ android {
         applicationId "com.dumuzeyn.mp3player"
         minSdk 23
         targetSdk 35
-        versionCode 37
-        versionName "3.1.1"
+        versionCode 38
+        versionName "3.1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -131,34 +131,27 @@ tasks.register("checkLauncherIcon") {
         def colorsText = file("src/main/res/values/colors.xml").getText("UTF-8")
         def fallbackStyleText = file("src/main/res/values/styles.xml").getText("UTF-8")
         def styleText = file("src/main/res/values-v31/styles.xml").getText("UTF-8")
+        def palettes = ['blue', 'red', 'green', 'pink', 'orange']
         def launcherIcons = [
                 'ic_launcher_home': 'voltune_icon_foreground_layer',
-                'ic_launcher_dark': 'voltune_icon_foreground_layer',
-                'ic_launcher_custom_blue_light': 'voltune_icon_foreground_blue_layer',
-                'ic_launcher_custom_blue_dark': 'voltune_icon_foreground_blue_layer',
-                'ic_launcher_custom_red_light': 'voltune_icon_foreground_red_layer',
-                'ic_launcher_custom_red_dark': 'voltune_icon_foreground_red_layer',
-                'ic_launcher_custom_green_light': 'voltune_icon_foreground_green_layer',
-                'ic_launcher_custom_green_dark': 'voltune_icon_foreground_green_layer',
-                'ic_launcher_custom_pink_light': 'voltune_icon_foreground_pink_layer',
-                'ic_launcher_custom_pink_dark': 'voltune_icon_foreground_pink_layer',
-                'ic_launcher_custom_orange_light': 'voltune_icon_foreground_orange_layer',
-                'ic_launcher_custom_orange_dark': 'voltune_icon_foreground_orange_layer'
+                'ic_launcher_dark': 'voltune_icon_foreground_layer'
         ]
         def launcherBackgrounds = [
                 'ic_launcher_home': 'voltune_background_light',
-                'ic_launcher_dark': 'voltune_background_dark',
-                'ic_launcher_custom_blue_light': 'launcher_icon_blue_light_bg',
-                'ic_launcher_custom_blue_dark': 'launcher_icon_blue_dark_bg',
-                'ic_launcher_custom_red_light': 'launcher_icon_red_light_bg',
-                'ic_launcher_custom_red_dark': 'launcher_icon_red_dark_bg',
-                'ic_launcher_custom_green_light': 'launcher_icon_green_light_bg',
-                'ic_launcher_custom_green_dark': 'launcher_icon_green_dark_bg',
-                'ic_launcher_custom_pink_light': 'launcher_icon_pink_light_bg',
-                'ic_launcher_custom_pink_dark': 'launcher_icon_pink_dark_bg',
-                'ic_launcher_custom_orange_light': 'launcher_icon_orange_light_bg',
-                'ic_launcher_custom_orange_dark': 'launcher_icon_orange_dark_bg'
+                'ic_launcher_dark': 'voltune_background_dark'
         ]
+        palettes.each { background ->
+            ['light', 'dark'].each { mode ->
+                palettes.each { foregroundPalette ->
+                    def icon = "ic_launcher_custom_${background}_${mode}"
+                    if (foregroundPalette != background) {
+                        icon += "_foreground_${foregroundPalette}"
+                    }
+                    launcherIcons[icon] = "voltune_icon_foreground_${foregroundPalette}_layer"
+                    launcherBackgrounds[icon] = "launcher_icon_${background}_${mode}_bg"
+                }
+            }
+        }
         launcherIcons.each { icon, foregroundName ->
             if (!manifestText.contains("@mipmap/${icon}")) {
                 throw new GradleException("Launcher alias is not mapped to ${icon}")
@@ -182,7 +175,11 @@ tasks.register("checkLauncherIcon") {
             }
             if (icon.startsWith('ic_launcher_custom_')) {
                 def parts = icon.split('_')
+                def foregroundPalette = parts.length > 5 ? parts[6] : parts[3]
                 def legacyName = "voltune_icon_legacy_${parts[3]}_${parts[4]}"
+                if (foregroundPalette != parts[3]) {
+                    legacyName += "_foreground_${foregroundPalette}"
+                }
                 def legacy = file("src/main/res/mipmap-anydpi/${icon}.xml").getText("UTF-8")
                 if (!legacy.contains("@drawable/${legacyName}")) {
                     throw new GradleException("${icon} legacy icon uses the wrong palette")
@@ -232,7 +229,7 @@ tasks.register("checkLauncherIcon") {
                 || !styleText.contains('<item name="android:windowSplashScreenBackground">@color/voltune_background_dark</item>')) {
             throw new GradleException("Android 12 splash is not tied to canonical backgrounds")
         }
-        ['blue', 'red', 'green', 'pink', 'orange'].each { palette ->
+        palettes.each { palette ->
             def paletteFile = file("src/main/res/drawable-nodpi/voltune_icon_foreground_${palette}.png")
             def paletteImage = javax.imageio.ImageIO.read(paletteFile)
             if (paletteImage == null || paletteImage.width != foreground.width
@@ -253,12 +250,14 @@ tasks.register("checkLauncherIcon") {
             if (paletteWidth < 0.50d || paletteWidth > 0.70d) {
                 throw new GradleException("${palette} adaptive icon safe-zone width is ${paletteWidth}")
             }
-            if (styleText.count("@drawable/voltune_icon_splash_${palette}") != 2) {
-                throw new GradleException("${palette} splash does not match both theme modes")
+            if (styleText.count("@drawable/voltune_icon_splash_${palette}") != 10) {
+                throw new GradleException("${palette} splash does not match every background")
             }
         }
         if (styleText.count('@drawable/voltune_splash_icon') != 2
-                || styleText.count('windowSplashScreenBackground') != 12) {
+                || styleText.count('windowSplashScreenBackground') != 52
+                || launcherIcons.size() != 52
+                || manifestText.count('<activity-alias') != 52) {
             throw new GradleException("Every launch theme must define a themed splash")
         }
         println "Launcher icon PASS: ${master.width}px master, safe-zone width ${String.format('%.3f', effectiveWidth)}"

@@ -367,7 +367,6 @@ final class ThemeController {
         host.rebuildUiForTheme();
         openDialog();
         launcherUpdatePending = true;
-        updateLauncherIcon();
     }
 
     void onHostStopped() {
@@ -380,7 +379,6 @@ final class ThemeController {
 
     void syncLauncherIcon() {
         launcherUpdatePending = true;
-        updateLauncherIcon();
     }
 
     void updateLauncherIcon() {
@@ -388,7 +386,8 @@ final class ThemeController {
                 host.appearanceState.customBg, isSystemDark(host));
         ComponentName selected = LauncherComponents.forThemeState(
                 host, host.appearanceState.themeMode, useDark,
-                host.appearanceState.customBg);
+                host.appearanceState.customBg, host.appearanceState.customFg,
+                host.appearanceState.customSecondaryAccent);
         try {
             LauncherComponents.apply(host, selected);
         } catch (RuntimeException ignored) {

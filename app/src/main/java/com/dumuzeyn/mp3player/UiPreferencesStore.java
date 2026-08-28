@@ -68,6 +68,17 @@ final class UiPreferencesStore {
                 .getInt(CUSTOM_BG, context.getColor(R.color.voltune_background_light));
     }
 
+    static int readCustomForeground(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(CUSTOM_FG, android.graphics.Color.BLACK);
+    }
+
+    static int readCustomSecondaryAccent(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(CUSTOM_SECONDARY_ACCENT,
+                        context.getColor(R.color.voltune_secondary_light));
+    }
+
     void load() {
         SharedPreferences preferences = preferences();
         host.themeController.load(preferences);

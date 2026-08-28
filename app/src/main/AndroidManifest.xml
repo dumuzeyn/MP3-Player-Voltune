@@ -80,6 +80,208 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
             android:exported="false"
             android:theme="@style/AppThemeCustomOrangeDark" />
+        <!-- GENERATED CUSTOM FOREGROUND ACTIVITIES START -->
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueLightForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueLightForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueLightForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueLightForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueLightForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueLightForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueLightForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueLightForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueDarkForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueDarkForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueDarkForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomBlueDarkForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedLightForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedLightForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedLightForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedLightForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedLightForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedLightForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedLightForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedLightForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedDarkForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedDarkForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedDarkForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedDarkForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedDarkForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedDarkForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomRedDarkForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomRedDarkForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenLightForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenLightForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenLightForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenLightForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenLightForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenLightForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenLightForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenLightForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenDarkForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenDarkForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenDarkForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomGreenDarkForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkLightForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkLightForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkLightForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkLightForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkLightForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkLightForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkLightForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkLightForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkDarkForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkDarkForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkDarkForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomPinkDarkForegroundOrange"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundOrange" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeLightForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeLightForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeLightForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeLightForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundPink" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeDarkForegroundBlue"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundBlue" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeDarkForegroundRed"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundRed" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeDarkForegroundGreen"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundGreen" />
+        <activity
+            android:name=".LauncherThemeActivities$CustomOrangeDarkForegroundPink"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+            android:exported="false"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundPink" />
+<!-- GENERATED CUSTOM FOREGROUND ACTIVITIES END -->
         <activity-alias
             android:name=".LauncherLight"
             android:enabled="true"
@@ -234,6 +436,528 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
+        <!-- GENERATED CUSTOM FOREGROUND ALIASES START -->
+        <activity-alias
+            android:name=".LauncherCustomBlueLightForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_light_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueLightForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueLightForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueLightForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_light_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueLightForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueLightForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueLightForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_light_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueLightForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueLightForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueLightForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_light_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueLightForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueLightForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueDarkForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_dark_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueDarkForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueDarkForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_dark_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueDarkForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueDarkForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_dark_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueDarkForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomBlueDarkForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_blue_dark_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomBlueDarkForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomBlueDarkForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedLightForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_light_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedLightForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomRedLightForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedLightForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_light_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedLightForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomRedLightForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedLightForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_light_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedLightForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomRedLightForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedLightForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_light_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedLightForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomRedLightForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedDarkForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_dark_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedDarkForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomRedDarkForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedDarkForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_dark_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedDarkForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomRedDarkForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedDarkForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_dark_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedDarkForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomRedDarkForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomRedDarkForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_red_dark_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomRedDarkForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomRedDarkForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenLightForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_light_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenLightForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenLightForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenLightForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_light_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenLightForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenLightForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenLightForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_light_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenLightForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenLightForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenLightForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_light_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenLightForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenLightForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenDarkForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_dark_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenDarkForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenDarkForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_dark_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenDarkForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenDarkForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_dark_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenDarkForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomGreenDarkForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_green_dark_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomGreenDarkForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomGreenDarkForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkLightForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_light_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkLightForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkLightForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkLightForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_light_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkLightForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkLightForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkLightForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_light_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkLightForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkLightForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkLightForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_light_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkLightForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkLightForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkDarkForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_dark_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkDarkForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkDarkForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_dark_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkDarkForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkDarkForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_dark_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkDarkForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomPinkDarkForegroundOrange"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_pink_dark_foreground_orange"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomPinkDarkForegroundOrange"
+            android:targetActivity=".LauncherThemeActivities$CustomPinkDarkForegroundOrange">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeLightForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_light_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeLightForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeLightForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_light_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeLightForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeLightForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_light_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeLightForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeLightForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_light_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeLightForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeLightForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeDarkForegroundBlue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_dark_foreground_blue"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundBlue"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeDarkForegroundBlue">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeDarkForegroundRed"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_dark_foreground_red"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundRed"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeDarkForegroundRed">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeDarkForegroundGreen"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_dark_foreground_green"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundGreen"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeDarkForegroundGreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherCustomOrangeDarkForegroundPink"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_custom_orange_dark_foreground_pink"
+            android:label="@string/app_name"
+            android:theme="@style/AppThemeCustomOrangeDarkForegroundPink"
+            android:targetActivity=".LauncherThemeActivities$CustomOrangeDarkForegroundPink">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+<!-- GENERATED CUSTOM FOREGROUND ALIASES END -->
         <service
             android:name=".Media3PlayerService"
             android:exported="true"
