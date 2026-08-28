@@ -79,6 +79,11 @@ final class UiPreferencesStore {
                         context.getColor(R.color.voltune_secondary_light));
     }
 
+    static int readResumeWindowMinutes(Context context) {
+        return Math.max(0, context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(RESUME_WINDOW_MINUTES, 120));
+    }
+
     void load() {
         SharedPreferences preferences = preferences();
         host.themeController.load(preferences);

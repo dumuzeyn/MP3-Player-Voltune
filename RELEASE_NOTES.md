@@ -1,8 +1,11 @@
-# MP3 Player Voltune 3.1.2
+# MP3 Player Voltune 3.1.3
 
 ## Русский
 
-Версия 3.1.2 синхронизирует оформление приложения и исправляет повторное добавление музыки.
+Версия 3.1.3 исправляет память мини-плеера и включает улучшения оформления и медиатеки из 3.1.2.
+
+- Память мини-плеера теперь действительно соблюдает выбранный срок. Например, при настройке 2 часа сессия, поставленная на паузу 8 часов назад, больше не появляется снова.
+- Проверка выполняется и при возвращении приложения на экран, и при восстановлении фонового проигрывателя после перезапуска процесса.
 
 - Light Theme теперь использует единый фон `#FFFFFF`, а Dark Theme - `#111015` в интерфейсе, launcher icon, Splash Screen, стартовом окне и системных панелях.
 - Custom Theme выбирает ближайший статический фон значка по сохранённому `customBg` через LAB/Delta E, а градиент V отдельно подбирается по основному и второму акцентам приложения.
@@ -16,7 +19,10 @@
 
 ## English
 
-Version 3.1.2 synchronizes visual surfaces and prevents duplicate library entries.
+Version 3.1.3 fixes mini-player retention and includes the visual and library improvements from 3.1.2.
+
+- Mini-player memory now honors the selected duration. For example, a session paused eight hours ago no longer returns when the limit is two hours.
+- Expiration is enforced both when the app returns to the foreground and when the background playback service restores after process recreation.
 
 - Light Theme now uses canonical `#FFFFFF`, while Dark Theme uses `#111015` across the app, launcher icon, splash, startup window, and system bars.
 - Custom Theme selects the closest static launcher background from `customBg` using LAB/Delta E, while the V gradient is matched independently from the primary and secondary app accents.

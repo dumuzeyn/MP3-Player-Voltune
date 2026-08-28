@@ -21,6 +21,15 @@ final class PlaybackSessionRestorer {
 
     void restore(Player player) {
         PlaybackStateManager.State state = stateManager.load();
+        if (state.uri.isEmpty() && state.queueUris.isEmpty()) {
+            return;
+        }
+        long retentionMs = UiPreferencesStore.readResumeWindowMinutes(context) * 60_000L;
+        if (MiniPlayerRetentionPolicy.isExpired(state.playing, state.inactiveSince,
+                state.savedAt, System.currentTimeMillis(), retentionMs)) {
+            stateManager.clear();
+            return;
+        }
         ArrayList<Track> queue = PlaybackQueueResolver.restore(
                 TrackStore.load(context), state.queueUris, null);
         if (queue.isEmpty()) {

@@ -74,6 +74,7 @@ final class SettingsController {
             addChoice(panel, label, host.appearanceState.resumeWindowMinutes == value, () -> {
                 host.appearanceState.resumeWindowMinutes = value;
                 host.saveState();
+                host.playbackController.enforceMiniPlayerRetention();
                 host.overlayHost.removeView(shade);
                 host.refreshSettingsLabels();
                 openResumeWindowDialog();
