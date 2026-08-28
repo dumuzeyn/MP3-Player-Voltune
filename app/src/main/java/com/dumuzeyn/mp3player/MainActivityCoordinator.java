@@ -69,7 +69,9 @@ final class MainActivityCoordinator {
 
     void onStop() {
         UiVisibilityController.apply(host, false);
-        host.themeController.onHostStopped();
+        if (!host.isChangingConfigurations()) {
+            host.themeController.onHostStopped();
+        }
     }
 
     void onDestroy() {
