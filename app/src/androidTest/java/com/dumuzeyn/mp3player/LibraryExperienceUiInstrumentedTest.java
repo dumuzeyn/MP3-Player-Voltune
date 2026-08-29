@@ -72,6 +72,12 @@ public class LibraryExperienceUiInstrumentedTest {
         assertFalse(host.libraryState.playlists.isEmpty());
 
         instrumentation.runOnMainSync(() ->
+                host.switchTabAnimated(LibraryTabs.FAVORITES, 1));
+        InstrumentedTestSupport.waitFor("Favorite track did not render", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.FAVORITES
+                        && findText(host.list, TextView.class, track.title) != null);
+
+        instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
         InstrumentedTestSupport.waitFor("Settings tab did not open", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.SETTINGS);

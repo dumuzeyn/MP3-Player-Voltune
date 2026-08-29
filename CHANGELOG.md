@@ -6,6 +6,7 @@
   foreground and when the playback service restores after process recreation.
 - Cleared expired paused queues instead of allowing the Media3 service to project them
   back into the mini-player.
+- Restored song-row rendering on the Favorites tab and covered it with a UI test.
 
 ## 3.1.2 - Safe launcher alias lifecycle
 

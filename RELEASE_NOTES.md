@@ -6,6 +6,7 @@
 
 - Память мини-плеера теперь действительно соблюдает выбранный срок. Например, при настройке 2 часа сессия, поставленная на паузу 8 часов назад, больше не появляется снова.
 - Проверка выполняется и при возвращении приложения на экран, и при восстановлении фонового проигрывателя после перезапуска процесса.
+- Песни снова отображаются на вкладке «Избранное» после добавления сердечком.
 
 - Light Theme теперь использует единый фон `#FFFFFF`, а Dark Theme - `#111015` в интерфейсе, launcher icon, Splash Screen, стартовом окне и системных панелях.
 - Custom Theme выбирает ближайший статический фон значка по сохранённому `customBg` через LAB/Delta E, а градиент V отдельно подбирается по основному и второму акцентам приложения.
@@ -23,6 +24,7 @@ Version 3.1.3 fixes mini-player retention and includes the visual and library im
 
 - Mini-player memory now honors the selected duration. For example, a session paused eight hours ago no longer returns when the limit is two hours.
 - Expiration is enforced both when the app returns to the foreground and when the background playback service restores after process recreation.
+- Songs added with the heart action are visible on the Favorites tab again.
 
 - Light Theme now uses canonical `#FFFFFF`, while Dark Theme uses `#111015` across the app, launcher icon, splash, startup window, and system bars.
 - Custom Theme selects the closest static launcher background from `customBg` using LAB/Delta E, while the V gradient is matched independently from the primary and secondary app accents.
