@@ -136,7 +136,7 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Queue row did not render", 5000L,
                 () -> queueList.getChildCount() > 0);
         int queueSize = host.playbackUiState.queue.size();
-        swipeRight(host, queueList.getChildAt(0));
+        swipeRight(queueList, queueList.getChildAt(0));
         InstrumentedTestSupport.waitFor("Right swipe did not leave the queue", 5000L,
                 () -> pager.getCurrentItem() == FullPlayerPageOrder.LYRICS);
         assertEquals("Right swipe must navigate without removing a queue item",
@@ -177,29 +177,25 @@ public class LibraryExperienceUiInstrumentedTest {
         return null;
     }
 
-    private void swipeRight(MainActivityCore host, View view) {
-        int[] location = new int[2];
-        int[] decorLocation = new int[2];
-        view.getLocationOnScreen(location);
-        host.getWindow().getDecorView().getLocationOnScreen(decorLocation);
-        float startX = location[0] - decorLocation[0] + view.getWidth() * 0.25f;
-        float endX = location[0] - decorLocation[0] + view.getWidth() * 0.85f;
-        float y = location[1] - decorLocation[1] + view.getHeight() * 0.5f;
+    private void swipeRight(RecyclerView target, View row) {
+        float startX = row.getLeft() + row.getWidth() * 0.25f;
+        float endX = row.getLeft() + row.getWidth() * 0.85f;
+        float y = row.getTop() + row.getHeight() * 0.5f;
         long downTime = SystemClock.uptimeMillis();
-        dispatchTouch(host, MotionEvent.obtain(
+        dispatchTouch(target, MotionEvent.obtain(
                 downTime, downTime, MotionEvent.ACTION_DOWN, startX, y, 0));
         for (int step = 1; step <= 8; step++) {
             long eventTime = downTime + step * 18L;
             float x = startX + ((endX - startX) * step / 8.0f);
-            dispatchTouch(host, MotionEvent.obtain(
+            dispatchTouch(target, MotionEvent.obtain(
                     downTime, eventTime, MotionEvent.ACTION_MOVE, x, y, 0));
         }
-        dispatchTouch(host, MotionEvent.obtain(
+        dispatchTouch(target, MotionEvent.obtain(
                 downTime, downTime + 180L, MotionEvent.ACTION_UP, endX, y, 0));
     }
 
-    private void dispatchTouch(MainActivityCore host, MotionEvent event) {
-        instrumentation.runOnMainSync(() -> host.dispatchTouchEvent(event));
+    private void dispatchTouch(View target, MotionEvent event) {
+        instrumentation.runOnMainSync(() -> target.dispatchTouchEvent(event));
         event.recycle();
     }
 

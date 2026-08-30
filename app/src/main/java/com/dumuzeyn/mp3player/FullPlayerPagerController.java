@@ -26,7 +26,8 @@ final class FullPlayerPagerController implements AutoCloseable {
         this.host = host;
         playerPage = new FullPlayerPlaybackPage(host, actions, playbackState);
         lyricsPage = new LyricsPageController(host, playbackState);
-        queuePage = new QueuePageController(host, playbackState);
+        queuePage = new QueuePageController(host, playbackState,
+                () -> showPage(FullPlayerPageOrder.LYRICS));
     }
 
     View createPager() {
@@ -56,11 +57,7 @@ final class FullPlayerPagerController implements AutoCloseable {
             target.setClickable(true);
             target.setFocusable(true);
             target.setContentDescription(pageDescription(page));
-            target.setOnClickListener(view -> {
-                if (pager != null) {
-                    pager.setCurrentItem(page, host.appearanceState.animations);
-                }
-            });
+            target.setOnClickListener(view -> showPage(page));
             FrameLayout.LayoutParams segmentParams = new FrameLayout.LayoutParams(
                     host.dp(22), host.dp(4), Gravity.CENTER);
             target.addView(segment, segmentParams);
@@ -117,6 +114,12 @@ final class FullPlayerPagerController implements AutoCloseable {
             return host.tr("Open lyrics", "Открыть текст");
         }
         return host.tr("Open queue", "Открыть очередь");
+    }
+
+    private void showPage(int position) {
+        if (pager != null) {
+            pager.setCurrentItem(position, host.appearanceState.animations);
+        }
     }
 
     @Override public void close() {

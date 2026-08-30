@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -15,13 +16,16 @@ import java.util.HashSet;
 final class QueuePageController implements AutoCloseable {
     private final MainActivityCore host;
     private final PlaybackStateProvider state;
+    private final Runnable navigateBack;
     private LinearLayout root;
     private QueueAdapter adapter;
     private boolean active;
 
-    QueuePageController(MainActivityCore host, PlaybackStateProvider state) {
+    QueuePageController(MainActivityCore host, PlaybackStateProvider state,
+            Runnable navigateBack) {
         this.host = host;
         this.state = state;
+        this.navigateBack = navigateBack;
     }
 
     View createView() {
@@ -90,6 +94,39 @@ final class QueuePageController implements AutoCloseable {
     }
 
     private void attachGestures(RecyclerView list) {
+        list.addOnItemTouchListener(new RecyclerView.SimpleOnItemTouchListener() {
+            private float downX;
+            private float downY;
+            private boolean navigating;
+
+            @Override public boolean onInterceptTouchEvent(
+                    RecyclerView view, MotionEvent event) {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                    downX = event.getX();
+                    downY = event.getY();
+                    navigating = false;
+                    return false;
+                }
+                if (event.getActionMasked() != MotionEvent.ACTION_MOVE || navigating) {
+                    return navigating;
+                }
+                float dx = event.getX() - downX;
+                float dy = event.getY() - downY;
+                if (dx >= host.dp(42) && dx > Math.abs(dy) * 1.25f) {
+                    navigating = true;
+                    navigateBack.run();
+                    return true;
+                }
+                return false;
+            }
+
+            @Override public void onTouchEvent(RecyclerView view, MotionEvent event) {
+                if (event.getActionMasked() == MotionEvent.ACTION_UP
+                        || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                    navigating = false;
+                }
+            }
+        });
         ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 ItemTouchHelper.UP | ItemTouchHelper.DOWN,
                 ItemTouchHelper.START) {
