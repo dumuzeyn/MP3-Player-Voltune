@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -10,11 +11,14 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
+import android.os.SystemClock;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.media3.common.Player;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -89,6 +93,8 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(playlistCover);
         assertEquals("Playlist artwork must not keep an empty transition layer",
                 1, playlistCover.getChildCount());
+        assertNull("Playlist artwork container must not expose square fallback corners",
+                playlistCover.getBackground());
         assertTrue(playlistCover.getChildAt(0).getAlpha() > 0.99f);
 
         instrumentation.runOnMainSync(() ->
@@ -114,19 +120,83 @@ public class LibraryExperienceUiInstrumentedTest {
                 () -> find(host.overlayHost, ViewPager2.class) != null);
         ViewPager2 pager = find(host.overlayHost, ViewPager2.class);
         assertEquals(FullPlayerPageOrder.PLAYER, pager.getCurrentItem());
-        instrumentation.runOnMainSync(() -> pager.setCurrentItem(
-                FullPlayerPageOrder.LYRICS, false));
+        View lyricsTile = findDescription(host.overlayHost, "Открыть текст");
+        assertNotNull(lyricsTile);
+        instrumentation.runOnMainSync(lyricsTile::performClick);
         InstrumentedTestSupport.waitFor("Missing lyrics state did not render", 5000L,
-                () -> containsText(host.overlayHost, "Текст не определён"));
-        instrumentation.runOnMainSync(() -> pager.setCurrentItem(
-                FullPlayerPageOrder.QUEUE, false));
-        assertEquals(FullPlayerPageOrder.QUEUE, pager.getCurrentItem());
-        instrumentation.runOnMainSync(() -> pager.setCurrentItem(
-                FullPlayerPageOrder.LYRICS, false));
-        instrumentation.runOnMainSync(() -> pager.setCurrentItem(
-                FullPlayerPageOrder.PLAYER, false));
-        assertEquals(FullPlayerPageOrder.PLAYER, pager.getCurrentItem());
+                () -> pager.getCurrentItem() == FullPlayerPageOrder.LYRICS
+                        && containsText(host.overlayHost, "Текст не определён"));
+        View queueTile = findDescription(host.overlayHost, "Открыть очередь");
+        assertNotNull(queueTile);
+        instrumentation.runOnMainSync(queueTile::performClick);
+        InstrumentedTestSupport.waitFor("Queue tile did not open the queue", 5000L,
+                () -> pager.getCurrentItem() == FullPlayerPageOrder.QUEUE);
+        RecyclerView queueList = findQueueList(host.overlayHost);
+        assertNotNull(queueList);
+        InstrumentedTestSupport.waitFor("Queue row did not render", 5000L,
+                () -> queueList.getChildCount() > 0);
+        int queueSize = host.playbackUiState.queue.size();
+        swipeRight(queueList, queueList.getChildAt(0));
+        InstrumentedTestSupport.waitFor("Right swipe did not leave the queue", 5000L,
+                () -> pager.getCurrentItem() == FullPlayerPageOrder.LYRICS);
+        assertEquals("Right swipe must navigate without removing a queue item",
+                queueSize, host.playbackUiState.queue.size());
+        View playerTile = findDescription(host.overlayHost, "Открыть плеер");
+        assertNotNull(playerTile);
+        instrumentation.runOnMainSync(playerTile::performClick);
+        InstrumentedTestSupport.waitFor("Player tile did not return to the player", 5000L,
+                () -> pager.getCurrentItem() == FullPlayerPageOrder.PLAYER);
         instrumentation.runOnMainSync(host.overlayHost::removeAllViews);
+    }
+
+    private static View findDescription(View view, String expected) {
+        CharSequence description = view.getContentDescription();
+        if (description != null && expected.contentEquals(description)) return view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                View found = findDescription(group.getChildAt(index), expected);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static RecyclerView findQueueList(View view) {
+        if (view instanceof RecyclerView
+                && ((RecyclerView) view).getAdapter() instanceof QueueAdapter) {
+            return (RecyclerView) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                RecyclerView found = findQueueList(group.getChildAt(index));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private void swipeRight(RecyclerView target, View row) {
+        float startX = row.getLeft() + row.getWidth() * 0.25f;
+        float endX = row.getLeft() + row.getWidth() * 0.85f;
+        float y = row.getTop() + row.getHeight() * 0.5f;
+        long downTime = SystemClock.uptimeMillis();
+        dispatchTouch(target, MotionEvent.obtain(
+                downTime, downTime, MotionEvent.ACTION_DOWN, startX, y, 0));
+        for (int step = 1; step <= 8; step++) {
+            long eventTime = downTime + step * 18L;
+            float x = startX + ((endX - startX) * step / 8.0f);
+            dispatchTouch(target, MotionEvent.obtain(
+                    downTime, eventTime, MotionEvent.ACTION_MOVE, x, y, 0));
+        }
+        dispatchTouch(target, MotionEvent.obtain(
+                downTime, downTime + 180L, MotionEvent.ACTION_UP, endX, y, 0));
+    }
+
+    private void dispatchTouch(View target, MotionEvent event) {
+        instrumentation.runOnMainSync(() -> target.dispatchTouchEvent(event));
+        event.recycle();
     }
 
     private static boolean containsText(View view, String expected) {

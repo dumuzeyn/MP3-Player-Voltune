@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.4 - Clean playlist artwork corners
+
+- Removed the square fallback surface behind rounded playlist artwork so light
+  corners no longer appear around covers.
+- Added a UI regression check for the playlist artwork container.
+- Moved Lyrics and Queue to the right of the main full-player page and aligned the
+  page indicator with the new swipe order.
+- Made the full-player page indicator tiles tappable with accessible touch targets.
+- Kept left-swipe queue removal while reserving right swipes for returning from Queue
+  to Lyrics and the main player page.
+
 ## 3.1.3 - Mini-player retention fix
 
 - Enforced the configured mini-player memory window when the app returns to the

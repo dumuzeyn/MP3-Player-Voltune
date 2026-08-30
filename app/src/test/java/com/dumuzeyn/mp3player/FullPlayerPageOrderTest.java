@@ -5,20 +5,20 @@ import org.junit.Test;
 
 public class FullPlayerPageOrderTest {
     @Test
-    public void rightSwipesAdvancePlayerToLyricsToQueue() {
+    public void leftSwipesAdvancePlayerToLyricsToQueueOnTheRight() {
         int page = FullPlayerPageOrder.PLAYER;
-        page = FullPlayerPageOrder.afterRightSwipe(page);
+        page = FullPlayerPageOrder.afterLeftSwipe(page);
         assertEquals(FullPlayerPageOrder.LYRICS, page);
-        page = FullPlayerPageOrder.afterRightSwipe(page);
+        page = FullPlayerPageOrder.afterLeftSwipe(page);
         assertEquals(FullPlayerPageOrder.QUEUE, page);
     }
 
     @Test
-    public void leftSwipesReturnQueueToLyricsToPlayer() {
+    public void rightSwipesReturnQueueToLyricsToPlayer() {
         int page = FullPlayerPageOrder.QUEUE;
-        page = FullPlayerPageOrder.afterLeftSwipe(page);
+        page = FullPlayerPageOrder.afterRightSwipe(page);
         assertEquals(FullPlayerPageOrder.LYRICS, page);
-        page = FullPlayerPageOrder.afterLeftSwipe(page);
+        page = FullPlayerPageOrder.afterRightSwipe(page);
         assertEquals(FullPlayerPageOrder.PLAYER, page);
     }
 }

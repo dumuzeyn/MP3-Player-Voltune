@@ -20,7 +20,7 @@ final class FrameLayoutCover extends FrameLayout {
 
     void setFallback(int fallback) {
         this.fallback = fallback;
-        setBackgroundColor(fallback);
+        setBackground(null);
         this.cover.setBackgroundColor(fallback);
     }
 
