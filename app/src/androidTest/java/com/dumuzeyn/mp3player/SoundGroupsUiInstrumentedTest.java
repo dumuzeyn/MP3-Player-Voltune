@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.junit.After;
@@ -33,7 +35,7 @@ public class SoundGroupsUiInstrumentedTest {
     }
 
     @Test
-    public void savedGroupAppearsImmediatelyAndOpensTrackList() {
+    public void savedGroupAppearsImmediatelyAndOpensTrackList() throws Exception {
         MainActivityCore host = launchWithSavedGroup();
         instrumentation.runOnMainSync(() -> {
             host.navigationState.tabIndex = LibraryTabs.SOUND;
@@ -51,7 +53,7 @@ public class SoundGroupsUiInstrumentedTest {
                         && findText(host.overlayHost, "Sound UI 0") != null);
     }
 
-    private MainActivityCore launchWithSavedGroup() {
+    private MainActivityCore launchWithSavedGroup() throws Exception {
         instrumentation = InstrumentationRegistry.getInstrumentation();
         Context context = ApplicationProvider.getApplicationContext();
         context.deleteDatabase(LibraryDatabase.DB_NAME);
@@ -63,9 +65,12 @@ public class SoundGroupsUiInstrumentedTest {
                 .putBoolean("soundAnalysisEnabled", true).commit();
         ArrayList<Track> tracks = new ArrayList<>();
         for (int index = 0; index < 4; index++) {
-            tracks.add(new Track("sound-ui-" + index, "content://sound/ui/" + index,
-                    "Sound UI " + index, "Artist", "Album", "Genre", 120000,
-                    10L + index, 20L + index, "fingerprint-" + index));
+            File wave = InstrumentedTestSupport.createTestWave(context,
+                    "sound-ui-" + index + ".wav", 1);
+            Track imported = TrackStore.fromUri(context, Uri.fromFile(wave));
+            assertNotNull(imported);
+            tracks.add(imported.withMetadata("Sound UI " + index, "Artist", "Album",
+                    "Artist", "Genre", 0, 0, 0));
         }
         TrackStore.save(context, tracks);
         SoundProfileStore store = new SoundProfileStore(context);
