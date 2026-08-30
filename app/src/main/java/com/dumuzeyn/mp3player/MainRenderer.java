@@ -12,6 +12,7 @@ final class MainRenderer {
     private final SongsMenuRenderer songsRenderer;
     private final FavoritesMenuRenderer favoritesRenderer;
     private final PlaylistsMenuRenderer playlistsRenderer;
+    private final MenuRenderer soundRenderer;
     private final MenuRenderer genresRenderer;
     private final MenuRenderer artistsRenderer;
     private final MenuRenderer albumsRenderer;
@@ -26,6 +27,7 @@ final class MainRenderer {
         this.songsRenderer = new SongsMenuRenderer(host);
         this.favoritesRenderer = new FavoritesMenuRenderer(host);
         this.playlistsRenderer = new PlaylistsMenuRenderer(host);
+        this.soundRenderer = new SoundMenuRenderer(host);
         this.genresRenderer = new GenresMenuRenderer(host);
         this.artistsRenderer = new ArtistsMenuRenderer(host);
         this.albumsRenderer = new AlbumsMenuRenderer(host);
@@ -220,6 +222,9 @@ final class MainRenderer {
         }
         if (tabIndex == LibraryTabs.PLAYLISTS) {
             return playlistsRenderer;
+        }
+        if (tabIndex == LibraryTabs.SOUND) {
+            return soundRenderer;
         }
         if (tabIndex == LibraryTabs.GENRES) {
             return genresRenderer;

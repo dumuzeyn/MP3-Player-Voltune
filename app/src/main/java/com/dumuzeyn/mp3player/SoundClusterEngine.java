@@ -3,7 +3,7 @@ package com.dumuzeyn.mp3player;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -31,7 +31,7 @@ final class SoundClusterEngine {
         }
         ArrayList<SoundGroup> groups = new ArrayList<>();
         for (MutableCluster cluster : clusters) {
-            cluster.trackIds.sort(String::compareTo);
+            Collections.sort(cluster.trackIds);
             groups.add(new SoundGroup(stableId(cluster.trackIds), "", "",
                     cluster.centroid, cluster.trackIds));
         }
@@ -75,7 +75,7 @@ final class SoundClusterEngine {
                 }
             }
         }
-        result.sort(Comparator.comparing(profile -> profile.trackId));
+        Collections.sort(result, (left, right) -> left.trackId.compareTo(right.trackId));
         return result;
     }
 
@@ -94,7 +94,7 @@ final class SoundClusterEngine {
                 nearest.add(best);
             }
         }
-        nearest.sort(Double::compareTo);
+        Collections.sort(nearest);
         double median = nearest.isEmpty() ? 0.75d : nearest.get(nearest.size() / 2);
         return Math.max(0.35d, Math.min(1.75d, median * 1.35d));
     }
@@ -174,7 +174,14 @@ final class SoundClusterEngine {
     }
 
     private static String stableId(List<String> trackIds) {
-        String joined = String.join("\n", trackIds);
+        StringBuilder joinedBuilder = new StringBuilder();
+        for (String trackId : trackIds) {
+            if (joinedBuilder.length() > 0) {
+                joinedBuilder.append('\n');
+            }
+            joinedBuilder.append(trackId);
+        }
+        String joined = joinedBuilder.toString();
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(joined.getBytes(StandardCharsets.UTF_8));

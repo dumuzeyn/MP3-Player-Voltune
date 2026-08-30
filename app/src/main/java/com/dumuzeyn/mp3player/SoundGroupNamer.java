@@ -1,7 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,7 +44,7 @@ final class SoundGroupNamer {
 
     static ArrayList<SoundGroup> name(List<SoundGroup> source) {
         ArrayList<SoundGroup> ordered = new ArrayList<>(source);
-        ordered.sort(Comparator.comparing(group -> group.id));
+        Collections.sort(ordered, (left, right) -> left.id.compareTo(right.id));
         Set<String> used = new HashSet<>();
         ArrayList<SoundGroup> result = new ArrayList<>();
         for (SoundGroup group : ordered) {
@@ -66,8 +66,8 @@ final class SoundGroupNamer {
     }
 
     private static Candidate fallback(String id, Set<String> used) {
-        int start = Math.floorMod(id.hashCode(), FALLBACK_RU_ADJECTIVES.length
-                * FALLBACK_RU_NOUNS.length);
+        int combinations = FALLBACK_RU_ADJECTIVES.length * FALLBACK_RU_NOUNS.length;
+        int start = (id.hashCode() & 0x7fffffff) % combinations;
         for (int offset = 0; offset < FALLBACK_RU_ADJECTIVES.length
                 * FALLBACK_RU_NOUNS.length; offset++) {
             int value = (start + offset) % (FALLBACK_RU_ADJECTIVES.length
@@ -92,7 +92,7 @@ final class SoundGroupNamer {
                     ? new Candidate(trait.highRussian, trait.highEnglish, Math.abs(value))
                     : new Candidate(trait.lowRussian, trait.lowEnglish, Math.abs(value)));
         }
-        result.sort((left, right) -> Double.compare(right.score, left.score));
+        Collections.sort(result, (left, right) -> Double.compare(right.score, left.score));
         return result;
     }
 
