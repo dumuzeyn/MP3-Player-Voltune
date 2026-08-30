@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.3 - Mini-player retention fix
+
+- Enforced the configured mini-player memory window when the app returns to the
+  foreground and when the playback service restores after process recreation.
+- Cleared expired paused queues instead of allowing the Media3 service to project them
+  back into the mini-player.
+- Restored song-row rendering on the Favorites tab and covered it with a UI test.
+- Prepared playlist tabs before their slide transition so cards no longer appear while
+  the screen is already moving.
+- Crossfaded playlist artwork only after the next cover is ready, preserving the
+  current cover or themed fallback throughout loading.
+
 ## 3.1.2 - Safe launcher alias lifecycle
 
 - Deferred launcher alias changes until the Activity is no longer visible, preventing a

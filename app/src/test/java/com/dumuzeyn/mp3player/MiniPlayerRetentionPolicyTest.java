@@ -44,4 +44,11 @@ public class MiniPlayerRetentionPolicyTest {
         assertTrue(MiniPlayerRetentionPolicy.isExpired(
                 false, 0L, 1_000L, 2_500L, 1_000L));
     }
+
+    @Test
+    public void twoHourSettingExpiresAnEightHourPause() {
+        long hour = 60L * 60L * 1000L;
+        assertTrue(MiniPlayerRetentionPolicy.isExpired(
+                false, hour, 9L * hour, 9L * hour, 2L * hour));
+    }
 }

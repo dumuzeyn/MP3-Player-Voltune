@@ -181,7 +181,8 @@ final class SongsRenderer {
 
     private void appendNextSongBatch() {
         if (pendingTracks == null || pendingGeneration != host.navigationState.songRenderGeneration
-                || host.navigationState.tabIndex > 1) {
+                || (host.navigationState.tabIndex != LibraryTabs.SONGS
+                && host.navigationState.tabIndex != LibraryTabs.FAVORITES)) {
             pendingTracks = null;
             return;
         }

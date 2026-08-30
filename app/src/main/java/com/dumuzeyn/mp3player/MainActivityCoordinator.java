@@ -55,6 +55,7 @@ final class MainActivityCoordinator {
     void onResume() {
         UiVisibilityController.apply(host, true);
         host.playbackUiState.sleepTimerEndsAt = PlaybackSleepTimer.readEndsAt(host);
+        host.playbackController.enforceMiniPlayerRetention();
         host.playerUiController.syncPlaybackUi();
         host.refreshAfterTrackChange();
         host.librarySnapshotApplier.refreshHome();

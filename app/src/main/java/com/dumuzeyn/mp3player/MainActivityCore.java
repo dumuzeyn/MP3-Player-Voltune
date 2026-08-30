@@ -68,7 +68,8 @@ class MainActivityCore extends Activity {
                     () -> navigationState.renderingTabPreview,
                     this::activeSongRows, this::findTrack,
                     this::isCurrent, this::isPlaybackPlaying,
-                    () -> purple, () -> yellow, () -> purpleSoft));
+                    () -> purple, () -> yellow, () -> purpleSoft,
+                    () -> appearanceState.animations));
     final SongsRenderer songsRenderer = new SongsRenderer(this);
     private final SettingsRenderer settingsRenderer = new SettingsRenderer(this);
     final SettingsController settingsController = new SettingsController(this);

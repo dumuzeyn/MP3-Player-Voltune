@@ -174,23 +174,8 @@ final class SwipeController {
         previewScroll.setTranslationX(direction * transitionDistance);
         host.contentHost.addView(previewScroll, 0, new FrameLayout.LayoutParams(-1, -1));
         previewSurface = previewScroll;
-        final ScrollView expectedScroll = previewScroll;
-        final LinearLayout expectedList = previewList;
-        final int expectedTarget = targetIndex;
-        final String expectedSearch = targetSearch;
-        host.contentHost.post(() -> {
-            if (previewScroll != expectedScroll || previewList != expectedList
-                    || targetIndex != expectedTarget || previewUsesSongsSurface) {
-                return;
-            }
-            previewState = host.renderTabPreview(
-                    expectedList, expectedTarget, expectedSearch);
-            expectedScroll.post(() -> {
-                if (previewScroll == expectedScroll && previewState != null) {
-                    expectedScroll.scrollTo(0, previewState.scrollY);
-                }
-            });
-        });
+        previewState = host.renderTabPreview(previewList, targetIndex, targetSearch);
+        previewScroll.scrollTo(0, previewState.scrollY);
     }
 
     private void updateOffset(float offset) {

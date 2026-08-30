@@ -25,6 +25,7 @@ final class PlaybackController implements Player.Listener {
     private final ArrayDeque<Runnable> pendingCommands = new ArrayDeque<>();
     private ListenableFuture<MediaController> controllerFuture;
     private MediaController controller;
+    private boolean discardExpiredSession;
     private boolean released;
 
     PlaybackController(MainActivityCore host) {
@@ -43,12 +44,19 @@ final class PlaybackController implements Player.Listener {
     }
 
     void restorePersistedUiState() {
-        PlaybackStateManager.State state = new PlaybackStateManager(host).load();
+        PlaybackStateManager stateManager = new PlaybackStateManager(host);
+        PlaybackStateManager.State state = stateManager.load();
+        if (!hasSavedSession(state)) {
+            return;
+        }
         long resumeWindowMs = Math.max(0L, host.appearanceState.resumeWindowMinutes) * 60000L;
         boolean expired = MiniPlayerRetentionPolicy.isExpired(
                 state.playing, state.inactiveSince, state.savedAt,
                 System.currentTimeMillis(), resumeWindowMs);
         if (expired) {
+            discardExpiredSession = true;
+            stateManager.clear();
+            clearProjectedSession();
             return;
         }
         Track current = host.findTrack(state.uri);
@@ -87,6 +95,7 @@ final class PlaybackController implements Player.Listener {
         try {
             controller = controllerFuture.get();
             controller.addListener(this);
+            discardExpiredControllerSession();
             synchronizeUi(true);
             while (!pendingCommands.isEmpty()) {
                 pendingCommands.removeFirst().run();
@@ -95,6 +104,43 @@ final class PlaybackController implements Player.Listener {
             VoltuneLog.failure("media_controller_connection_failed", error);
             pendingCommands.clear();
         }
+    }
+
+    void enforceMiniPlayerRetention() {
+        PlaybackStateManager stateManager = new PlaybackStateManager(host);
+        PlaybackStateManager.State state = stateManager.load();
+        if (!hasSavedSession(state)) {
+            return;
+        }
+        long retentionMs = Math.max(0L, host.appearanceState.resumeWindowMinutes) * 60_000L;
+        if (!MiniPlayerRetentionPolicy.isExpired(state.playing, state.inactiveSince,
+                state.savedAt, System.currentTimeMillis(), retentionMs)) {
+            return;
+        }
+        discardExpiredSession = true;
+        stateManager.clear();
+        discardExpiredControllerSession();
+        clearProjectedSession();
+    }
+
+    private void discardExpiredControllerSession() {
+        if (!discardExpiredSession || controller == null || controller.getPlayWhenReady()) {
+            return;
+        }
+        discardExpiredSession = false;
+        controller.stop();
+        controller.clearMediaItems();
+        controller.sendCustomCommand(Media3Commands.CLEAR_QUEUE_COMMAND, Bundle.EMPTY);
+    }
+
+    private void clearProjectedSession() {
+        host.playbackUiState.queue.clear();
+        host.updatePlaybackSnapshot(PlaybackSnapshot.empty());
+        host.playerUiController.updateMini();
+    }
+
+    private static boolean hasSavedSession(PlaybackStateManager.State state) {
+        return !state.uri.isEmpty() || !state.queueUris.isEmpty();
     }
 
     void release() {
