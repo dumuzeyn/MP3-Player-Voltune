@@ -59,6 +59,7 @@
             android:layout_width="46dp"
             android:layout_height="26dp"
             android:layout_alignParentBottom="true"
+            android:layout_marginBottom="4dp"
             android:layout_toStartOf="@id/song_actions"
             android:gravity="center"
             android:singleLine="true"
@@ -69,6 +70,7 @@
             android:layout_width="match_parent"
             android:layout_height="26dp"
             android:layout_alignParentBottom="true"
+            android:layout_marginBottom="4dp"
             android:layout_marginStart="10dp"
             android:layout_toEndOf="@id/song_cover_container"
             android:layout_toStartOf="@id/song_duration" />

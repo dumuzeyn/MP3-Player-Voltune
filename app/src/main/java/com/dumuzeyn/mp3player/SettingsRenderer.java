@@ -20,6 +20,7 @@ final class SettingsRenderer {
     private Button animationsButton;
     private Button particlesButton;
     private Button tickerButton;
+    private Button soundAnalysisButton;
     private LinearLayout cachedContent;
     private String cachedAppearanceKey = "";
 
@@ -116,6 +117,8 @@ final class SettingsRenderer {
         defaults(SettingsSectionResetter.Section.ANIMATIONS);
 
         section(host.tr("Library", "Библиотека"));
+        soundAnalysisButton = addButton(host.soundAnalysisController.settingLabel(),
+                view -> host.soundAnalysisController.toggle());
         addButton(host.tr("Check songs", "Проверить песни"),
                 view -> host.openSongDiagnostics());
         addButton(host.tr("Music folders", "Музыкальные папки"),
@@ -251,6 +254,9 @@ final class SettingsRenderer {
         }
         if (tickerButton != null) {
             tickerButton.setText(host.playlistTickerSettingsController.settingLabel());
+        }
+        if (soundAnalysisButton != null) {
+            soundAnalysisButton.setText(host.soundAnalysisController.settingLabel());
         }
     }
 

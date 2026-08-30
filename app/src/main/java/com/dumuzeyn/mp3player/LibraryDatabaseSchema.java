@@ -32,6 +32,7 @@ final class LibraryDatabaseSchema {
                 + "track_id TEXT NOT NULL, position INTEGER NOT NULL, "
                 + "PRIMARY KEY (playlist_id, track_id))");
         createLibrarySources(db);
+        createSoundTables(db);
     }
 
     static void migrate(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -54,7 +55,29 @@ final class LibraryDatabaseSchema {
         }
         if (version < 6 && newVersion >= 6) {
             LibraryDuplicateCleaner.clean(db);
+            version = 6;
         }
+        if (version < 7 && newVersion >= 7) {
+            createSoundTables(db);
+        }
+    }
+
+    private static void createSoundTables(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS audio_profiles ("
+                + "track_id TEXT PRIMARY KEY NOT NULL, analysis_version INTEGER NOT NULL, "
+                + "file_size INTEGER NOT NULL, last_modified INTEGER NOT NULL, "
+                + "fingerprint TEXT NOT NULL, state TEXT NOT NULL, vector TEXT NOT NULL, "
+                + "group_id TEXT NOT NULL DEFAULT '', error TEXT NOT NULL DEFAULT '', "
+                + "updated_at INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_audio_profiles_group "
+                + "ON audio_profiles(group_id)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS sound_groups ("
+                + "group_id TEXT PRIMARY KEY NOT NULL, name_ru TEXT NOT NULL, "
+                + "name_en TEXT NOT NULL, centroid TEXT NOT NULL, "
+                + "position INTEGER NOT NULL, updated_at INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE TRIGGER IF NOT EXISTS delete_track_audio_profile "
+                + "AFTER DELETE ON tracks BEGIN DELETE FROM audio_profiles "
+                + "WHERE track_id=OLD.track_id; END");
     }
 
     private static void createLibrarySources(SQLiteDatabase db) {

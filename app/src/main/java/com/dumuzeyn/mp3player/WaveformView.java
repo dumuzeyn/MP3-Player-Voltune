@@ -81,7 +81,7 @@ public class WaveformView extends View {
             float base = 0.24f + ((seed >> (i % 12)) & 15) / 22f;
             float pulse = active ? (float) Math.sin(time + i * 0.7f) * 0.22f : 0f;
             float bar = Math.max(0.18f, Math.min(0.92f, base + pulse));
-            float center = height * 0.55f;
+            float center = height * 0.5f;
             float half = height * bar * 0.38f;
             canvas.drawLine(x, center - half, x, center + half, paint);
         }

@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.2.0 - Local sound groups
+
+- Added the Sound tab immediately after Playlists with locally generated groups that
+  open through the existing track-list and playback flow.
+- Added bounded streaming audio analysis for tempo, energy, loudness, dynamics,
+  spectral shape, bass/treble balance, rhythmic activity, contrast, and compact
+  timbral coefficients. No network or cloud service is used.
+- Added adaptive deterministic clustering, relative two-word Russian and English
+  names, incremental assignment, and a non-destructive SQLite profile cache.
+- Added one low-priority resumable analysis queue that pauses during playback, low
+  battery, or severe thermal pressure and never holds a wake lock.
+- Added settings control, saved progress and failure states, cache invalidation, and
+  automatic cleanup when tracks or folders are removed.
+- Raised the waveform and duration line in song cards and centered waveform bars.
+- Added unit, migration, persistence, deletion, decoding, UI, text-clipping, and
+  synthetic 100/500/2000/5000-track performance checks.
+
 ## 3.1.4 - Clean playlist artwork corners
 
 - Removed the square fallback surface behind rounded playlist artwork so light

@@ -28,6 +28,7 @@ final class LibrarySnapshotApplier {
         host.playbackController.restorePersistedUiState();
         host.playbackController.connect();
         host.render();
+        host.soundAnalysisController.onLibraryReady(host.libraryState.tracks);
         host.audioImportController.onLibraryReady();
         if (host.getIntent().getIntExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 0) == 0) {
             host.libraryMaintenanceController.run(
@@ -56,6 +57,7 @@ final class LibrarySnapshotApplier {
 
     void rebuildDerivedAndRender() {
         final int generation = ++derivedGeneration;
+        host.soundAnalysisController.onLibraryReady(host.libraryState.tracks);
         boolean songsVisible = host.navigationState.tabIndex == LibraryTabs.SONGS;
         if (host.songsView != null) {
             host.songsView.refreshFilteredSource(host.libraryState.tracks);

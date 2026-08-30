@@ -59,8 +59,7 @@ class MainActivityCore extends Activity {
     private final LocalizationController localization = new LocalizationController(this);
     final PlaybackUiState playbackUiState = new PlaybackUiState();
     ParticleEffectsView particleEffectsView;
-    final Handler uiHandler = new Handler(Looper.getMainLooper());
-    final Handler playbackHandler = new Handler(Looper.getMainLooper());
+    final Handler uiHandler = new Handler(Looper.getMainLooper()), playbackHandler = new Handler(Looper.getMainLooper());
     final SongRowStateRegistry songRows = new SongRowStateRegistry();
     final SongRowStateRegistry previewSongRows = new SongRowStateRegistry();
     final TrackArtworkUi artworkUi = new TrackArtworkUi(this, this.uiHandler,
@@ -116,6 +115,7 @@ class MainActivityCore extends Activity {
     final LibraryPersistenceController libraryPersistenceController =
             new LibraryPersistenceController(this);
     final LibraryLoader libraryLoader = new LibraryLoader(this, this.uiHandler);
+    final SoundAnalysisController soundAnalysisController = new SoundAnalysisController(this);
     final TrackSearchController trackSearchController =
             new TrackSearchController(this.uiHandler);
     final GlobalSearchController globalSearchController =
