@@ -1,8 +1,14 @@
-# MP3 Player Voltune 3.1.3
+# MP3 Player Voltune 3.1.4
 
 ## Русский
 
-Версия 3.1.3 исправляет память мини-плеера и включает улучшения оформления и медиатеки из 3.1.2.
+Версия 3.1.4 убирает светлый квадратный фон, который был виден вокруг скруглённых обложек плейлистов, и включает все исправления 3.1.3.
+
+- Внешний контейнер обложки теперь прозрачный, поэтому по скруглённым краям больше не виден белый фон.
+- Цвет-заглушка сохранён внутри самой обложки и не выходит за её границы.
+- В большом плеере страницы «Текст» и «Очередь» теперь находятся справа от основного экрана.
+- Нижние плитки большого плеера теперь переключают страницы нажатием.
+- В очереди свайп влево по песне по-прежнему удаляет её, а свайп вправо возвращает к тексту и основному плееру.
 
 - Память мини-плеера теперь действительно соблюдает выбранный срок. Например, при настройке 2 часа сессия, поставленная на паузу 8 часов назад, больше не появляется снова.
 - Проверка выполняется и при возвращении приложения на экран, и при восстановлении фонового проигрывателя после перезапуска процесса.
@@ -22,7 +28,13 @@
 
 ## English
 
-Version 3.1.3 fixes mini-player retention and includes the visual and library improvements from 3.1.2.
+Version 3.1.4 removes the light square background that appeared around rounded playlist covers and includes every fix from 3.1.3.
+
+- The outer artwork container is now transparent, so no white background is exposed around rounded corners.
+- The themed fallback remains inside the clipped artwork bounds.
+- Lyrics and Queue now sit to the right of the main full-player page.
+- The full-player indicator tiles now switch pages when tapped.
+- Swiping a queue item left still removes it, while right swipes return to Lyrics and the main player.
 
 - Mini-player memory now honors the selected duration. For example, a session paused eight hours ago no longer returns when the limit is two hours.
 - Expiration is enforced both when the app returns to the foreground and when the background playback service restores after process recreation.

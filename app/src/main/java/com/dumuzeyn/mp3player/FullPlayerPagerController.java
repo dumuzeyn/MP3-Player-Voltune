@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
-/** Caches three pages and maps the requested inverse swipe order. */
+/** Caches the player, lyrics, and queue pages in their visual swipe order. */
 final class FullPlayerPagerController implements AutoCloseable {
     private final MainActivityCore host;
     private final FullPlayerPlaybackPage playerPage;
@@ -48,14 +48,25 @@ final class FullPlayerPagerController implements AutoCloseable {
     View createIndicator() {
         LinearLayout row = new LinearLayout(host);
         row.setGravity(Gravity.CENTER);
-        for (int logical = 0; logical < 3; logical++) {
-            int position = 2 - logical;
+        for (int position = 0; position < 3; position++) {
+            final int page = position;
             View segment = new View(host);
             segments[position] = segment;
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    host.dp(22), host.dp(4));
-            params.setMargins(host.dp(3), 0, host.dp(3), 0);
-            row.addView(segment, params);
+            FrameLayout target = new FrameLayout(host);
+            target.setClickable(true);
+            target.setFocusable(true);
+            target.setContentDescription(pageDescription(page));
+            target.setOnClickListener(view -> {
+                if (pager != null) {
+                    pager.setCurrentItem(page, host.appearanceState.animations);
+                }
+            });
+            FrameLayout.LayoutParams segmentParams = new FrameLayout.LayoutParams(
+                    host.dp(22), host.dp(4), Gravity.CENTER);
+            target.addView(segment, segmentParams);
+            LinearLayout.LayoutParams targetParams = new LinearLayout.LayoutParams(
+                    host.dp(48), host.dp(18));
+            row.addView(target, targetParams);
         }
         updateIndicator();
         return row;
@@ -96,6 +107,16 @@ final class FullPlayerPagerController implements AutoCloseable {
             background.setColor(position == selected ? host.purple : host.cardStroke);
             segment.setBackground(background);
         }
+    }
+
+    private String pageDescription(int position) {
+        if (position == FullPlayerPageOrder.PLAYER) {
+            return host.tr("Open player", "Открыть плеер");
+        }
+        if (position == FullPlayerPageOrder.LYRICS) {
+            return host.tr("Open lyrics", "Открыть текст");
+        }
+        return host.tr("Open queue", "Открыть очередь");
     }
 
     @Override public void close() {
