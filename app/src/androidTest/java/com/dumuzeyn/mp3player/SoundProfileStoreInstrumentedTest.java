@@ -64,6 +64,20 @@ public class SoundProfileStoreInstrumentedTest {
         assertTrue(profiles.loadGroups().isEmpty());
     }
 
+    @Test
+    public void replacingLibraryAfterFolderRemovalLeavesNoProfiles() {
+        Track first = track("folder-one");
+        Track second = track("folder-two");
+        library.saveTracks(Arrays.asList(first, second));
+        profiles.saveProfile(TrackAudioProfile.analyzed(first, features(1.0d)));
+        profiles.saveProfile(TrackAudioProfile.analyzed(second, features(2.0d)));
+
+        library.saveTracks(new ArrayList<>());
+        profiles.pruneEmptyGroups();
+
+        assertTrue(profiles.loadProfiles().isEmpty());
+    }
+
     private static Track track(String id) {
         return new Track(id, "content://sound/" + id, "Title", "Artist", "Album",
                 "Genre", 120000, 100L, 200L, "fingerprint");

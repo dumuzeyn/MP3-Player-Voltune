@@ -52,10 +52,15 @@ public class SoundClusterEngineTest {
     public void syntheticLibrariesScaleToFiveThousandTracks() {
         SoundClusterEngine engine = new SoundClusterEngine();
         for (int size : new int[]{100, 500, 2000, 5000}) {
+            long started = System.nanoTime();
             ArrayList<SoundGroup> groups = engine.cluster(syntheticClouds(size,
                     Math.max(2, (int) Math.sqrt(size) / 3)));
+            long elapsedMs = (System.nanoTime() - started) / 1_000_000L;
+            System.out.println("sound_cluster_profile size=" + size + " elapsedMs="
+                    + elapsedMs + " groups=" + groups.size());
             assertFalse("size=" + size, groups.isEmpty());
             assertTrue("size=" + size, groups.size() <= Math.ceil(Math.sqrt(size)));
+            assertTrue("size=" + size + " elapsedMs=" + elapsedMs, elapsedMs < 5000L);
         }
     }
 
