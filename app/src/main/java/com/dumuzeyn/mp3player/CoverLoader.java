@@ -3,6 +3,9 @@ package com.dumuzeyn.mp3player;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.media.MediaMetadataRetriever;
 import android.content.Context;
 import android.os.Handler;
@@ -24,7 +27,7 @@ final class CoverLoader {
     private final Handler mainHandler;
     private final LruCache<String, Bitmap> cache;
     private volatile ArtworkDiskCache diskCache;
-    private final Map<String, ArrayList<WeakReference<ImageView>>> pendingTargets = new LinkedHashMap<>();
+    private final Map<String, ArrayList<PendingTarget>> pendingTargets = new LinkedHashMap<>();
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private volatile boolean closed;
 
@@ -45,6 +48,11 @@ final class CoverLoader {
         load(view, track, fallbackColor, THUMB_SIZE);
     }
 
+    void loadSmooth(ImageView view, Track track, int fallbackColor, int maxSize,
+            int transitionDuration) {
+        load(view, track, fallbackColor, maxSize, true, transitionDuration);
+    }
+
     void loadCachedOnly(ImageView view, Track track, int fallbackColor, int maxSize) {
         String key = key(track, maxSize);
         view.setTag(key);
@@ -61,6 +69,11 @@ final class CoverLoader {
     }
 
     void load(final ImageView view, final Track track, int fallbackColor, final int maxSize) {
+        load(view, track, fallbackColor, maxSize, false, 0);
+    }
+
+    private void load(final ImageView view, final Track track, int fallbackColor,
+            final int maxSize, boolean smooth, int transitionDuration) {
         if (closed) {
             return;
         }
@@ -71,24 +84,24 @@ final class CoverLoader {
         view.setTag(key);
         Bitmap cached = cache.get(key);
         if (cached != null && !cached.isRecycled()) {
-            view.setImageBitmap(cached);
+            applyBitmap(view, cached, fallbackColor, smooth, transitionDuration);
             return;
         }
         Bitmap thumbnail = maxSize == THUMB_SIZE ? null : cache.get(key(track, THUMB_SIZE));
         if (thumbnail != null && !thumbnail.isRecycled()) {
-            view.setImageBitmap(thumbnail);
-        } else {
+            applyBitmap(view, thumbnail, fallbackColor, smooth, transitionDuration);
+        } else if (!smooth || view.getDrawable() == null) {
             view.setImageDrawable(null);
             view.setBackgroundColor(fallbackColor);
         }
         synchronized (pendingTargets) {
-            ArrayList<WeakReference<ImageView>> waiting = pendingTargets.get(key);
+            ArrayList<PendingTarget> waiting = pendingTargets.get(key);
             if (waiting != null) {
-                waiting.add(new WeakReference<>(view));
+                waiting.add(new PendingTarget(view, fallbackColor, smooth, transitionDuration));
                 return;
             }
             waiting = new ArrayList<>();
-            waiting.add(new WeakReference<>(view));
+            waiting.add(new PendingTarget(view, fallbackColor, smooth, transitionDuration));
             pendingTargets.put(key, waiting);
         }
         try {
@@ -111,18 +124,24 @@ final class CoverLoader {
                         cacheThumbnail(track, bitmap);
                     }
                 }
-                final ArrayList<WeakReference<ImageView>> targets;
+                final ArrayList<PendingTarget> targets;
                 synchronized (pendingTargets) {
                     targets = pendingTargets.remove(key);
                 }
                 mainHandler.post(() -> {
-                    if (closed || bitmap == null || targets == null) {
+                    if (closed || targets == null) {
                         return;
                     }
-                    for (WeakReference<ImageView> reference : targets) {
-                        ImageView target = reference.get();
+                    for (PendingTarget pending : targets) {
+                        ImageView target = pending.view.get();
                         if (target != null && key.equals(target.getTag())) {
-                            target.setImageBitmap(bitmap);
+                            if (bitmap == null) {
+                                applyFallback(target, pending.fallbackColor,
+                                        pending.smooth, pending.transitionDuration);
+                            } else {
+                                applyBitmap(target, bitmap, pending.fallbackColor,
+                                        pending.smooth, pending.transitionDuration);
+                            }
                         }
                     }
                 });
@@ -190,6 +209,55 @@ final class CoverLoader {
         cache.put(key, Bitmap.createScaledBitmap(fullCover,
                 Math.max(1, Math.round(width * scale)),
                 Math.max(1, Math.round(height * scale)), true));
+    }
+
+    private void applyBitmap(ImageView view, Bitmap bitmap, int fallbackColor,
+            boolean smooth, int transitionDuration) {
+        if (!smooth || transitionDuration <= 0) {
+            view.setImageBitmap(bitmap);
+            return;
+        }
+        applyDrawable(view, new BitmapDrawable(view.getResources(), bitmap),
+                fallbackColor, transitionDuration);
+    }
+
+    private void applyFallback(ImageView view, int fallbackColor, boolean smooth,
+            int transitionDuration) {
+        view.setBackgroundColor(fallbackColor);
+        if (!smooth || transitionDuration <= 0 || view.getDrawable() == null) {
+            view.setImageDrawable(null);
+            return;
+        }
+        applyDrawable(view, new ColorDrawable(fallbackColor), fallbackColor,
+                transitionDuration);
+    }
+
+    private void applyDrawable(ImageView view, Drawable next, int fallbackColor,
+            int transitionDuration) {
+        Drawable previous = view.getDrawable();
+        if (previous == null) {
+            previous = new ColorDrawable(fallbackColor);
+        }
+        TransitionDrawable transition = new TransitionDrawable(
+                new Drawable[] {previous, next});
+        transition.setCrossFadeEnabled(true);
+        view.setImageDrawable(transition);
+        transition.startTransition(transitionDuration);
+    }
+
+    private static final class PendingTarget {
+        final WeakReference<ImageView> view;
+        final int fallbackColor;
+        final boolean smooth;
+        final int transitionDuration;
+
+        PendingTarget(ImageView view, int fallbackColor, boolean smooth,
+                int transitionDuration) {
+            this.view = new WeakReference<>(view);
+            this.fallbackColor = fallbackColor;
+            this.smooth = smooth;
+            this.transitionDuration = transitionDuration;
+        }
     }
 
     private Bitmap read(Track track, int maxSize) {

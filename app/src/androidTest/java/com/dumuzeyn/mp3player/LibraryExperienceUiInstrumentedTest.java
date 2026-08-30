@@ -77,6 +77,20 @@ public class LibraryExperienceUiInstrumentedTest {
                 () -> host.navigationState.tabIndex == LibraryTabs.FAVORITES
                         && findText(host.list, TextView.class, track.title) != null);
 
+        instrumentation.runOnMainSync(() -> {
+            host.switchTabAnimated(LibraryTabs.PLAYLISTS, 1);
+            assertNotNull("Playlist preview was empty during the first transition frame",
+                    findText(host.contentHost, TextView.class, "UI smoke"));
+        });
+        InstrumentedTestSupport.waitFor("Playlists tab did not open", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.PLAYLISTS
+                        && findText(host.list, TextView.class, "UI smoke") != null);
+        FrameLayoutCover playlistCover = find(host.list, FrameLayoutCover.class);
+        assertNotNull(playlistCover);
+        assertEquals("Playlist artwork must not keep an empty transition layer",
+                1, playlistCover.getChildCount());
+        assertTrue(playlistCover.getChildAt(0).getAlpha() > 0.99f);
+
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
         InstrumentedTestSupport.waitFor("Settings tab did not open", 5000L,
@@ -164,7 +178,7 @@ public class LibraryExperienceUiInstrumentedTest {
                 .commit();
         context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
                 .putString("language", "ru")
-                .putBoolean("animations", false)
+                .putBoolean("animations", true)
                 .putBoolean("particlesEnabled", false)
                 .commit();
         ArrayList<Track> tracks = new ArrayList<>();

@@ -22,6 +22,8 @@ final class TrackArtworkUi implements AutoCloseable {
         int secondaryActiveColor();
 
         int inactiveColor();
+
+        boolean animationsEnabled();
     }
 
     private final Context context;
@@ -47,6 +49,16 @@ final class TrackArtworkUi implements AutoCloseable {
         }
     }
 
+    void loadCoverSmooth(ImageView view, Track track, int fallbackColor) {
+        registerCover(view, track);
+        if (dependencies.renderingPreview()) {
+            coverLoader.loadCachedOnly(view, track, fallbackColor, CoverLoader.THUMB_SIZE);
+        } else {
+            coverLoader.loadSmooth(view, track, fallbackColor, CoverLoader.THUMB_SIZE,
+                    dependencies.animationsEnabled() ? 320 : 0);
+        }
+    }
+
     void loadUnregisteredCover(ImageView view, Track track, int fallbackColor, int maxSize) {
         if (view instanceof RotatingCoverImageView) {
             ((RotatingCoverImageView) view).bindTrack(track);
@@ -58,7 +70,9 @@ final class TrackArtworkUi implements AutoCloseable {
         dependencies.activeRows().forEachCover((uri, cover) -> {
             Track track = dependencies.findTrack(uri);
             if (track != null) {
-                coverLoader.load(cover, track, dependencies.inactiveColor());
+                coverLoader.loadSmooth(cover, track, dependencies.inactiveColor(),
+                        CoverLoader.THUMB_SIZE,
+                        dependencies.animationsEnabled() ? 180 : 0);
             }
         });
     }

@@ -10,6 +10,7 @@ final class TrackArtworkDependencies implements TrackArtworkUi.Dependencies {
     private final IntValueProvider activeColor;
     private final IntValueProvider secondaryColor;
     private final IntValueProvider inactiveColor;
+    private final BooleanValueProvider animations;
 
     TrackArtworkDependencies(BooleanValueProvider preview,
             ValueProvider<SongRowStateRegistry> rows,
@@ -18,7 +19,8 @@ final class TrackArtworkDependencies implements TrackArtworkUi.Dependencies {
             BooleanValueProvider playing,
             IntValueProvider activeColor,
             IntValueProvider secondaryColor,
-            IntValueProvider inactiveColor) {
+            IntValueProvider inactiveColor,
+            BooleanValueProvider animations) {
         this.preview = preview;
         this.rows = rows;
         this.trackFinder = trackFinder;
@@ -27,6 +29,7 @@ final class TrackArtworkDependencies implements TrackArtworkUi.Dependencies {
         this.activeColor = activeColor;
         this.secondaryColor = secondaryColor;
         this.inactiveColor = inactiveColor;
+        this.animations = animations;
     }
 
     @Override
@@ -67,5 +70,10 @@ final class TrackArtworkDependencies implements TrackArtworkUi.Dependencies {
     @Override
     public int inactiveColor() {
         return inactiveColor.get();
+    }
+
+    @Override
+    public boolean animationsEnabled() {
+        return animations.get();
     }
 }
