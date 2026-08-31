@@ -1,4 +1,4 @@
-# Contributing to MP3 Player Voltune
+# Contributing to Voltune
 
 Thank you for improving the project. Keep changes focused and preserve the existing offline-first behavior.
 

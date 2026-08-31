@@ -51,8 +51,18 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
             }
             if (!tracks.isEmpty()) {
                 String name = english ? group.nameEnglish : group.nameRussian;
-                result.computeIfAbsent(name, ignored -> new ArrayList<>()).addAll(tracks);
-                summaries.computeIfAbsent(name, ignored -> new TempoSummary()).add(group);
+                ArrayList<Track> namedTracks = result.get(name);
+                if (namedTracks == null) {
+                    namedTracks = new ArrayList<>();
+                    result.put(name, namedTracks);
+                }
+                namedTracks.addAll(tracks);
+                TempoSummary summary = summaries.get(name);
+                if (summary == null) {
+                    summary = new TempoSummary();
+                    summaries.put(name, summary);
+                }
+                summary.add(group);
             }
         }
         return result;

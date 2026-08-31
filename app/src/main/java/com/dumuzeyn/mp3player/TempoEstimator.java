@@ -3,7 +3,6 @@ package com.dumuzeyn.mp3player;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /** Estimates tempo per decoded range and combines ranges with octave correction. */
@@ -187,7 +186,7 @@ final class TempoEstimator {
 
     private static double weightedMedian(List<Estimate> values) {
         ArrayList<Estimate> ordered = new ArrayList<>(values);
-        Collections.sort(ordered, Comparator.comparingDouble(value -> value.bpm));
+        Collections.sort(ordered, (left, right) -> Double.compare(left.bpm, right.bpm));
         double total = 0.0d;
         for (Estimate value : ordered) {
             total += value.confidence;

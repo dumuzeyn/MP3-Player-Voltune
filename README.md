@@ -1,10 +1,10 @@
 <a id="russian"></a>
 
 <p align="center">
-  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Иконка MP3 Player Voltune">
+  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Иконка Voltune">
 </p>
 
-<h1 align="center">MP3 Player Voltune</h1>
+<h1 align="center">Voltune</h1>
 
 <p align="center">
   <strong>Ваша музыка. Ваши правила. Никаких аккаунтов и подписок.</strong>
@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.2.0-9b4dff?style=for-the-badge" alt="Скачать MP3 Player Voltune">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.3.0-9b4dff?style=for-the-badge" alt="Скачать Voltune">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -44,12 +44,12 @@ Voltune превращает папку с музыкой в удобную ли
 
 ## Большая библиотека остаётся удобной
 
-Песни, избранное, плейлисты, группы по звучанию, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
+Песни, избранное, плейлисты, похожие треки, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
 
-Вкладка «Звучание» локально анализирует короткие участки аудио и объединяет похожие песни по темпу, энергии, динамике, спектру и тембру. Названия вроде «Быстрый ритм» или «Глубокий бас» описывают группы относительно текущей коллекции. Аудио и профили не отправляются в интернет.
+Вкладка «Похожие» локально анализирует несколько участков композиции и объединяет треки по темпу, энергии, динамике, спектру и тембру. Устойчивые названия вроде «Медленный темп · глубокий бас» строятся из реальных характеристик группы, а BPM учитывается только при достаточной уверенности. Аудио и профили не отправляются в интернет.
 
 <p align="center">
-  <img src="docs/screenshots/ru/library.png" width="36%" alt="Библиотека песен MP3 Player Voltune">
+  <img src="docs/screenshots/ru/library.png" width="36%" alt="Библиотека песен Voltune">
 </p>
 
 ## Полный контроль над воспроизведением
@@ -59,7 +59,7 @@ Voltune превращает папку с музыкой в удобную ли
 Воспроизведение продолжает работать в фоне и управляется из системной медиапанели Android. Очередь, текущая песня, позиция и режим повтора сохраняются, чтобы после возвращения не начинать всё заново.
 
 <p align="center">
-  <img src="docs/screenshots/ru/player.png" width="36%" alt="Большой плеер MP3 Player Voltune">
+  <img src="docs/screenshots/ru/player.png" width="36%" alt="Большой плеер Voltune">
 </p>
 
 ## Звук и внешний вид под ваш вкус
@@ -69,13 +69,13 @@ Voltune предлагает эквалайзер с готовыми профи
 Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и прозрачность карточек. Круглые обложки вращаются как пластинки, а скорость вращения и параметры частиц настраиваются отдельно.
 
 <p align="center">
-  <img src="docs/screenshots/ru/settings.png" width="36%" alt="Настройки MP3 Player Voltune">
+  <img src="docs/screenshots/ru/settings.png" width="36%" alt="Настройки Voltune">
 </p>
 
 ## Возможности
 
 - Стартовая «Главная» с продолжением прослушивания, историей, новыми и часто слушаемыми треками.
-- Локальная вкладка «Звучание» с адаптивными группами по реальному аудиосигналу без облака.
+- Локальная вкладка «Похожие» с устойчивыми адаптивными группами по реальному аудиосигналу без облака.
 - Умные плейлисты, глобальный поиск по пяти категориям и просмотр библиотеки по папкам.
 - Очередь Media3 с перетаскиванием, свайпом, «играть следующим» и сохранением в плейлист.
 - Локальные `.lrc`, обычные и встроенные ID3-тексты без сетевых запросов.
@@ -158,7 +158,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 Автор проекта **Зейналов У. Р. о.**
 
-[Репозиторий MP3 Player Voltune](https://github.com/dumuzeyn/MP3-Player-Voltune)
+[Репозиторий Voltune](https://github.com/dumuzeyn/MP3-Player-Voltune)
 
 [Поддержать автора через CloudTips](https://pay.cloudtips.ru/p/54e5a4f9). Поддержка является добровольной и безвозмездной, не открывает подписку, дополнительные функции или другие преимущества.
 
@@ -167,10 +167,10 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 <a id="english"></a>
 
 <p align="center">
-  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="MP3 Player Voltune icon">
+  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Voltune icon">
 </p>
 
-<h1 align="center">MP3 Player Voltune</h1>
+<h1 align="center">Voltune</h1>
 
 <p align="center">
   <strong>Your music. Your rules. No accounts or subscriptions.</strong>
@@ -182,7 +182,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_3.1.0-9b4dff?style=for-the-badge" alt="Download MP3 Player Voltune">
+    <img src="https://img.shields.io/badge/Download_APK-Version_3.3.0-9b4dff?style=for-the-badge" alt="Download Voltune">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
@@ -210,10 +210,12 @@ Voltune turns a folder of downloaded music into a focused personal library. It f
 
 ## A large library that stays manageable
 
-Songs, Favorites, Playlists, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltune creates only the rows that are actually visible.
+Songs, Favorites, Playlists, Similar tracks, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltune creates only the rows that are actually visible.
+
+The Similar tab analyzes several local segments of each song and groups tracks by tempo, energy, dynamics, spectrum, and timbre. Deterministic names describe real group characteristics, while uncertain tempo estimates do not drive the grouping or its name. Audio and profiles never leave the device.
 
 <p align="center">
-  <img src="docs/screenshots/en/library.png" width="36%" alt="MP3 Player Voltune music library">
+  <img src="docs/screenshots/en/library.png" width="36%" alt="Voltune music library">
 </p>
 
 ## Complete playback control
@@ -223,7 +225,7 @@ The mini-player keeps essential actions available throughout the app, while the 
 Playback continues in the background and integrates with Android system media controls. The queue, current song, position, and repeat mode are preserved so returning to the app does not mean starting over.
 
 <p align="center">
-  <img src="docs/screenshots/en/player.png" width="36%" alt="MP3 Player Voltune full player">
+  <img src="docs/screenshots/en/player.png" width="36%" alt="Voltune full player">
 </p>
 
 ## Sound and appearance made personal
@@ -233,12 +235,13 @@ Voltune includes an equalizer with built-in presets and a remembered custom prof
 Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and card opacity. Circular artwork can rotate like a record, with separate controls for rotation speed and particle effects.
 
 <p align="center">
-  <img src="docs/screenshots/en/settings.png" width="36%" alt="MP3 Player Voltune settings">
+  <img src="docs/screenshots/en/settings.png" width="36%" alt="Voltune settings">
 </p>
 
 ## Features
 
 - Home starts with listening continuity, history, recent additions, favorites, and quick access.
+- The local Similar tab builds adaptive groups from real audio features without cloud processing.
 - Smart playlists, five-category global search, and safe folder-based browsing.
 - A Media3-owned queue with drag, swipe, play-next, append, clear, and save-to-playlist actions.
 - Offline sidecar LRC, synchronized lyrics, plain text, and bounded embedded ID3 lyrics.
@@ -321,6 +324,6 @@ Source code is available for personal, educational, and non-commercial use. Comm
 
 Project author: **Zeynalov U. R. o.**
 
-[MP3 Player Voltune repository](https://github.com/dumuzeyn/MP3-Player-Voltune)
+[Voltune repository](https://github.com/dumuzeyn/MP3-Player-Voltune)
 
 [Support the author through CloudTips](https://pay.cloudtips.ru/p/54e5a4f9). Support is voluntary and gratuitous; it does not unlock subscriptions, additional features, or other benefits.
