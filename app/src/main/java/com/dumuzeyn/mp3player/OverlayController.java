@@ -118,6 +118,10 @@ final class OverlayController implements AutoCloseable {
         queueController.open();
     }
 
+    void refreshPlayback() {
+        queueController.refreshPlayback();
+    }
+
     void openAddFavorites() {
         openSelection(host.tr("Add to favorites", "Добавить в избранное"),
                 new HashSet<>(), selected -> {

@@ -19,7 +19,7 @@ final class LocalizationController {
     void refreshTabLabels() {
         host.tabs = new String[]{text("Home", "Главная"), text("Songs", "Песни"),
                 text("Favorites", "Избранное"), text("Playlists", "Плейлисты"),
-                text("Sound", "Звучание"), text("Genres", "Жанры"),
+                text("Similar", "Похожие"), text("Genres", "Жанры"),
                 text("Artists", "Исполнители"),
                 text("Albums", "Альбомы"), text("Folders", "Папки"),
                 text("Settings", "Настройки")};

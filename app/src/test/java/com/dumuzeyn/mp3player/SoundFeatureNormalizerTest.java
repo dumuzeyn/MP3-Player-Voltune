@@ -19,8 +19,18 @@ public class SoundFeatureNormalizerTest {
                 mean += vector[feature];
             }
             assertEquals(0.0d, mean / result.vectors.size(), 1.0e-9d);
-            assertEquals(20.0d, result.means[feature], 1.0e-9d);
+            assertEquals(20.0d, result.centers[feature], 1.0e-9d);
         }
+    }
+
+    @Test
+    public void extremeOutlierDoesNotMoveRobustCenter() {
+        SoundFeatureNormalizer.Result result = SoundFeatureNormalizer.normalize(Arrays.asList(
+                profile("a", filled(10.0d)), profile("b", filled(11.0d)),
+                profile("c", filled(12.0d)), profile("outlier", filled(10000.0d))));
+
+        assertTrue(result.centers[TrackAudioProfile.ENERGY] < 12.0d);
+        assertTrue(Math.abs(result.vectors.get(3)[TrackAudioProfile.ENERGY]) <= 3.61d);
     }
 
     @Test

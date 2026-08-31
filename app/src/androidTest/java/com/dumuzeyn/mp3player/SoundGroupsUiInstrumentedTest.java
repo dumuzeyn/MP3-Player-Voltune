@@ -30,7 +30,7 @@ public class SoundGroupsUiInstrumentedTest {
     @After
     public void tearDown() {
         if (activity != null) {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
     }
 
@@ -43,6 +43,7 @@ public class SoundGroupsUiInstrumentedTest {
         });
         InstrumentedTestSupport.waitFor("Saved sound group did not render", 5000L,
                 () -> findText(host.list, "Яркий тембр") != null);
+        assertNotNull(findText(host.list, "82 BPM · 4 треков"));
         View group = findText(host.list, "Яркий тембр");
         assertNotNull(group);
         View clickable = clickableAncestor(group);
@@ -81,8 +82,17 @@ public class SoundGroupsUiInstrumentedTest {
             store.saveProfile(TrackAudioProfile.analyzed(tracks.get(index), features));
             ids.add(tracks.get(index).trackId);
         }
-        store.replaceGroups(Arrays.asList(new SoundGroup("sound-ui", "Яркий тембр",
-                "Bright timbre", new double[TrackAudioProfile.FEATURE_COUNT], ids)));
+        double[] firstCentroid = new double[TrackAudioProfile.FEATURE_COUNT];
+        firstCentroid[TrackAudioProfile.BPM] = 80.0d;
+        firstCentroid[TrackAudioProfile.TEMPO_CONFIDENCE] = 0.9d;
+        double[] secondCentroid = new double[TrackAudioProfile.FEATURE_COUNT];
+        secondCentroid[TrackAudioProfile.BPM] = 84.0d;
+        secondCentroid[TrackAudioProfile.TEMPO_CONFIDENCE] = 0.9d;
+        store.replaceGroups(Arrays.asList(
+                new SoundGroup("sound-ui-a", "Яркий тембр", "Bright timbre",
+                        firstCentroid, new ArrayList<>(ids.subList(0, 2))),
+                new SoundGroup("sound-ui-b", "Яркий тембр", "Bright timbre",
+                        secondCentroid, new ArrayList<>(ids.subList(2, 4)))));
         store.close();
 
         Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(

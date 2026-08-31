@@ -1,6 +1,8 @@
 package com.dumuzeyn.mp3player;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -34,7 +36,7 @@ public class TextClippingInstrumentedTest {
     @After
     public void tearDown() {
         if (activity != null) {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
     }
 
@@ -76,14 +78,37 @@ public class TextClippingInstrumentedTest {
 
     @Test
     public void homeTabStartsCenteredWithoutDuplicateContentTitle() {
+        Context context = ApplicationProvider.getApplicationContext();
+        context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
+                .clear().commit();
         MainActivityCore host = launchRussianActivity();
-        InstrumentedTestSupport.waitFor("Home tab was not centered", 5000L,
-                () -> activeTabCenterOffset(host) <= 2);
+        assertEquals("Voltune", host.getString(R.string.app_name));
+        assertEquals("Похожие", host.tabs[LibraryTabs.SOUND]);
+        assertHomeTabCentered(host, "clean launch");
         List<String> duplicates = new ArrayList<>();
         instrumentation.runOnMainSync(() -> collectExactText(
                 host.list, host.tabs[LibraryTabs.HOME], duplicates));
         assertTrue("Active tab title is duplicated in content: " + duplicates,
                 duplicates.isEmpty());
+
+        InstrumentedTestSupport.finishActivity(instrumentation, activity);
+        activity = null;
+        MainActivityCore relaunched = launchRussianActivity();
+        assertHomeTabCentered(relaunched, "second launch");
+    }
+
+    @Test
+    public void homeContentIsReusedAfterSectionSwitch() {
+        MainActivityCore host = launchRussianActivity();
+        View firstHomeContent = host.list.getChildAt(0);
+        instrumentation.runOnMainSync(() -> {
+            host.navigationState.tabIndex = LibraryTabs.FAVORITES;
+            host.render();
+            host.navigationState.tabIndex = LibraryTabs.HOME;
+            host.render();
+        });
+        assertSame("Home content was rebuilt after returning from another section",
+                firstHomeContent, host.list.getChildAt(0));
     }
 
     private MainActivityCore launchRussianActivity() {
@@ -106,7 +131,10 @@ public class TextClippingInstrumentedTest {
         assertNotNull("MainActivity did not start", activity);
         MainActivityCore host = (MainActivityCore) activity;
         InstrumentedTestSupport.waitFor("Main screen was not laid out", 10000L,
-                () -> host.root != null && host.root.getWidth() > 0);
+                () -> host.root != null && host.root.getWidth() > 0
+                        && host.librarySnapshotApplier.hasAppliedInitialSnapshot()
+                        && host.list != null && host.list.getChildCount() > 0
+                        && host.list.getChildAt(0).getHeight() > 0);
         return host;
     }
 
@@ -156,6 +184,11 @@ public class TextClippingInstrumentedTest {
             }
         }
         return closest;
+    }
+
+    private static void assertHomeTabCentered(MainActivityCore host, String launchName) {
+        InstrumentedTestSupport.waitFor("Home tab was not centered on " + launchName,
+                5000L, () -> activeTabCenterOffset(host) <= 2);
     }
 
     private static void collectExactText(View view, String expected, List<String> found) {

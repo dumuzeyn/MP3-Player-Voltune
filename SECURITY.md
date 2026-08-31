@@ -2,7 +2,7 @@
 
 ## Supported version
 
-Security fixes are applied to the latest published release of MP3 Player Voltune.
+Security fixes are applied to the latest published release of Voltune.
 
 ## Reporting a vulnerability
 

@@ -3,8 +3,8 @@ package com.dumuzeyn.mp3player;
 import java.util.Locale;
 
 final class TrackAudioProfile {
-    static final int ANALYSIS_VERSION = 1;
-    static final int FEATURE_COUNT = 18;
+    static final int ANALYSIS_VERSION = 2;
+    static final int FEATURE_COUNT = 19;
     static final int BPM = 0;
     static final int ENERGY = 1;
     static final int LOUDNESS = 2;
@@ -17,6 +17,8 @@ final class TrackAudioProfile {
     static final int TREBLE = 9;
     static final int RHYTHM = 10;
     static final int CONTRAST = 11;
+    static final int TEMPO_CONFIDENCE = 12;
+    static final int TIMBRE_START = 13;
 
     final String trackId;
     final int analysisVersion;

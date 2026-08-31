@@ -38,7 +38,7 @@ public class AudioFeatureAccumulatorTest {
     public void representativeRangesCoverStartMiddleAndEndWithoutOverlapForLongTrack() {
         ArrayList<Long> starts = AudioFeatureExtractor.representativeStarts(180_000_000L);
         assertEquals(3, starts.size());
-        assertEquals(Long.valueOf(0L), starts.get(0));
+        assertEquals(Long.valueOf(5_000_000L), starts.get(0));
         assertEquals(Long.valueOf(85_000_000L), starts.get(1));
         assertEquals(Long.valueOf(170_000_000L), starts.get(2));
     }

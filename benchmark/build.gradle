@@ -23,6 +23,7 @@ android {
     buildTypes {
         benchmark {
             debuggable false
+            signingConfig signingConfigs.debug
             minifyEnabled true
             proguardFiles "proguard-rules.pro"
             matchingFallbacks = ["release"]

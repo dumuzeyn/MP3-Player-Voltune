@@ -50,6 +50,7 @@ final class MainActivityViewController {
             host.songsView.refreshPlayback();
         }
         host.playlistController.refreshPlaybackState();
+        host.overlayController.refreshPlayback();
         if (host.sourcePlayButton != null) {
             host.sourcePlayButton.setText(host.playbackQueueController.isPlayingSource(
                     host.currentVisibleTracks()) ? "Ⅱ" : "▶");

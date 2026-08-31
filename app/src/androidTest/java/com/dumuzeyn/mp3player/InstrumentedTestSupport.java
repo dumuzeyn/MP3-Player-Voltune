@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import android.app.Instrumentation;
+import android.app.Activity;
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
@@ -61,6 +62,31 @@ final class InstrumentedTestSupport {
             SystemClock.sleep(100L);
         }
         throw new AssertionError(message);
+    }
+
+    static void finishActivity(Instrumentation instrumentation, Activity activity) {
+        finishActivity(instrumentation, activity, false);
+    }
+
+    static void finishAndRemoveTask(Instrumentation instrumentation, Activity activity) {
+        finishActivity(instrumentation, activity, true);
+    }
+
+    private static void finishActivity(Instrumentation instrumentation, Activity activity,
+            boolean removeTask) {
+        if (activity == null || activity.isDestroyed()) {
+            return;
+        }
+        instrumentation.runOnMainSync(() -> {
+            if (removeTask) {
+                activity.finishAndRemoveTask();
+            } else {
+                activity.finish();
+            }
+        });
+        waitFor("Activity did not start finishing", 5000L, activity::isFinishing);
+        instrumentation.waitForIdleSync();
+        SystemClock.sleep(250L);
     }
 
     static void runShellCommand(Instrumentation instrumentation, String command) throws Exception {

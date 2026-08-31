@@ -28,7 +28,7 @@ public class AccessibilityInstrumentedTest {
     @After
     public void tearDown() {
         if (activity != null) {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
     }
 

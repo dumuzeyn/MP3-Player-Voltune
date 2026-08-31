@@ -18,6 +18,7 @@ final class QueueAdapter extends ListAdapter<Track, QueueAdapter.Holder> {
 
     private final MainActivityCore host;
     private final Listener listener;
+    private String currentTrackId = "";
     private static final DiffUtil.ItemCallback<Track> DIFF =
             new DiffUtil.ItemCallback<Track>() {
                 @Override public boolean areItemsTheSame(@NonNull Track oldItem,
@@ -36,6 +37,7 @@ final class QueueAdapter extends ListAdapter<Track, QueueAdapter.Holder> {
         this.host = host;
         this.listener = listener;
         setHasStableIds(true);
+        captureCurrentTrack();
         submitTracks(tracks);
     }
 
@@ -58,12 +60,24 @@ final class QueueAdapter extends ListAdapter<Track, QueueAdapter.Holder> {
         Track track = getItem(position);
         holder.container.addView(host.songsRenderer.queueRow(track,
                 () -> remove(holder.getBindingAdapterPosition()),
-                () -> listener.play(holder.getBindingAdapterPosition())),
+                () -> {
+                    listener.play(holder.getBindingAdapterPosition());
+                    host.uiHandler.postDelayed(this::refreshPlayback, 80L);
+                }),
                 new FrameLayout.LayoutParams(-1, -2));
     }
 
     void submitTracks(List<Track> tracks) {
-        submitList(new ArrayList<>(tracks));
+        submitList(new ArrayList<>(tracks), this::refreshPlayback);
+    }
+
+    void refreshPlayback() {
+        String previous = currentTrackId;
+        captureCurrentTrack();
+        notifyTrack(previous);
+        if (!previous.equals(currentTrackId)) {
+            notifyTrack(currentTrackId);
+        }
     }
 
     boolean move(int from, int to) {
@@ -86,6 +100,24 @@ final class QueueAdapter extends ListAdapter<Track, QueueAdapter.Holder> {
         tracks.remove(position);
         submitList(tracks);
         listener.remove(position);
+    }
+
+    private void captureCurrentTrack() {
+        Track current = host.playbackStateProvider.currentTrack();
+        currentTrackId = current == null ? "" : current.trackId;
+    }
+
+    private void notifyTrack(String trackId) {
+        if (trackId.isEmpty()) {
+            return;
+        }
+        List<Track> tracks = getCurrentList();
+        for (int index = 0; index < tracks.size(); index++) {
+            if (trackId.equals(tracks.get(index).trackId)) {
+                notifyItemChanged(index);
+                return;
+            }
+        }
     }
 
     static final class Holder extends RecyclerView.ViewHolder {

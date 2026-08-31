@@ -23,6 +23,10 @@ abstract class TrackGroupMenuRenderer implements MenuRenderer {
 
     abstract int cardOpacity();
 
+    String groupSubtitle(String name, ArrayList<Track> tracks) {
+        return tracks.size() + " " + host.tr("tracks", "треков");
+    }
+
     @Override
     public boolean needsMiniSpacer() {
         return true;
@@ -77,7 +81,7 @@ abstract class TrackGroupMenuRenderer implements MenuRenderer {
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         labels.addView(title);
-        labels.addView(host.uiFactory.text(tracks.size() + " " + host.tr("songs", "песен"), 13, false));
+        labels.addView(host.uiFactory.text(groupSubtitle(name, tracks), 13, false));
         row.addView(labels, new LinearLayout.LayoutParams(0, host.dp(62), 1.0f));
 
         Button play = host.uiFactory.icon(host.playbackQueueController.isPlayingSource(tracks) ? "Ⅱ" : "▶");

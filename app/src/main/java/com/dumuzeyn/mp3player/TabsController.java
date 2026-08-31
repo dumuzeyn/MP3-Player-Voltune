@@ -20,12 +20,17 @@ final class TabsController {
     private Button transitionTo;
     private float transitionFromX;
     private float transitionToX;
+    private boolean infiniteLoopAttached;
+    private int lastViewportWidth;
 
     TabsController(MainActivityCore host) {
         this.host = host;
     }
 
     void buildTabs(LinearLayout page) {
+        cancelScrollAnimation();
+        infiniteLoopAttached = false;
+        lastViewportWidth = 0;
         LinearLayout container = new LinearLayout(host);
         container.setOrientation(LinearLayout.VERTICAL);
         container.addView(host.uiFactory.lineView(), new LinearLayout.LayoutParams(-1, 1));
@@ -57,10 +62,22 @@ final class TabsController {
                 if (right <= left || host.tabRow.getWidth() <= 0) {
                     return;
                 }
-                view.removeOnLayoutChangeListener(this);
+                int viewportWidth = right - left;
+                if (viewportWidth == lastViewportWidth && infiniteLoopAttached) {
+                    return;
+                }
+                lastViewportWidth = viewportWidth;
                 scrollView.post(() -> {
-                    attachInfiniteScrollLoop();
-                    positionIndicatorToActive();
+                    if (host.tabsScroll != scrollView) {
+                        return;
+                    }
+                    if (!infiniteLoopAttached) {
+                        infiniteLoopAttached = true;
+                        attachInfiniteScrollLoop();
+                    } else {
+                        scrollToActiveNow(false, host.navigationState.tabIndex);
+                        positionIndicatorToActive();
+                    }
                 });
             }
         });

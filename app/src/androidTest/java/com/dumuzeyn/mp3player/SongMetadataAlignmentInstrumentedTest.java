@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -32,6 +34,15 @@ public class SongMetadataAlignmentInstrumentedTest {
         assertEquals(waveform.getBottom(), duration.getBottom());
         assertEquals(dp(context, 4), card.getHeight() - waveform.getBottom());
         assertTrue(waveform.getTop() >= item.findViewById(R.id.song_title).getBottom());
+
+        View marker = item.findViewById(R.id.song_current_marker);
+        assertEquals(context.getResources().getDimensionPixelSize(
+                R.dimen.now_playing_indicator_width), marker.getWidth());
+        assertEquals(context.getResources().getDimensionPixelSize(
+                R.dimen.now_playing_indicator_height), marker.getHeight());
+        NowPlayingIndicator.style(marker, Color.MAGENTA);
+        assertTrue(marker.getBackground() instanceof GradientDrawable);
+        assertTrue(((GradientDrawable) marker.getBackground()).getCornerRadius() > 0.0f);
     }
 
     private static int dp(Context context, int value) {

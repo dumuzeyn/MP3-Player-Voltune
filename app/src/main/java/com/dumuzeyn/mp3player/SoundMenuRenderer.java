@@ -4,10 +4,13 @@ import android.text.TextUtils;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class SoundMenuRenderer extends TrackGroupMenuRenderer {
+    private final Map<String, TempoSummary> summaries = new HashMap<>();
+
     SoundMenuRenderer(MainActivityCore host) {
         super(host);
     }
@@ -16,18 +19,18 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
     public void render() {
         addStatus();
         if (!host.soundAnalysisController.enabled()) {
-            addMessage(host.tr("Sound analysis is disabled in Settings",
-                    "Анализ звучания выключен в настройках"));
+            addMessage(host.tr("Similar-track analysis is disabled in Settings",
+                    "Анализ похожих треков выключен в настройках"));
             return;
         }
         if (host.libraryState.tracks.size() < 4) {
-            addMessage(host.tr("Add more songs to create sound groups",
-                    "Добавьте больше песен для групп по звучанию"));
+            addMessage(host.tr("Add more songs to find similar tracks",
+                    "Добавьте больше песен, чтобы найти похожие треки"));
             return;
         }
         if (host.soundAnalysisController.groups().isEmpty()) {
-            addMessage(host.tr("Groups will appear as audio profiles become ready",
-                    "Группы появятся по мере готовности звуковых профилей"));
+            addMessage(host.tr("Similar tracks will appear after local analysis",
+                    "Похожие треки появятся после локального анализа"));
             return;
         }
         super.render();
@@ -36,6 +39,7 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
     @Override
     Map<String, ArrayList<Track>> groupedTracks() {
         LinkedHashMap<String, ArrayList<Track>> result = new LinkedHashMap<>();
+        summaries.clear();
         boolean english = "en".equals(host.appearanceState.language);
         for (SoundGroup group : host.soundAnalysisController.groups()) {
             ArrayList<Track> tracks = new ArrayList<>();
@@ -46,7 +50,19 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
                 }
             }
             if (!tracks.isEmpty()) {
-                result.put(english ? group.nameEnglish : group.nameRussian, tracks);
+                String name = english ? group.nameEnglish : group.nameRussian;
+                ArrayList<Track> namedTracks = result.get(name);
+                if (namedTracks == null) {
+                    namedTracks = new ArrayList<>();
+                    result.put(name, namedTracks);
+                }
+                namedTracks.addAll(tracks);
+                TempoSummary summary = summaries.get(name);
+                if (summary == null) {
+                    summary = new TempoSummary();
+                    summaries.put(name, summary);
+                }
+                summary.add(group);
             }
         }
         return result;
@@ -54,7 +70,17 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
 
     @Override
     String unknownGroupName() {
-        return host.tr("Sound group", "Группа звучания");
+        return host.tr("Similar tracks", "Похожие треки");
+    }
+
+    @Override
+    String groupSubtitle(String name, ArrayList<Track> tracks) {
+        TempoSummary summary = summaries.get(name);
+        String count = tracks.size() + " " + host.tr("tracks", "треков");
+        if (summary == null || summary.weight == 0.0d) {
+            return count;
+        }
+        return Math.round(summary.weightedBpm / summary.weight) + " BPM · " + count;
     }
 
     @Override
@@ -74,7 +100,7 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         } else if (analysis.queued() > 0) {
             status = host.tr("Waiting: ", "В очереди: ") + analysis.queued();
         } else {
-            status = host.tr("Sound profiles are up to date", "Звуковые профили актуальны");
+            status = host.tr("Similar tracks are up to date", "Похожие треки актуальны");
         }
         String progress = analysis.analyzed() + " / " + analysis.total();
         if (analysis.failed() > 0) {
@@ -108,5 +134,24 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         message.setGravity(android.view.Gravity.CENTER);
         message.setPadding(host.dp(20), host.dp(12), host.dp(20), host.dp(12));
         host.list.addView(message, new LinearLayout.LayoutParams(-1, host.dp(82)));
+    }
+
+    private static final class TempoSummary {
+        double weightedBpm;
+        double weight;
+
+        void add(SoundGroup group) {
+            if (group.centroid.length <= TrackAudioProfile.TEMPO_CONFIDENCE) {
+                return;
+            }
+            double bpm = group.centroid[TrackAudioProfile.BPM];
+            double confidence = group.centroid[TrackAudioProfile.TEMPO_CONFIDENCE];
+            if (bpm <= 0.0d || confidence < 0.45d) {
+                return;
+            }
+            int size = Math.max(1, group.trackIds.size());
+            weightedBpm += bpm * size;
+            weight += size;
+        }
     }
 }

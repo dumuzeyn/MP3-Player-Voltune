@@ -1,7 +1,10 @@
 package com.dumuzeyn.mp3player;
 
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.ViewTreeObserver;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +22,10 @@ final class MainRenderer {
     private final MenuRenderer settingsRenderer;
     private final MenuRenderer foldersRenderer;
     private final Map<String, Integer> scrollPositions = new HashMap<>();
+    private final SongRowStateRegistry cachedHomeRows = new SongRowStateRegistry();
+    private LinearLayout cachedHomeContent;
+    private HomeContent cachedHomeModel;
+    private String cachedHomeKey = "";
     private String renderedMenuKey;
 
     MainRenderer(MainActivityCore host) {
@@ -59,10 +66,14 @@ final class MainRenderer {
         if (host.contentScroll != null) {
             host.contentScroll.setVisibility(View.VISIBLE);
         }
+        if (host.navigationState.tabIndex == LibraryTabs.HOME && attachCachedHome()) {
+            restoreCurrentScrollPosition();
+            host.playerUiController.updateMini();
+            return;
+        }
         host.list.removeAllViews();
         host.songRows.clear();
         host.sourcePlayButton = null;
-        host.renderSectionHeader();
         MenuRenderer renderer = rendererForTab();
         int scrollY = scrollPositionFor(
                 host.navigationState.tabIndex, host.navigationState.search);
@@ -70,9 +81,14 @@ final class MainRenderer {
                 || host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
             host.songsRenderer.prepareNextRenderForScroll(scrollY);
         }
-        renderer.render();
-        if (renderer.needsMiniSpacer()) {
-            host.addMiniSpacerIfNeeded();
+        if (host.navigationState.tabIndex == LibraryTabs.HOME) {
+            renderAndCacheHome(renderer);
+        } else {
+            host.renderSectionHeader();
+            renderer.render();
+            if (renderer.needsMiniSpacer()) {
+                host.addMiniSpacerIfNeeded();
+            }
         }
         restoreCurrentScrollPosition();
         host.playerUiController.updateMini();
@@ -81,6 +97,7 @@ final class MainRenderer {
     void captureScrollBeforeUiRebuild() {
         rememberCurrentScrollPosition();
         renderedMenuKey = null;
+        invalidateHomeCache();
     }
 
     void captureCurrentScrollPosition() {
@@ -155,15 +172,21 @@ final class MainRenderer {
             host.navigationState.renderingTabPreview = true;
             host.sourcePlayButton = null;
             target.removeAllViews();
-            host.renderSectionHeader();
             MenuRenderer renderer = rendererForTab(targetIndex);
             if (targetIndex == LibraryTabs.SONGS
                     || targetIndex == LibraryTabs.FAVORITES) {
                 host.songsRenderer.prepareNextRenderForScroll(scrollY);
             }
-            renderer.render();
-            if (renderer.needsMiniSpacer()) {
-                host.addMiniSpacerIfNeeded();
+            if (targetIndex == LibraryTabs.HOME && attachCachedHome()) {
+                // Reuse the detached Home hierarchy, artwork, and playback row bindings.
+            } else if (targetIndex == LibraryTabs.HOME) {
+                renderAndCacheHome(renderer);
+            } else {
+                host.renderSectionHeader();
+                renderer.render();
+                if (renderer.needsMiniSpacer()) {
+                    host.addMiniSpacerIfNeeded();
+                }
             }
             previewState = new PreviewState(
                     scrollY,
@@ -199,6 +222,65 @@ final class MainRenderer {
 
     void discardPreview() {
         host.previewSongRows.clear();
+    }
+
+    void invalidateHomeCache() {
+        cachedHomeContent = null;
+        cachedHomeModel = null;
+        cachedHomeKey = "";
+        cachedHomeRows.clear();
+    }
+
+    private boolean attachCachedHome() {
+        if (cachedHomeContent == null || cachedHomeModel != host.libraryState.homeContent
+                || !cachedHomeKey.equals(homeKey())) {
+            return false;
+        }
+        ViewParent parent = cachedHomeContent.getParent();
+        if (parent instanceof ViewGroup && parent != host.list) {
+            ((ViewGroup) parent).removeView(cachedHomeContent);
+        }
+        if (cachedHomeContent.getParent() != host.list) {
+            host.list.removeAllViews();
+            host.list.addView(cachedHomeContent,
+                    new LinearLayout.LayoutParams(-1, -2));
+        }
+        host.activeSongRows().replaceWith(cachedHomeRows);
+        host.activeSongRows().refresh(host.songRowStateResolver());
+        host.sourcePlayButton = null;
+        host.artworkUi.promoteVisibleArtwork();
+        return true;
+    }
+
+    private void renderAndCacheHome(MenuRenderer renderer) {
+        LinearLayout target = host.list;
+        LinearLayout content = new LinearLayout(host);
+        content.setOrientation(LinearLayout.VERTICAL);
+        target.addView(content, new LinearLayout.LayoutParams(-1, -2));
+        host.list = content;
+        try {
+            host.renderSectionHeader();
+            renderer.render();
+            if (renderer.needsMiniSpacer()) {
+                host.addMiniSpacerIfNeeded();
+            }
+        } finally {
+            host.list = target;
+        }
+        cachedHomeContent = content;
+        cachedHomeModel = host.libraryState.homeContent;
+        cachedHomeKey = homeKey();
+        cachedHomeRows.replaceWith(host.activeSongRows());
+    }
+
+    private String homeKey() {
+        Track current = host.playbackStateProvider.currentTrack();
+        return (current == null ? "" : current.trackId) + '|' + host.appearanceState.language
+                + '|' + host.appearanceState.circularCovers + '|' + host.panel
+                + '|' + host.primaryText + '|' + host.secondaryText
+                + '|' + host.appearanceState.playlistCardOpacity
+                + '|' + host.appearanceState.artistCardOpacity
+                + '|' + host.appearanceState.albumCardOpacity;
     }
 
     private int scrollPositionFor(int tabIndex, String search) {

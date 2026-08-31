@@ -5,7 +5,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import org.junit.Test;
 
@@ -14,81 +16,193 @@ public class SoundClusterEngineTest {
     public void emptyAndSmallLibrariesStayUngrouped() {
         SoundClusterEngine engine = new SoundClusterEngine();
         assertTrue(engine.cluster(new ArrayList<>()).isEmpty());
-        assertTrue(engine.cluster(synthetic(3, 1)).isEmpty());
+        assertTrue(engine.cluster(cloud("small", 3, 0, 1L)).isEmpty());
     }
 
     @Test
-    public void clustersAreAdaptiveDeterministicAndNamedRelatively() {
-        ArrayList<TrackAudioProfile> profiles = syntheticClouds(90, 3);
+    public void clearlyDifferentAudioFamiliesDoNotCollapseIntoOneGroup() {
+        ArrayList<TrackAudioProfile> profiles = fourFamilies(24);
+        ArrayList<SoundGroup> groups = new SoundClusterEngine().cluster(profiles);
+
+        assertTrue("groups=" + groups.size(), groups.size() >= 3);
+        assertTrue(largest(groups) < profiles.size() * 0.55d);
+        assertTrue(distinctFamilies(groups, profiles) >= 3);
+    }
+
+    @Test
+    public void oversizedHeterogeneousPopulationIsSplitByCohesion() {
+        ArrayList<TrackAudioProfile> profiles = fourFamilies(20);
+        profiles.addAll(cloud("neutral", 20, 4, 91L));
+
+        ArrayList<SoundGroup> groups = new SoundClusterEngine().cluster(profiles);
+
+        assertTrue(groups.size() >= 3);
+        assertTrue("largest=" + largest(groups), largest(groups) < 70);
+    }
+
+    @Test
+    public void genuinelyDenseLargePopulationIsNotSplitOnlyBecauseItIsLarge() {
+        ArrayList<TrackAudioProfile> profiles = cloud("dense", 140, 4, 22L);
+        ArrayList<SoundGroup> groups = new SoundClusterEngine().cluster(profiles);
+
+        assertTrue("groups=" + groups.size(), groups.size() <= 2);
+        assertTrue(largest(groups) >= 110);
+    }
+
+    @Test
+    public void shuffledInputProducesEquivalentMembership() {
+        ArrayList<TrackAudioProfile> profiles = fourFamilies(20);
         SoundClusterEngine engine = new SoundClusterEngine();
-        ArrayList<SoundGroup> first = engine.cluster(profiles);
-        ArrayList<SoundGroup> second = engine.cluster(profiles);
-
-        assertTrue(first.size() >= 2);
-        assertTrue(first.size() <= Math.ceil(Math.sqrt(profiles.size())));
-        assertEquals(ids(first), ids(second));
-        HashSet<String> names = new HashSet<>();
-        int assigned = 0;
-        for (SoundGroup group : first) {
-            assertEquals(2, group.nameRussian.split(" ").length);
-            assertEquals(2, group.nameEnglish.split(" ").length);
-            assertTrue(names.add(group.nameRussian));
-            assigned += group.trackIds.size();
+        Map<String, String> expected = membership(engine.cluster(profiles));
+        for (int seed = 0; seed < 5; seed++) {
+            ArrayList<TrackAudioProfile> shuffled = new ArrayList<>(profiles);
+            Collections.shuffle(shuffled, new Random(seed));
+            assertEquals(expected, membership(engine.cluster(shuffled)));
         }
-        assertEquals(profiles.size(), assigned);
     }
 
     @Test
-    public void incrementalTrackUsesNearestSavedCentroid() {
-        ArrayList<TrackAudioProfile> profiles = syntheticClouds(80, 2);
+    public void incrementalOutlierIsNotForcedIntoUnrelatedSavedGroup() {
+        ArrayList<TrackAudioProfile> profiles = fourFamilies(16);
         SoundClusterEngine engine = new SoundClusterEngine();
         ArrayList<SoundGroup> groups = engine.cluster(profiles);
-        assertFalse(groups.isEmpty());
-        String assigned = engine.nearestGroup(profiles.get(0).features, profiles, groups);
-        assertFalse(assigned.isEmpty());
+        double[] outlier = values(4);
+        outlier[TrackAudioProfile.BPM] = 55.0d;
+        outlier[TrackAudioProfile.ENERGY] = 0.95d;
+        outlier[TrackAudioProfile.BASS] = 0.95d;
+        outlier[TrackAudioProfile.CENTROID] = 0.95d;
+
+        assertEquals("", engine.nearestGroup(outlier, profiles, groups));
     }
 
     @Test(timeout = 12000L)
     public void syntheticLibrariesScaleToFiveThousandTracks() {
         SoundClusterEngine engine = new SoundClusterEngine();
         for (int size : new int[]{100, 500, 2000, 5000}) {
+            ArrayList<TrackAudioProfile> profiles = new ArrayList<>();
+            int each = size / 4;
+            profiles.addAll(family("slow-" + size, each, 0, size));
+            profiles.addAll(family("fast-" + size, each, 1, size + 1L));
+            profiles.addAll(family("bass-" + size, each, 2, size + 2L));
+            profiles.addAll(family("bright-" + size, size - each * 3, 3, size + 3L));
             long started = System.nanoTime();
-            ArrayList<SoundGroup> groups = engine.cluster(syntheticClouds(size,
-                    Math.max(2, (int) Math.sqrt(size) / 3)));
+            ArrayList<SoundGroup> groups = engine.cluster(profiles);
             long elapsedMs = (System.nanoTime() - started) / 1_000_000L;
-            System.out.println("sound_cluster_profile size=" + size + " elapsedMs="
+            System.out.println("similar_cluster size=" + size + " elapsedMs="
                     + elapsedMs + " groups=" + groups.size());
-            assertFalse("size=" + size, groups.isEmpty());
-            assertTrue("size=" + size, groups.size() <= Math.ceil(Math.sqrt(size)));
+            assertFalse(groups.isEmpty());
             assertTrue("size=" + size + " elapsedMs=" + elapsedMs, elapsedMs < 5000L);
         }
     }
 
-    private static ArrayList<String> ids(ArrayList<SoundGroup> groups) {
-        ArrayList<String> result = new ArrayList<>();
-        for (SoundGroup group : groups) {
-            result.add(group.id + ":" + group.nameRussian);
+    private static ArrayList<TrackAudioProfile> fourFamilies(int each) {
+        ArrayList<TrackAudioProfile> result = new ArrayList<>();
+        result.addAll(family("slow", each, 0, 10L));
+        result.addAll(family("fast", each, 1, 20L));
+        result.addAll(family("bass", each, 2, 30L));
+        result.addAll(family("bright", each, 3, 40L));
+        return result;
+    }
+
+    private static ArrayList<TrackAudioProfile> family(String prefix, int count,
+            int type, long seed) {
+        return cloud(prefix, count, type, seed);
+    }
+
+    private static ArrayList<TrackAudioProfile> cloud(String prefix, int count,
+            int type, long seed) {
+        Random random = new Random(seed);
+        ArrayList<TrackAudioProfile> result = new ArrayList<>();
+        for (int index = 0; index < count; index++) {
+            double[] features = values(type);
+            for (int feature = 0; feature < features.length; feature++) {
+                if (feature == TrackAudioProfile.TEMPO_CONFIDENCE) continue;
+                double scale = feature == TrackAudioProfile.BPM ? 1.4d : 0.008d;
+                features[feature] += random.nextGaussian() * scale;
+            }
+            result.add(profile(prefix + "-" + index, features));
         }
         return result;
     }
 
-    private static ArrayList<TrackAudioProfile> synthetic(int count, int seed) {
-        return syntheticClouds(count, Math.max(1, seed));
+    private static double[] values(int type) {
+        double[] value = new double[TrackAudioProfile.FEATURE_COUNT];
+        value[TrackAudioProfile.BPM] = 108.0d;
+        value[TrackAudioProfile.ENERGY] = 0.14d;
+        value[TrackAudioProfile.LOUDNESS] = -15.0d;
+        value[TrackAudioProfile.DYNAMIC_RANGE] = 9.0d;
+        value[TrackAudioProfile.CENTROID] = 0.30d;
+        value[TrackAudioProfile.BANDWIDTH] = 0.22d;
+        value[TrackAudioProfile.ROLLOFF] = 0.48d;
+        value[TrackAudioProfile.ZERO_CROSSING] = 0.08d;
+        value[TrackAudioProfile.BASS] = 0.22d;
+        value[TrackAudioProfile.TREBLE] = 0.10d;
+        value[TrackAudioProfile.RHYTHM] = 0.10d;
+        value[TrackAudioProfile.CONTRAST] = 1.8d;
+        value[TrackAudioProfile.TEMPO_CONFIDENCE] = 0.90d;
+        for (int index = TrackAudioProfile.TIMBRE_START; index < value.length; index++) {
+            value[index] = (index - TrackAudioProfile.TIMBRE_START) * 0.04d;
+        }
+        if (type == 0) {
+            value[TrackAudioProfile.BPM] = 78.0d;
+            value[TrackAudioProfile.ENERGY] = 0.06d;
+            value[TrackAudioProfile.DYNAMIC_RANGE] = 13.0d;
+        } else if (type == 1) {
+            value[TrackAudioProfile.BPM] = 152.0d;
+            value[TrackAudioProfile.ENERGY] = 0.29d;
+            value[TrackAudioProfile.RHYTHM] = 0.21d;
+        } else if (type == 2) {
+            value[TrackAudioProfile.BPM] = 102.0d;
+            value[TrackAudioProfile.BASS] = 0.56d;
+            value[TrackAudioProfile.CENTROID] = 0.19d;
+        } else if (type == 3) {
+            value[TrackAudioProfile.BPM] = 126.0d;
+            value[TrackAudioProfile.ENERGY] = 0.23d;
+            value[TrackAudioProfile.CENTROID] = 0.58d;
+            value[TrackAudioProfile.TREBLE] = 0.27d;
+        }
+        return value;
     }
 
-    private static ArrayList<TrackAudioProfile> syntheticClouds(int count, int clouds) {
-        Random random = new Random(8843L + count + clouds);
-        ArrayList<TrackAudioProfile> result = new ArrayList<>();
-        for (int index = 0; index < count; index++) {
-            int cloud = index % clouds;
-            double[] features = new double[TrackAudioProfile.FEATURE_COUNT];
-            for (int feature = 0; feature < features.length; feature++) {
-                features[feature] = cloud * 5.0d + feature * 0.1d
-                        + random.nextGaussian() * 0.18d;
+    private static TrackAudioProfile profile(String id, double[] features) {
+        return new TrackAudioProfile(id, TrackAudioProfile.ANALYSIS_VERSION, 1L, 2L, id,
+                SoundAnalysisState.ANALYZED, features, "", "", 0L);
+    }
+
+    private static int largest(ArrayList<SoundGroup> groups) {
+        int result = 0;
+        for (SoundGroup group : groups) result = Math.max(result, group.trackIds.size());
+        return result;
+    }
+
+    private static int distinctFamilies(ArrayList<SoundGroup> groups,
+            ArrayList<TrackAudioProfile> profiles) {
+        Map<String, String> familyByTrack = new HashMap<>();
+        for (TrackAudioProfile profile : profiles) {
+            familyByTrack.put(profile.trackId, profile.trackId.substring(0,
+                    profile.trackId.indexOf('-')));
+        }
+        int separated = 0;
+        for (SoundGroup group : groups) {
+            HashMap<String, Integer> counts = new HashMap<>();
+            for (String id : group.trackIds) {
+                String family = familyByTrack.get(id);
+                counts.put(family, counts.containsKey(family) ? counts.get(family) + 1 : 1);
             }
-            result.add(new TrackAudioProfile(String.format("track-%05d", index),
-                    TrackAudioProfile.ANALYSIS_VERSION, index, index, "fp-" + index,
-                    SoundAnalysisState.ANALYZED, features, "", "", 0L));
+            for (int count : counts.values()) {
+                if (count >= group.trackIds.size() * 0.75d) {
+                    separated++;
+                    break;
+                }
+            }
+        }
+        return separated;
+    }
+
+    private static Map<String, String> membership(ArrayList<SoundGroup> groups) {
+        HashMap<String, String> result = new HashMap<>();
+        for (SoundGroup group : groups) {
+            for (String trackId : group.trackIds) result.put(trackId, group.id);
         }
         return result;
     }

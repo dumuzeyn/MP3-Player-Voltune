@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.3.0 - Similar tracks and responsive Home
+
+- Renamed the Sound section to Similar and changed the user-facing product name to
+  Voltune across the app, launcher label, task preview, and documentation.
+- Replaced sequential sound grouping with robust feature normalization, deterministic
+  multi-start k-means++, adaptive cluster selection, quality checks, heterogeneous
+  oversized-cluster splitting, and bounded outlier assignment.
+- Added multi-segment tempo estimation, half/double-time correction, confidence-aware
+  BPM weighting, and deterministic group names based on absolute audio characteristics.
+- Reused the complete Home view hierarchy across navigation, preserving scroll,
+  artwork, and targeted playback bindings instead of rebuilding every card.
+- Re-centered the looping section selector after the final viewport width is known on
+  first launch, relaunch, window changes, and tablet layouts.
+- Unified the rounded Now Playing indicator across track, queue, and playlist surfaces.
+- Reduced playlist cards to the standard compact 68 dp format while preserving their
+  animated preview and playback, shuffle, rename, and delete actions.
+- Expanded clustering, BPM, UI layout, first-launch, and large-library benchmark checks.
+
 ## 3.2.0 - Local sound groups
 
 - Added the Sound tab immediately after Playlists with locally generated groups that
