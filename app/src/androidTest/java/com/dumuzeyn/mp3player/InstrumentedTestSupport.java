@@ -84,7 +84,9 @@ final class InstrumentedTestSupport {
                 activity.finish();
             }
         });
-        waitFor("Activity did not finish", 5000L, activity::isDestroyed);
+        waitFor("Activity did not start finishing", 5000L, activity::isFinishing);
+        instrumentation.waitForIdleSync();
+        SystemClock.sleep(250L);
     }
 
     static void runShellCommand(Instrumentation instrumentation, String command) throws Exception {

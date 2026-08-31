@@ -144,7 +144,11 @@ final class SoundAnalysisController implements Closeable {
 
     private void closeWorkerResources() {
         if (store != null) {
-            store.close();
+            try {
+                store.close();
+            } catch (RuntimeException error) {
+                VoltuneLog.failure("sound_profile_store_close_failed", error);
+            }
             store = null;
         }
         extractor = null;

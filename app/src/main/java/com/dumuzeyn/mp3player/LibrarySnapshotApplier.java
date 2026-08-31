@@ -10,6 +10,7 @@ final class LibrarySnapshotApplier {
     private final MainActivityCore host;
     private int derivedGeneration;
     private long loadedContentVersion;
+    private volatile boolean initialSnapshotApplied;
 
     LibrarySnapshotApplier(MainActivityCore host) {
         this.host = host;
@@ -27,6 +28,7 @@ final class LibrarySnapshotApplier {
         host.libraryRepository.reindex();
         host.playbackController.restorePersistedUiState();
         host.playbackController.connect();
+        initialSnapshotApplied = true;
         host.render();
         host.soundAnalysisController.onLibraryReady(host.libraryState.tracks);
         host.audioImportController.onLibraryReady();
@@ -34,6 +36,10 @@ final class LibrarySnapshotApplier {
             host.libraryMaintenanceController.run(
                     host.libraryState.tracks, this::applyMaintenance);
         }
+    }
+
+    boolean hasAppliedInitialSnapshot() {
+        return initialSnapshotApplied;
     }
 
     void refreshHome() {

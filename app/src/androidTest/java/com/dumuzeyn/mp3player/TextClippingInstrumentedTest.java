@@ -131,7 +131,10 @@ public class TextClippingInstrumentedTest {
         assertNotNull("MainActivity did not start", activity);
         MainActivityCore host = (MainActivityCore) activity;
         InstrumentedTestSupport.waitFor("Main screen was not laid out", 10000L,
-                () -> host.root != null && host.root.getWidth() > 0);
+                () -> host.root != null && host.root.getWidth() > 0
+                        && host.librarySnapshotApplier.hasAppliedInitialSnapshot()
+                        && host.list != null && host.list.getChildCount() > 0
+                        && host.list.getChildAt(0).getHeight() > 0);
         return host;
     }
 
