@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class SoundAnalysisController implements Closeable {
     private static final String PREFS = "mp3_player_ui";
     private static final String ENABLED = "soundAnalysisEnabled";
+    private static final String CLUSTERING_VERSION = "similarClusteringVersion";
     private static final long CONSTRAINT_RECHECK_MS = 5_000L;
     private final MainActivityCore host;
     private SoundProfileStore store;
@@ -131,6 +132,9 @@ final class SoundAnalysisController implements Closeable {
         LinkedHashMap<String, TrackAudioProfile> profiles = store.loadProfiles();
         groups = store.loadGroups();
         ArrayList<Track> pending = prepareQueue(tracks, profiles);
+        int pendingCount = pending.size();
+        boolean clusteringChanged = host.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getInt(CLUSTERING_VERSION, 0) != SoundClusterEngine.CLUSTERING_VERSION;
         store.pruneEmptyGroups();
         groups = store.loadGroups();
         publishCounts(tracks.size(), profiles, pending.size());
@@ -138,10 +142,11 @@ final class SoundAnalysisController implements Closeable {
         if (!enabled()) {
             return;
         }
-        int usableBefore = usableCount(profiles);
-        boolean majorChange = pending.size() >= Math.max(10, usableBefore / 5);
+        if (clusteringChanged && pending.isEmpty() && usableCount(profiles) >= 4) {
+            rebuildGroups(profiles);
+        }
         for (Track track : pending) {
-            if (!waitUntilRunnable(requestedGeneration)) {
+            if (!runAllowedOrRescheduled(requestedGeneration, tracks)) {
                 return;
             }
             activeTitle = track.title;
@@ -158,7 +163,7 @@ final class SoundAnalysisController implements Closeable {
                 profiles.put(track.trackId, profile);
                 analyzed++;
                 queued = Math.max(0, queued - 1);
-                updateGroupsAfterProfile(profiles, profile, majorChange);
+                updateGroupsAfterProfile(profiles, profile);
             } catch (AudioFeatureExtractor.AnalysisInterruptedException interrupted) {
                 if (!isCurrent(requestedGeneration)) {
                     return;
@@ -184,7 +189,7 @@ final class SoundAnalysisController implements Closeable {
             activeTitle = "";
             notifyUi();
         }
-        if (majorChange || groups.isEmpty()) {
+        if (pendingCount > 0 || clusteringChanged || groups.isEmpty()) {
             rebuildGroups(profiles);
         }
         activeTitle = "";
@@ -211,7 +216,7 @@ final class SoundAnalysisController implements Closeable {
     }
 
     private void updateGroupsAfterProfile(Map<String, TrackAudioProfile> profiles,
-            TrackAudioProfile profile, boolean majorChange) {
+            TrackAudioProfile profile) {
         if (groups.isEmpty() && usableCount(profiles) >= 4) {
             rebuildGroups(profiles);
             return;
@@ -222,7 +227,7 @@ final class SoundAnalysisController implements Closeable {
             store.assign(profile.trackId, groupId);
             groups = store.loadGroups();
         }
-        if (!majorChange && usableCount(profiles) <= 20) {
+        if (usableCount(profiles) <= 20) {
             rebuildGroups(profiles);
         }
     }
@@ -232,22 +237,23 @@ final class SoundAnalysisController implements Closeable {
                 new ArrayList<>(profiles.values()));
         store.replaceGroups(rebuilt);
         groups = store.loadGroups();
+        host.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putInt(CLUSTERING_VERSION, SoundClusterEngine.CLUSTERING_VERSION).apply();
     }
 
-    private boolean waitUntilRunnable(int requestedGeneration) {
-        while (isCurrent(requestedGeneration)) {
-            blockReason = SoundAnalysisConstraints.reason(host, host.isPlaybackPlaying());
-            if (blockReason == SoundAnalysisConstraints.BlockReason.NONE) {
-                return true;
+    private boolean runAllowedOrRescheduled(int requestedGeneration,
+            ArrayList<Track> tracks) {
+        if (!isCurrent(requestedGeneration)) return false;
+        blockReason = SoundAnalysisConstraints.reason(host, host.isPlaybackPlaying());
+        if (blockReason == SoundAnalysisConstraints.BlockReason.NONE) return true;
+        activeTitle = "";
+        notifyUi();
+        host.uiHandler.postDelayed(() -> {
+            if (!closed && enabled() && requestedGeneration == generation.get()) {
+                lastLibrarySignature = Long.MIN_VALUE;
+                onLibraryReady(tracks);
             }
-            notifyUi();
-            try {
-                Thread.sleep(CONSTRAINT_RECHECK_MS);
-            } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
-                return false;
-            }
-        }
+        }, CONSTRAINT_RECHECK_MS);
         return false;
     }
 
