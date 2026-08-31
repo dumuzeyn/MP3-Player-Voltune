@@ -59,29 +59,27 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
         host.uiFactory.makeMarquee(title);
         TextView count = host.uiFactory.text(playlist.uris.size() + " "
                 + host.tr3("tracks", "треков", "♪"), 12, false);
-        titleColumn.addView(title, new LinearLayout.LayoutParams(-1, host.dp(24)));
-        titleColumn.addView(count, new LinearLayout.LayoutParams(-1, host.dp(18)));
+        titleColumn.addView(title, new LinearLayout.LayoutParams(-1, host.dp(22)));
+        titleColumn.addView(count, new LinearLayout.LayoutParams(-1, host.dp(16)));
 
         SmoothPlaylistTicker ticker = new SmoothPlaylistTicker(host);
         ticker.setVisibleLines(1);
-        titleColumn.addView(ticker, new LinearLayout.LayoutParams(-1, host.dp(28)));
+        ticker.setTextSizeSp(12);
+        titleColumn.addView(ticker, new LinearLayout.LayoutParams(-1, host.dp(20)));
         card.addView(titleColumn, new LinearLayout.LayoutParams(0, -1, 1.0f));
 
-        LinearLayout actions = new LinearLayout(host);
-        actions.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout topActions = host.uiFactory.row();
-        LinearLayout bottomActions = host.uiFactory.row();
+        LinearLayout actions = host.uiFactory.row();
         int actionSize = host.getResources().getDimensionPixelSize(R.dimen.playlist_action_size);
 
         Button delete = host.uiFactory.icon("×");
         host.uiFactory.applyPlainIconStyle(delete, Color.rgb(190, 45, 45));
         delete.setOnClickListener(view -> host.overlayController.confirmDeletePlaylist(playlist));
-        topActions.addView(delete, new LinearLayout.LayoutParams(actionSize, actionSize));
+        actions.addView(delete, new LinearLayout.LayoutParams(actionSize, actionSize));
 
         Button rename = host.uiFactory.icon("✎");
         host.uiFactory.applyPlainIconStyle(rename);
         rename.setOnClickListener(view -> host.overlayController.renamePlaylist(playlist));
-        topActions.addView(rename, new LinearLayout.LayoutParams(actionSize, actionSize));
+        actions.addView(rename, new LinearLayout.LayoutParams(actionSize, actionSize));
 
         Button play = host.uiFactory.icon(host.playbackQueueController.isPlayingCollection(tracks) ? "Ⅱ" : "▶");
         host.uiFactory.applyPlainIconStyle(play, host.purple);
@@ -93,17 +91,15 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
                 host.playbackQueueController.playList(tracks, false);
             }
         });
-        bottomActions.addView(play, new LinearLayout.LayoutParams(actionSize, actionSize));
+        actions.addView(play, new LinearLayout.LayoutParams(actionSize, actionSize));
 
         Button shuffle = host.uiFactory.shuffleButton();
         host.uiFactory.applyPlainIconStyle(shuffle);
         shuffle.setOnClickListener(view -> {
             host.playbackQueueController.playList(tracks, true);
         });
-        bottomActions.addView(shuffle, new LinearLayout.LayoutParams(actionSize, actionSize));
-        actions.addView(topActions, new LinearLayout.LayoutParams(actionSize * 2, actionSize));
-        actions.addView(bottomActions, new LinearLayout.LayoutParams(actionSize * 2, actionSize));
-        card.addView(actions, new LinearLayout.LayoutParams(actionSize * 2, actionSize * 2));
+        actions.addView(shuffle, new LinearLayout.LayoutParams(actionSize, actionSize));
+        card.addView(actions, new LinearLayout.LayoutParams(actionSize * 4, actionSize));
         host.playlistController.bindRollingPreview(ticker, cover, tracks, host.navigationState.songRenderGeneration);
 
         card.setOnClickListener(view -> host.overlayController.openPlaylist(playlist));

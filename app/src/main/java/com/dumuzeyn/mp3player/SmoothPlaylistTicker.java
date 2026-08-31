@@ -62,6 +62,12 @@ final class SmoothPlaylistTicker extends View {
         invalidate();
     }
 
+    void setTextSizeSp(int value) {
+        paint.setTextSize(sp(Math.max(10, value)));
+        requestLayout();
+        invalidate();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
