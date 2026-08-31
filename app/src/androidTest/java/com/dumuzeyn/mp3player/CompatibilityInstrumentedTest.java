@@ -83,7 +83,7 @@ public class CompatibilityInstrumentedTest {
             InstrumentedTestSupport.waitFor("Home tab must be centered on tablet", 5000L,
                     () -> activeTabCenterOffset(host) <= 2);
         } finally {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
     }
 

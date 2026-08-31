@@ -79,7 +79,7 @@ final class SoundAnalysisController implements Closeable {
         lastLibrarySignature = signature;
         int requestedGeneration = generation.incrementAndGet();
         ArrayList<Track> snapshot = new ArrayList<>(tracks);
-        executor.execute(() -> runQueue(requestedGeneration, snapshot));
+        executor.execute(() -> runQueueSafely(requestedGeneration, snapshot));
     }
 
     ArrayList<SoundGroup> groups() {
@@ -112,12 +112,42 @@ final class SoundAnalysisController implements Closeable {
 
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
         closed = true;
         generation.incrementAndGet();
-        executor.shutdownNow();
+        executor.execute(this::closeWorkerResources);
+        executor.shutdown();
+    }
+
+    private void runQueueSafely(int requestedGeneration, ArrayList<Track> tracks) {
+        try {
+            runQueue(requestedGeneration, tracks);
+        } catch (RuntimeException error) {
+            VoltuneLog.failure("sound_analysis_queue_failed", error);
+            closeWorkerResources();
+            activeTitle = "";
+            blockReason = SoundAnalysisConstraints.BlockReason.NONE;
+            if (closed || requestedGeneration != generation.get()) {
+                return;
+            }
+            lastLibrarySignature = Long.MIN_VALUE;
+            notifyUi();
+            host.uiHandler.postDelayed(() -> {
+                if (!closed && requestedGeneration == generation.get()) {
+                    onLibraryReady(host.libraryState.tracks);
+                }
+            }, CONSTRAINT_RECHECK_MS);
+        }
+    }
+
+    private void closeWorkerResources() {
         if (store != null) {
             store.close();
+            store = null;
         }
+        extractor = null;
     }
 
     private void runQueue(int requestedGeneration, ArrayList<Track> tracks) {

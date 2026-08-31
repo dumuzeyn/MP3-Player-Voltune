@@ -36,7 +36,7 @@ public class TextClippingInstrumentedTest {
     @After
     public void tearDown() {
         if (activity != null) {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
     }
 
@@ -91,7 +91,7 @@ public class TextClippingInstrumentedTest {
         assertTrue("Active tab title is duplicated in content: " + duplicates,
                 duplicates.isEmpty());
 
-        instrumentation.runOnMainSync(activity::finish);
+        InstrumentedTestSupport.finishActivity(instrumentation, activity);
         activity = null;
         MainActivityCore relaunched = launchRussianActivity();
         assertHomeTabCentered(relaunched, "second launch");

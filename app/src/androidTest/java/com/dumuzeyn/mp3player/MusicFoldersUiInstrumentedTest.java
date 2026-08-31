@@ -47,7 +47,7 @@ public class MusicFoldersUiInstrumentedTest {
     @After
     public void tearDown() {
         if (activity != null) {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
         context.deleteDatabase(LibraryDatabase.DB_NAME);
     }
@@ -104,16 +104,19 @@ public class MusicFoldersUiInstrumentedTest {
         }
         int[] location = new int[2];
         view.getLocationOnScreen(location);
-        int screenWidth = root.getResources().getDisplayMetrics().widthPixels;
-        int screenHeight = root.getResources().getDisplayMetrics().heightPixels;
+        int[] rootLocation = new int[2];
+        root.getLocationOnScreen(rootLocation);
+        int viewportRight = rootLocation[0] + root.getWidth();
+        int viewportBottom = rootLocation[1] + root.getHeight();
         String bounds = " at " + location[0] + "," + location[1]
                 + " size " + view.getWidth() + "x" + view.getHeight()
-                + " on " + screenWidth + "x" + screenHeight;
-        assertTrue("View extends left of the screen" + bounds, location[0] >= 0);
-        assertTrue("View extends right of the screen" + bounds,
-                location[0] + view.getWidth() <= screenWidth);
-        assertTrue("View extends below the screen" + bounds,
-                location[1] + view.getHeight() <= screenHeight);
+                + " in viewport " + root.getWidth() + "x" + root.getHeight();
+        assertTrue("View extends left of the viewport" + bounds,
+                location[0] >= rootLocation[0]);
+        assertTrue("View extends right of the viewport" + bounds,
+                location[0] + view.getWidth() <= viewportRight);
+        assertTrue("View extends below the viewport" + bounds,
+                location[1] + view.getHeight() <= viewportBottom);
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             if (group instanceof ScrollView) {

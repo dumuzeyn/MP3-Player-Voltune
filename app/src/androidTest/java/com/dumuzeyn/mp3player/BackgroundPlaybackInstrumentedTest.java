@@ -85,7 +85,7 @@ public class BackgroundPlaybackInstrumentedTest {
         stopPlayback();
         TrackStore.save(context, Collections.<Track>emptyList());
         if (activity != null) {
-            instrumentation.runOnMainSync(activity::finish);
+            InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
         if (controller != null) {
             controllerAction(controller::release);
@@ -104,7 +104,7 @@ public class BackgroundPlaybackInstrumentedTest {
         startQueue(Collections.singletonList(firstTrack), Player.REPEAT_MODE_ONE);
         waitForPlayingUri("Media3 did not start playback", firstTrack.uri);
 
-        instrumentation.runOnMainSync(activity::finish);
+        InstrumentedTestSupport.finishActivity(instrumentation, activity);
         activity = null;
         InstrumentedTestSupport.waitFor("Playback stopped when Activity closed",
                 TRANSITION_TIMEOUT_MS, () -> controllerValue(controller::isPlaying));
@@ -129,7 +129,7 @@ public class BackgroundPlaybackInstrumentedTest {
         controllerAction(() -> controller.sendCustomCommand(
                 Media3Commands.TIMER_START_COMMAND, timer));
 
-        instrumentation.runOnMainSync(activity::finishAndRemoveTask);
+        InstrumentedTestSupport.finishAndRemoveTask(instrumentation, activity);
         activity = null;
         waitForPlayingUri("Playlist did not advance after task removal", secondTrack.uri);
         waitForPlayingUri("Repeating playlist did not wrap", firstTrack.uri);
