@@ -52,9 +52,12 @@ public class VoltuneMacrobenchmark {
                 scope -> {
                     scope.startActivityAndWait();
                     scope.getDevice().swipe(500, 1600, 500, 400, 20);
+                    clickText(scope, "Songs", "\u041f\u0435\u0441\u043d\u0438");
+                    clickText(scope, "Benchmark song 00000", "Benchmark song 00000");
                     clickText(scope, "Favorites", "\u0418\u0437\u0431\u0440\u0430\u043d\u043d\u043e\u0435");
                     clickText(scope, "Home", "\u0413\u043b\u0430\u0432\u043d\u0430\u044f");
-                    clickText(scope, "Songs", "\u041f\u0435\u0441\u043d\u0438");
+                    clickText(scope, "Albums", "\u0410\u043b\u044c\u0431\u043e\u043c\u044b");
+                    clickText(scope, "Home", "\u0413\u043b\u0430\u0432\u043d\u0430\u044f");
                     return Unit.INSTANCE;
                 });
     }

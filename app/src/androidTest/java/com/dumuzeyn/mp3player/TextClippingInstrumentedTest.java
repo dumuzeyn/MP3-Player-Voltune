@@ -1,7 +1,8 @@
 package com.dumuzeyn.mp3player;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -87,6 +88,20 @@ public class TextClippingInstrumentedTest {
                 host.list, host.tabs[LibraryTabs.HOME], duplicates));
         assertTrue("Active tab title is duplicated in content: " + duplicates,
                 duplicates.isEmpty());
+    }
+
+    @Test
+    public void homeContentIsReusedAfterSectionSwitch() {
+        MainActivityCore host = launchRussianActivity();
+        View firstHomeContent = host.list.getChildAt(0);
+        instrumentation.runOnMainSync(() -> {
+            host.navigationState.tabIndex = LibraryTabs.FAVORITES;
+            host.render();
+            host.navigationState.tabIndex = LibraryTabs.HOME;
+            host.render();
+        });
+        assertSame("Home content was rebuilt after returning from another section",
+                firstHomeContent, host.list.getChildAt(0));
     }
 
     private MainActivityCore launchRussianActivity() {
