@@ -220,8 +220,7 @@ final class SongsRenderer {
         host.uiFactory.applyCardStyle(row, host.navigationState.tabIndex == LibraryTabs.FAVORITES
                 ? host.appearanceState.favoriteCardOpacity : host.appearanceState.songCardOpacity);
 
-        View marker = new View(host);
-        marker.setBackgroundColor(host.yellow);
+        View marker = NowPlayingIndicator.create(host);
         marker.setVisibility(host.isCurrent(track) ? View.VISIBLE : View.INVISIBLE);
         host.activeSongRows().registerCurrentMarker(track.uri, marker);
 
@@ -305,20 +304,21 @@ final class SongsRenderer {
         host.activeSongRows().registerPlayButton(track.uri, play);
         row.addView(play, host.uiFactory.square(44));
         container.addView(row, new FrameLayout.LayoutParams(-1, -2));
-        FrameLayout.LayoutParams markerParams = new FrameLayout.LayoutParams(host.dp(4), host.dp(52));
-        markerParams.gravity = android.view.Gravity.START | android.view.Gravity.CENTER_VERTICAL;
-        markerParams.setMargins(host.dp(2), 0, 0, 0);
-        container.addView(marker, markerParams);
+        container.addView(marker, NowPlayingIndicator.layoutParams(host));
         return host.uiFactory.spaced(container);
     }
 
     View queueRow(final Track track, final Runnable removeAction, final Runnable playAction) {
+        FrameLayout container = new FrameLayout(host);
         LinearLayout row = new LinearLayout(host);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(16);
         row.setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4));
-        host.uiFactory.setSurface(row, host.isCurrent(track) ? host.fg : host.panel, false,
+        host.uiFactory.setSurface(row, host.panel, false,
                 host.appearanceState.songCardOpacity);
+
+        View marker = NowPlayingIndicator.create(host);
+        marker.setVisibility(host.isCurrent(track) ? View.VISIBLE : View.INVISIBLE);
 
         ImageView cover = host.uiFactory.coverView();
         host.artworkUi.loadCover(cover, track,
@@ -330,11 +330,11 @@ final class SongsRenderer {
         title.setSingleLine(true);
         title.setEllipsize(TextUtils.TruncateAt.END);
         title.setPadding(host.dp(12), 0, host.dp(8), 0);
-        title.setTextColor(host.isCurrent(track) ? host.bg : host.fg);
+        title.setTextColor(host.fg);
         row.addView(title, new LinearLayout.LayoutParams(0, host.dp(62), 1.0f));
 
         Button remove = host.uiFactory.icon("−");
-        host.uiFactory.applyPlainIconStyle(remove, host.isCurrent(track) ? host.bg : android.graphics.Color.rgb(190, 45, 45));
+        host.uiFactory.applyPlainIconStyle(remove, android.graphics.Color.rgb(190, 45, 45));
         remove.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -344,7 +344,7 @@ final class SongsRenderer {
         row.addView(remove, host.uiFactory.square(44));
 
         Button play = host.uiFactory.icon("");
-        host.uiFactory.applyPlainIconStyle(play, host.isCurrent(track) ? host.bg : host.purple);
+        host.uiFactory.applyPlainIconStyle(play, host.purple);
         SongRowStateRegistry.applyPlayState(play,
                 host.isCurrent(track) && host.isPlaybackPlaying());
         play.setOnClickListener(new View.OnClickListener() {
@@ -354,6 +354,8 @@ final class SongsRenderer {
             }
         });
         row.addView(play, host.uiFactory.square(44));
-        return host.uiFactory.spaced(row);
+        container.addView(row, new FrameLayout.LayoutParams(-1, -2));
+        container.addView(marker, NowPlayingIndicator.layoutParams(host));
+        return host.uiFactory.spaced(container);
     }
 }

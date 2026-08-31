@@ -8,7 +8,7 @@ import android.view.View;
 import java.util.ArrayList;
 
 final class SmoothPlaylistTicker extends View {
-    private static final int VISIBLE_LINES = 3;
+    private static final int DEFAULT_VISIBLE_LINES = 3;
 
     private final MainActivityCore host;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -19,6 +19,7 @@ final class SmoothPlaylistTicker extends View {
     private int lineHeight;
     private String contentKey = "";
     private boolean uiActive = true;
+    private int visibleLines = DEFAULT_VISIBLE_LINES;
 
     SmoothPlaylistTicker(MainActivityCore host) {
         super(host);
@@ -55,12 +56,18 @@ final class SmoothPlaylistTicker extends View {
         if (active) invalidate();
     }
 
+    void setVisibleLines(int value) {
+        visibleLines = Math.max(1, value);
+        requestLayout();
+        invalidate();
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
         lineHeight = Math.max(1, (metrics.descent - metrics.ascent) + host.dp(3));
         int visibleLines = PlaylistTickerLayoutPolicy.visibleLineCount(
-                titles.size(), VISIBLE_LINES);
+                titles.size(), this.visibleLines);
         int desiredHeight = (lineHeight * visibleLines)
                 + getPaddingTop() + getPaddingBottom();
         setMeasuredDimension(resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec),
@@ -74,7 +81,7 @@ final class SmoothPlaylistTicker extends View {
             return;
         }
         paint.setColor(host.primaryText);
-        boolean scrolling = uiActive && titles.size() > VISIBLE_LINES
+        boolean scrolling = uiActive && titles.size() > visibleLines
                 && host.appearanceState.animations
                 && host.appearanceState.playlistTickerSpeed > 0
                 && isVisibleToUser();
@@ -90,9 +97,9 @@ final class SmoothPlaylistTicker extends View {
         float top = getPaddingTop() - remainder;
         Paint.FontMetrics metrics = paint.getFontMetrics();
         int linesToDraw = scrolling
-                ? VISIBLE_LINES + 2
+                ? visibleLines + 2
                 : PlaylistTickerLayoutPolicy.staticLinesToDraw(
-                        titles.size(), VISIBLE_LINES);
+                        titles.size(), visibleLines);
         for (int line = 0; line < linesToDraw; line++) {
             if (top >= getHeight() - getPaddingBottom()) {
                 break;

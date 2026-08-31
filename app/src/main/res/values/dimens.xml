@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="now_playing_indicator_width">4dp</dimen>
+    <dimen name="now_playing_indicator_height">38dp</dimen>
+    <dimen name="now_playing_indicator_inset">3dp</dimen>
+    <dimen name="playlist_card_height">88dp</dimen>
+    <dimen name="playlist_cover_size">72dp</dimen>
+    <dimen name="playlist_action_size">38dp</dimen>
+</resources>

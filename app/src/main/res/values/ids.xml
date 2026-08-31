@@ -3,4 +3,5 @@
     <item name="text_card_surface" type="id" />
     <item name="section_title" type="id" />
     <item name="section_play" type="id" />
+    <item name="playlist_card" type="id" />
 </resources>

@@ -54,6 +54,7 @@ final class QueuePageController implements AutoCloseable {
     void refresh() {
         if (active && adapter != null) {
             adapter.submitTracks(state.activeQueue());
+            adapter.refreshPlayback();
         }
     }
 

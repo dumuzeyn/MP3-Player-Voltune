@@ -243,7 +243,7 @@ final class SongAdapter extends ListAdapter<Track, SongAdapter.SongViewHolder> {
             title.setTextColor(host.primaryText);
             title.setEllipsize(TextUtils.TruncateAt.END);
             duration.setTextColor(host.secondaryText);
-            marker.setBackgroundColor(host.yellow);
+            NowPlayingIndicator.style(marker, host.yellow);
             configureButton(actions);
             configureButton(play);
             actions.setText("⋯");

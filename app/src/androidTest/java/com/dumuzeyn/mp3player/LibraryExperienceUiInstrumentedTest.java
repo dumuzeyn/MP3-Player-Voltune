@@ -89,8 +89,17 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Playlists tab did not open", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.PLAYLISTS
                         && findText(host.list, TextView.class, "UI smoke") != null);
+        InstrumentedTestSupport.waitFor("Compact playlist card was not laid out", 5000L,
+                () -> host.list.findViewById(R.id.playlist_card) != null
+                        && host.list.findViewById(R.id.playlist_card).getHeight() > 0);
         FrameLayoutCover playlistCover = find(host.list, FrameLayoutCover.class);
         assertNotNull(playlistCover);
+        View playlistCard = host.list.findViewById(R.id.playlist_card);
+        assertNotNull(playlistCard);
+        assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_card_height),
+                playlistCard.getHeight());
+        assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
+                playlistCover.getHeight());
         assertEquals("Playlist artwork must not keep an empty transition layer",
                 1, playlistCover.getChildCount());
         assertNull("Playlist artwork container must not expose square fallback corners",

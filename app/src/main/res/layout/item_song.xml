@@ -78,7 +78,8 @@
 
     <View
         android:id="@+id/song_current_marker"
-        android:layout_width="4dp"
-        android:layout_height="52dp"
-        android:layout_gravity="start|center_vertical" />
+        android:layout_width="@dimen/now_playing_indicator_width"
+        android:layout_height="@dimen/now_playing_indicator_height"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="@dimen/now_playing_indicator_inset" />
 </FrameLayout>

@@ -4,7 +4,6 @@ import android.graphics.Color;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -41,32 +40,48 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
     private View playlistCard(final Playlist playlist) {
         final ArrayList<Track> tracks = host.playlistController.sortedPlaylistTracks(playlist);
         LinearLayout card = new LinearLayout(host);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(host.dp(10), host.dp(8), host.dp(10), host.dp(8));
+        card.setId(R.id.playlist_card);
+        card.setOrientation(LinearLayout.HORIZONTAL);
+        card.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        card.setPadding(host.dp(7), host.dp(4), host.dp(6), host.dp(4));
         host.uiFactory.setSurface(card, host.panel, false, host.appearanceState.playlistCardOpacity);
 
-        View marker = new View(host);
-        marker.setBackgroundColor(host.yellow);
+        FrameLayoutCover cover = new FrameLayoutCover(host);
+        int fallback = host.appearanceState.dark ? 28 : 235;
+        cover.setFallback(Color.rgb(fallback, fallback, fallback));
+        int coverSize = host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size);
+        card.addView(cover, new LinearLayout.LayoutParams(coverSize, coverSize));
 
-        LinearLayout header = host.uiFactory.row();
         LinearLayout titleColumn = new LinearLayout(host);
         titleColumn.setOrientation(LinearLayout.VERTICAL);
-        TextView title = host.uiFactory.text(playlist.name, 20, true);
+        titleColumn.setPadding(host.dp(10), 0, host.dp(5), 0);
+        TextView title = host.uiFactory.text(playlist.name, 17, true);
         host.uiFactory.makeMarquee(title);
-        TextView count = host.uiFactory.text(playlist.uris.size() + " " + host.tr3("songs", "песен", "♪"), 13, false);
-        titleColumn.addView(title);
-        titleColumn.addView(count);
-        header.addView(titleColumn, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        TextView count = host.uiFactory.text(playlist.uris.size() + " "
+                + host.tr3("tracks", "треков", "♪"), 12, false);
+        titleColumn.addView(title, new LinearLayout.LayoutParams(-1, host.dp(24)));
+        titleColumn.addView(count, new LinearLayout.LayoutParams(-1, host.dp(18)));
+
+        SmoothPlaylistTicker ticker = new SmoothPlaylistTicker(host);
+        ticker.setVisibleLines(1);
+        titleColumn.addView(ticker, new LinearLayout.LayoutParams(-1, host.dp(28)));
+        card.addView(titleColumn, new LinearLayout.LayoutParams(0, -1, 1.0f));
+
+        LinearLayout actions = new LinearLayout(host);
+        actions.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout topActions = host.uiFactory.row();
+        LinearLayout bottomActions = host.uiFactory.row();
+        int actionSize = host.getResources().getDimensionPixelSize(R.dimen.playlist_action_size);
 
         Button delete = host.uiFactory.icon("×");
         host.uiFactory.applyPlainIconStyle(delete, Color.rgb(190, 45, 45));
         delete.setOnClickListener(view -> host.overlayController.confirmDeletePlaylist(playlist));
-        header.addView(delete, host.uiFactory.square(44));
+        topActions.addView(delete, new LinearLayout.LayoutParams(actionSize, actionSize));
 
         Button rename = host.uiFactory.icon("✎");
         host.uiFactory.applyPlainIconStyle(rename);
         rename.setOnClickListener(view -> host.overlayController.renamePlaylist(playlist));
-        header.addView(rename, host.uiFactory.square(44));
+        topActions.addView(rename, new LinearLayout.LayoutParams(actionSize, actionSize));
 
         Button play = host.uiFactory.icon(host.playbackQueueController.isPlayingCollection(tracks) ? "Ⅱ" : "▶");
         host.uiFactory.applyPlainIconStyle(play, host.purple);
@@ -78,38 +93,29 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
                 host.playbackQueueController.playList(tracks, false);
             }
         });
-        header.addView(play, host.uiFactory.square(44));
+        bottomActions.addView(play, new LinearLayout.LayoutParams(actionSize, actionSize));
 
         Button shuffle = host.uiFactory.shuffleButton();
         host.uiFactory.applyPlainIconStyle(shuffle);
         shuffle.setOnClickListener(view -> {
             host.playbackQueueController.playList(tracks, true);
         });
-        header.addView(shuffle, host.uiFactory.square(44));
-        card.addView(header);
-
-        LinearLayout body = host.uiFactory.row();
-        FrameLayoutCover cover = new FrameLayoutCover(host);
-        int fallback = host.appearanceState.dark ? 28 : 235;
-        cover.setFallback(Color.rgb(fallback, fallback, fallback));
-        body.addView(cover, host.uiFactory.square(72));
-
-        SmoothPlaylistTicker ticker = new SmoothPlaylistTicker(host);
-        ticker.setPadding(host.dp(12), 0, 0, 0);
-        body.addView(ticker, new LinearLayout.LayoutParams(0, -2, 1.0f));
-        card.addView(body);
+        bottomActions.addView(shuffle, new LinearLayout.LayoutParams(actionSize, actionSize));
+        actions.addView(topActions, new LinearLayout.LayoutParams(actionSize * 2, actionSize));
+        actions.addView(bottomActions, new LinearLayout.LayoutParams(actionSize * 2, actionSize));
+        card.addView(actions, new LinearLayout.LayoutParams(actionSize * 2, actionSize * 2));
         host.playlistController.bindRollingPreview(ticker, cover, tracks, host.navigationState.songRenderGeneration);
 
         card.setOnClickListener(view -> host.overlayController.openPlaylist(playlist));
 
         FrameLayout container = new FrameLayout(host);
-        container.addView(card, new FrameLayout.LayoutParams(-1, -2));
-        FrameLayout.LayoutParams markerParams = new FrameLayout.LayoutParams(host.dp(4), -1);
-        markerParams.gravity = android.view.Gravity.START;
-        markerParams.setMargins(host.dp(2), host.dp(10), 0, host.dp(10));
-        container.addView(marker, markerParams);
+        int cardHeight = host.getResources().getDimensionPixelSize(R.dimen.playlist_card_height);
+        container.addView(card, new FrameLayout.LayoutParams(-1, cardHeight));
+        View marker = NowPlayingIndicator.create(host);
+        container.addView(marker, NowPlayingIndicator.layoutParams(host));
         host.playlistController.bindPlaybackState(
                 play, marker, tracks, host.navigationState.songRenderGeneration);
+        container.setMinimumHeight(cardHeight);
         return container;
     }
 }

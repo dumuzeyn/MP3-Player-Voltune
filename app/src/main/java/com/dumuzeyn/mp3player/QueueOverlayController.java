@@ -13,6 +13,7 @@ import java.util.HashSet;
 final class QueueOverlayController {
     private final MainActivityCore host;
     private final OverlayController overlays;
+    private QueueAdapter activeAdapter;
 
     QueueOverlayController(MainActivityCore host, OverlayController overlays) {
         this.host = host;
@@ -25,6 +26,7 @@ final class QueueOverlayController {
         panel.addView(header(shade));
         ArrayList<Track> snapshot = new ArrayList<>(host.playbackUiState.queue);
         QueueAdapter adapter = adapter(snapshot);
+        activeAdapter = adapter;
         RecyclerView list = new RecyclerView(host);
         list.setLayoutManager(new LinearLayoutManager(host));
         list.setAdapter(adapter);
@@ -34,6 +36,12 @@ final class QueueOverlayController {
         shade.addView(panel, host.bottomParams());
         host.overlayHost.addView(shade);
         host.playerUiController.updateMini();
+    }
+
+    void refreshPlayback() {
+        if (activeAdapter != null) {
+            activeAdapter.refreshPlayback();
+        }
     }
 
     private LinearLayout header(FrameLayout shade) {
@@ -138,6 +146,7 @@ final class QueueOverlayController {
         if (shade.getParent() != null) {
             host.overlayHost.removeView(shade);
         }
+        activeAdapter = null;
         host.playerUiController.updateMini();
     }
 }
