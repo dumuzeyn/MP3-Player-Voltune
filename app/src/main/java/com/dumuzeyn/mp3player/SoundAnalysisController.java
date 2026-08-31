@@ -64,7 +64,7 @@ final class SoundAnalysisController implements Closeable {
     }
 
     String settingLabel() {
-        return host.tr("Analyze songs by sound: ", "Анализировать песни по звучанию: ")
+        return host.tr("Analyze similar tracks: ", "Анализ похожих треков: ")
                 + host.tr(enabled() ? "on" : "off", enabled() ? "вкл" : "выкл");
     }
 

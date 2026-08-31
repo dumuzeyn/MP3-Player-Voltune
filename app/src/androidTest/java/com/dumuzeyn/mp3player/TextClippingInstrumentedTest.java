@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -77,6 +78,8 @@ public class TextClippingInstrumentedTest {
     @Test
     public void homeTabStartsCenteredWithoutDuplicateContentTitle() {
         MainActivityCore host = launchRussianActivity();
+        assertEquals("Voltune", host.getString(R.string.app_name));
+        assertEquals("Похожие", host.tabs[LibraryTabs.SOUND]);
         InstrumentedTestSupport.waitFor("Home tab was not centered", 5000L,
                 () -> activeTabCenterOffset(host) <= 2);
         List<String> duplicates = new ArrayList<>();

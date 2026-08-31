@@ -1,5 +1,10 @@
 package com.dumuzeyn.mp3player;
 
+import android.graphics.Typeface;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -24,12 +29,20 @@ final class HeaderController {
         icon.setImageBitmap(AppIconRenderer.renderLogo(
                 host, host.purple, host.yellow, host.dp(42)));
         icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        icon.setContentDescription("MP3 Player Voltune");
+        icon.setContentDescription(host.getString(R.string.app_name));
         LinearLayout.LayoutParams iconParams = host.uiFactory.square(36);
         iconParams.setMargins(0, 0, host.dp(8), 0);
         row.addView(icon, iconParams);
-        TextView title = host.uiFactory.text("MP3 Player Voltune", 20, true);
+        SpannableString brand = new SpannableString(host.getString(R.string.app_name));
+        brand.setSpan(new ForegroundColorSpan(host.purple), 0, 1,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        TextView title = host.uiFactory.text(brand.toString(), 22, true);
+        title.setText(brand);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         title.setTextColor(host.primaryText);
+        title.setGravity(Gravity.CENTER_VERTICAL);
+        title.setIncludeFontPadding(false);
+        title.setLetterSpacing(0.0f);
         row.addView(title, new LinearLayout.LayoutParams(0, host.dp(52), 1.0f));
         header.addView(row, new FrameLayout.LayoutParams(-1, -1));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(60));

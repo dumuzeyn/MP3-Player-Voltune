@@ -401,7 +401,7 @@ final class ThemeController {
         }
         try {
             host.setTaskDescription(new ActivityManager.TaskDescription(
-                    "MP3 Player Voltune", launcherPreviewIcon(), host.bg));
+                    host.getString(R.string.app_name), launcherPreviewIcon(), host.bg));
         } catch (RuntimeException ignored) {
         }
     }
