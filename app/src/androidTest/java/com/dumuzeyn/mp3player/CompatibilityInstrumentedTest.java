@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
+import android.view.View;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -79,8 +80,26 @@ public class CompatibilityInstrumentedTest {
             int maximumPageWidth = Math.round(
                     960 * context.getResources().getDisplayMetrics().density);
             assertTrue(host.page.getWidth() <= maximumPageWidth);
+            InstrumentedTestSupport.waitFor("Home tab must be centered on tablet", 5000L,
+                    () -> activeTabCenterOffset(host) <= 2);
         } finally {
             instrumentation.runOnMainSync(activity::finish);
         }
+    }
+
+    private static int activeTabCenterOffset(MainActivityCore host) {
+        if (host.tabsScroll == null || host.tabRow == null || host.tabsScroll.getWidth() == 0) {
+            return Integer.MAX_VALUE;
+        }
+        int center = host.tabsScroll.getScrollX() + host.tabsScroll.getWidth() / 2;
+        int closest = Integer.MAX_VALUE;
+        for (int index = 0; index < host.tabRow.getChildCount(); index++) {
+            View child = host.tabRow.getChildAt(index);
+            if (Integer.valueOf(LibraryTabs.HOME).equals(child.getTag())) {
+                closest = Math.min(closest,
+                        Math.abs(child.getLeft() + child.getWidth() / 2 - center));
+            }
+        }
+        return closest;
     }
 }

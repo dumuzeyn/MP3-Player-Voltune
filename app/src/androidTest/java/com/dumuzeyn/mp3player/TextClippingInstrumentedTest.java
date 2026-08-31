@@ -78,16 +78,23 @@ public class TextClippingInstrumentedTest {
 
     @Test
     public void homeTabStartsCenteredWithoutDuplicateContentTitle() {
+        Context context = ApplicationProvider.getApplicationContext();
+        context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
+                .clear().commit();
         MainActivityCore host = launchRussianActivity();
         assertEquals("Voltune", host.getString(R.string.app_name));
         assertEquals("Похожие", host.tabs[LibraryTabs.SOUND]);
-        InstrumentedTestSupport.waitFor("Home tab was not centered", 5000L,
-                () -> activeTabCenterOffset(host) <= 2);
+        assertHomeTabCentered(host, "clean launch");
         List<String> duplicates = new ArrayList<>();
         instrumentation.runOnMainSync(() -> collectExactText(
                 host.list, host.tabs[LibraryTabs.HOME], duplicates));
         assertTrue("Active tab title is duplicated in content: " + duplicates,
                 duplicates.isEmpty());
+
+        instrumentation.runOnMainSync(activity::finish);
+        activity = null;
+        MainActivityCore relaunched = launchRussianActivity();
+        assertHomeTabCentered(relaunched, "second launch");
     }
 
     @Test
@@ -174,6 +181,11 @@ public class TextClippingInstrumentedTest {
             }
         }
         return closest;
+    }
+
+    private static void assertHomeTabCentered(MainActivityCore host, String launchName) {
+        InstrumentedTestSupport.waitFor("Home tab was not centered on " + launchName,
+                5000L, () -> activeTabCenterOffset(host) <= 2);
     }
 
     private static void collectExactText(View view, String expected, List<String> found) {
