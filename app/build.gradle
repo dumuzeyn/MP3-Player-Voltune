@@ -331,9 +331,9 @@ tasks.register("checkArchitecture") {
                     "Media3PlayerService must not read the full library on its main thread")
         }
         if (playbackService.count("TrackStore.updateDuration(") != 1
-                || !playbackService.contains("libraryIo.execute")) {
+                || !playbackService.contains("launch(Dispatchers.IO)")) {
             throw new GradleException(
-                    "Media3PlayerService must write duration through its background executor")
+                    "Media3PlayerService must write duration through Dispatchers.IO")
         }
         def manifest = file("src/main/AndroidManifest.xml").getText("UTF-8")
         for (String permission : ["android.permission.INTERNET",
