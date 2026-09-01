@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Random;
 
 /** Owns library-facing queue decisions; ExoPlayer remains the active queue owner. */
-final class PlaybackQueueController {
+public final class PlaybackQueueController {
     private final MainActivityCore host;
     private final PlaybackController playback;
     private final LibraryMutationController mutations;
