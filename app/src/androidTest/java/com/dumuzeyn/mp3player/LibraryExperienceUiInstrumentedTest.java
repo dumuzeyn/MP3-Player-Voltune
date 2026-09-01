@@ -3,12 +3,14 @@ package com.dumuzeyn.mp3player;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.SystemClock;
 import android.view.MotionEvent;
@@ -39,6 +41,40 @@ public class LibraryExperienceUiInstrumentedTest {
         if (activity != null) {
             InstrumentedTestSupport.finishActivity(instrumentation, activity);
         }
+    }
+
+    @Test
+    public void homeHierarchySurvivesPlaybackChangesAndBothNavigationPaths() {
+        MainActivityCore host = launchWithLibrary();
+        View coldHomeContent = host.list.getChildAt(0);
+        Track first = host.libraryState.tracks.get(0);
+        Track second = host.libraryState.tracks.get(1);
+
+        applyPlaybackState(host, first, false);
+        openTabByClick(host, LibraryTabs.SONGS);
+        openTabByClick(host, LibraryTabs.HOME);
+        assertSame("Paused playback rebuilt the cached Home hierarchy",
+                coldHomeContent, host.list.getChildAt(0));
+
+        applyPlaybackState(host, first, true);
+        openTabByClick(host, LibraryTabs.ALBUMS);
+        openTabByClick(host, LibraryTabs.HOME);
+        assertSame("Active playback rebuilt the warm Home hierarchy",
+                coldHomeContent, host.list.getChildAt(0));
+
+        applyPlaybackState(host, second, true);
+        openTabByClick(host, LibraryTabs.SONGS);
+        openTabByClick(host, LibraryTabs.HOME);
+        assertSame("Changing the current track rebuilt static Home content",
+                coldHomeContent, host.list.getChildAt(0));
+
+        openTabByClick(host, LibraryTabs.SONGS);
+        swipeToPreviousTab(host);
+        InstrumentedTestSupport.waitFor("Swipe did not return to Home", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.HOME
+                        && !host.navigationState.tabAnimating);
+        assertSame("Swipe transition rebuilt the cached Home hierarchy",
+                coldHomeContent, host.list.getChildAt(0));
     }
 
     @Test
@@ -104,6 +140,13 @@ public class LibraryExperienceUiInstrumentedTest {
                 playlistCover instanceof RotatingCoverImageView);
         assertTrue("Playlist card must not contain a moving ticker",
                 !containsViewClassName(host.list, "SmoothPlaylistTicker"));
+        SystemClock.sleep(500L);
+        instrumentation.waitForIdleSync();
+        Drawable initialPlaylistArtwork = playlistCover.getDrawable();
+        SystemClock.sleep(15050L);
+        instrumentation.waitForIdleSync();
+        assertSame("Playlist artwork changed after the removed ticker interval",
+                initialPlaylistArtwork, playlistCover.getDrawable());
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
@@ -202,6 +245,57 @@ public class LibraryExperienceUiInstrumentedTest {
                 downTime, downTime + 180L, MotionEvent.ACTION_UP, endX, y, 0));
     }
 
+    private void swipeToPreviousTab(MainActivityCore host) {
+        float startX = host.contentHost.getWidth() * 0.25f;
+        float endX = host.contentHost.getWidth() * 0.85f;
+        float y = host.contentHost.getHeight() * 0.5f;
+        long downTime = SystemClock.uptimeMillis();
+        dispatchSwipeEvent(host, MotionEvent.obtain(
+                downTime, downTime, MotionEvent.ACTION_DOWN, startX, y, 0));
+        for (int step = 1; step <= 8; step++) {
+            long eventTime = downTime + step * 18L;
+            float x = startX + ((endX - startX) * step / 8.0f);
+            dispatchSwipeEvent(host, MotionEvent.obtain(
+                    downTime, eventTime, MotionEvent.ACTION_MOVE, x, y, 0));
+        }
+        dispatchSwipeEvent(host, MotionEvent.obtain(
+                downTime, downTime + 180L, MotionEvent.ACTION_UP, endX, y, 0));
+    }
+
+    private void dispatchSwipeEvent(MainActivityCore host, MotionEvent event) {
+        instrumentation.runOnMainSync(() -> host.swipeController.handle(event));
+        event.recycle();
+    }
+
+    private void openTabByClick(MainActivityCore host, int targetIndex) {
+        instrumentation.runOnMainSync(() -> {
+            for (int index = 0; index < host.tabRow.getChildCount(); index++) {
+                View tab = host.tabRow.getChildAt(index);
+                if (Integer.valueOf(targetIndex).equals(tab.getTag())) {
+                    tab.performClick();
+                    return;
+                }
+            }
+            throw new AssertionError("Tab button not found: " + targetIndex);
+        });
+        InstrumentedTestSupport.waitFor("Tab did not open: " + targetIndex, 5000L,
+                () -> host.navigationState.tabIndex == targetIndex
+                        && !host.navigationState.tabAnimating);
+    }
+
+    private void applyPlaybackState(MainActivityCore host, Track track, boolean playing) {
+        instrumentation.runOnMainSync(() -> {
+            String mediaId = MediaItemMapper.stableHash(track.uri);
+            host.updatePlaybackSnapshot(new PlaybackSnapshot(
+                    Collections.singletonList(mediaId), mediaId, 0, 1000L,
+                    track.durationMs, playing, Player.STATE_READY, Player.REPEAT_MODE_OFF,
+                    false, PlaybackPhase.READY, PauseReason.NONE, StopReason.NONE,
+                    null, System.currentTimeMillis()));
+            host.refreshAfterTrackChange();
+        });
+        instrumentation.waitForIdleSync();
+    }
+
     private void dispatchTouch(View target, MotionEvent event) {
         instrumentation.runOnMainSync(() -> target.dispatchTouchEvent(event));
         event.recycle();
@@ -283,6 +377,7 @@ public class LibraryExperienceUiInstrumentedTest {
                 .putString("language", "ru")
                 .putBoolean("animations", true)
                 .putBoolean("particlesEnabled", false)
+                .putInt("playlistTickerSpeed", 200)
                 .commit();
         ArrayList<Track> tracks = new ArrayList<>();
         for (int index = 0; index < 10; index++) {
