@@ -23,7 +23,6 @@ final class UiPreferencesStore {
     private static final String CUSTOM_TEXT_COLOR = "customTextColor";
     private static final String TEXT_OUTLINE_ENABLED = "textOutlineEnabled";
     private static final String TEXT_OUTLINE_COLOR = "textOutlineColor";
-    private static final String PLAYLIST_TICKER_SPEED = "playlistTickerSpeed";
     private static final String CARD_OPACITY = "cardOpacity";
     private static final String SONG_CARD_OPACITY = "songCardOpacity";
     private static final String FAVORITE_CARD_OPACITY = "favoriteCardOpacity";
@@ -104,7 +103,6 @@ final class UiPreferencesStore {
         host.appearanceState.customTextColor = preferences.getInt(CUSTOM_TEXT_COLOR, 0);
         host.appearanceState.textOutlineEnabled = preferences.getBoolean(TEXT_OUTLINE_ENABLED, false);
         host.appearanceState.textOutlineColor = preferences.getInt(TEXT_OUTLINE_COLOR, 0);
-        host.appearanceState.playlistTickerSpeed = clamp(preferences.getInt(PLAYLIST_TICKER_SPEED, 100), 0, 200);
         host.appearanceState.cardOpacity = clamp(preferences.getInt(CARD_OPACITY, 82), 35, 100);
         host.appearanceState.songCardOpacity = clamp(
                 preferences.getInt(SONG_CARD_OPACITY, host.appearanceState.cardOpacity), 35, 100);
@@ -171,7 +169,6 @@ final class UiPreferencesStore {
                 .putInt(CUSTOM_TEXT_COLOR, host.appearanceState.customTextColor)
                 .putBoolean(TEXT_OUTLINE_ENABLED, host.appearanceState.textOutlineEnabled)
                 .putInt(TEXT_OUTLINE_COLOR, host.appearanceState.textOutlineColor)
-                .putInt(PLAYLIST_TICKER_SPEED, host.appearanceState.playlistTickerSpeed)
                 .putInt(CARD_OPACITY, host.appearanceState.cardOpacity)
                 .putInt(SONG_CARD_OPACITY, host.appearanceState.songCardOpacity)
                 .putInt(FAVORITE_CARD_OPACITY, host.appearanceState.favoriteCardOpacity)

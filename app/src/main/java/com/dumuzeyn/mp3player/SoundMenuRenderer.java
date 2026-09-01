@@ -1,16 +1,14 @@
 package com.dumuzeyn.mp3player;
 
 import android.text.TextUtils;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class SoundMenuRenderer extends TrackGroupMenuRenderer {
-    private final Map<String, TempoSummary> summaries = new HashMap<>();
-
     SoundMenuRenderer(MainActivityCore host) {
         super(host);
     }
@@ -31,15 +29,16 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         if (host.soundAnalysisController.groups().isEmpty()) {
             addMessage(host.tr("Similar tracks will appear after local analysis",
                     "Похожие треки появятся после локального анализа"));
+            addRebuildButton();
             return;
         }
         super.render();
+        addRebuildButton();
     }
 
     @Override
     Map<String, ArrayList<Track>> groupedTracks() {
         LinkedHashMap<String, ArrayList<Track>> result = new LinkedHashMap<>();
-        summaries.clear();
         boolean english = "en".equals(host.appearanceState.language);
         for (SoundGroup group : host.soundAnalysisController.groups()) {
             ArrayList<Track> tracks = new ArrayList<>();
@@ -57,12 +56,6 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
                     result.put(name, namedTracks);
                 }
                 namedTracks.addAll(tracks);
-                TempoSummary summary = summaries.get(name);
-                if (summary == null) {
-                    summary = new TempoSummary();
-                    summaries.put(name, summary);
-                }
-                summary.add(group);
             }
         }
         return result;
@@ -75,12 +68,7 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
 
     @Override
     String groupSubtitle(String name, ArrayList<Track> tracks) {
-        TempoSummary summary = summaries.get(name);
-        String count = tracks.size() + " " + host.tr("tracks", "треков");
-        if (summary == null || summary.weight == 0.0d) {
-            return count;
-        }
-        return Math.round(summary.weightedBpm / summary.weight) + " BPM · " + count;
+        return tracks.size() + " " + host.tr("tracks", "треков");
     }
 
     @Override
@@ -93,6 +81,8 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         String status;
         if (!analysis.enabled()) {
             status = host.tr("Analysis disabled", "Анализ выключен");
+        } else if (analysis.rebuildingGroups()) {
+            status = host.tr("Rebuilding groups", "Пересборка групп");
         } else if (!analysis.activeTitle().isEmpty()) {
             status = host.tr("Analyzing: ", "Анализ: ") + analysis.activeTitle();
         } else if (analysis.blockReason() != SoundAnalysisConstraints.BlockReason.NONE) {
@@ -136,22 +126,20 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         host.list.addView(message, new LinearLayout.LayoutParams(-1, host.dp(82)));
     }
 
-    private static final class TempoSummary {
-        double weightedBpm;
-        double weight;
-
-        void add(SoundGroup group) {
-            if (group.centroid.length <= TrackAudioProfile.TEMPO_CONFIDENCE) {
-                return;
-            }
-            double bpm = group.centroid[TrackAudioProfile.BPM];
-            double confidence = group.centroid[TrackAudioProfile.TEMPO_CONFIDENCE];
-            if (bpm <= 0.0d || confidence < 0.45d) {
-                return;
-            }
-            int size = Math.max(1, group.trackIds.size());
-            weightedBpm += bpm * size;
-            weight += size;
-        }
+    private void addRebuildButton() {
+        SoundAnalysisController analysis = host.soundAnalysisController;
+        boolean busy = analysis.rebuildingGroups() || analysis.fullReanalysis();
+        String label = analysis.rebuildingGroups()
+                ? host.tr("Rebuilding groups...", "Пересборка групп...")
+                : host.tr("Rebuild groups", "Пересобрать группы");
+        Button button = host.uiFactory.button(label);
+        host.uiFactory.applySecondaryButtonStyle(button,
+                host.appearanceState.genreCardOpacity);
+        button.setEnabled(!busy && analysis.analyzed() >= 4);
+        button.setOnClickListener(view -> analysis.rebuildGroupsFromSavedProfiles());
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(48));
+        params.setMargins(0, host.dp(10), 0, host.dp(4));
+        host.list.addView(button, params);
     }
+
 }

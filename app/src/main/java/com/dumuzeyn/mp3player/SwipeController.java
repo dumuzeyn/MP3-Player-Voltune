@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import android.animation.ValueAnimator;
+import android.os.Trace;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
@@ -146,7 +147,12 @@ final class SwipeController {
     }
 
     private void prepareTransition(int target, int requestedDirection, boolean saveHistory, String search) {
+        Trace.beginSection("Voltune/Home.prepareTransition");
+        try {
         cleanupPreview();
+        host.songRows.setWaveformsTransitionPaused(true);
+        host.previewSongRows.setWaveformsTransitionPaused(true);
+        host.mainRenderer.setHomeTransitionPaused(true);
         direction = requestedDirection >= 0 ? 1 : -1;
         targetIndex = target;
         recordHistory = saveHistory;
@@ -164,6 +170,7 @@ final class SwipeController {
                     host.libraryState.tracks, targetSearch);
             previewSurface = host.songsView;
             previewSurface.setTranslationX(direction * transitionDistance);
+            prepareSurfaceLayers();
             return;
         }
         previewUsesSongsSurface = false;
@@ -175,7 +182,12 @@ final class SwipeController {
         host.contentHost.addView(previewScroll, 0, new FrameLayout.LayoutParams(-1, -1));
         previewSurface = previewScroll;
         previewState = host.renderTabPreview(previewList, targetIndex, targetSearch);
+        host.previewSongRows.setWaveformsTransitionPaused(true);
+        prepareSurfaceLayers();
         previewScroll.scrollTo(0, previewState.scrollY);
+        } finally {
+            Trace.endSection();
+        }
     }
 
     private void updateOffset(float offset) {
@@ -238,6 +250,7 @@ final class SwipeController {
             resetCurrentContent();
             host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
                     completedTarget, completedDirection, shouldRecord, completedSearch));
+            resumeWaveforms();
             return;
         }
         if (previewScroll != null && previewList != null
@@ -254,12 +267,14 @@ final class SwipeController {
             host.tabTransitionCoordinator.completeWithPreview(new TabTransitionRequest(
                     completedTarget, completedDirection, shouldRecord, completedSearch,
                     committedScroll, committedList, committedState));
+            resumeWaveforms();
             return;
         }
         cleanupPreview();
         resetCurrentContent();
         host.tabTransitionCoordinator.complete(TabTransitionRequest.withoutPreview(
                 completedTarget, completedDirection, shouldRecord, completedSearch));
+        resumeWaveforms();
     }
 
     private void finishCancelledTransition() {
@@ -267,9 +282,13 @@ final class SwipeController {
         resetCurrentContent();
         host.navigationState.tabAnimating = false;
         host.tabsController.cancelTransition();
+        resumeWaveforms();
     }
 
     private void cleanupPreview() {
+        if (previewSurface != null) {
+            previewSurface.setLayerType(View.LAYER_TYPE_NONE, null);
+        }
         if (previewScroll != null && previewScroll.getParent() == host.contentHost) {
             host.contentHost.removeView(previewScroll);
         }
@@ -291,12 +310,28 @@ final class SwipeController {
         if (currentSurface != null) {
             currentSurface.setTranslationX(0.0f);
             currentSurface.setAlpha(1.0f);
+            currentSurface.setLayerType(View.LAYER_TYPE_NONE, null);
         }
         currentSurface = null;
         if (host.contentScroll != null) {
             host.contentScroll.setTranslationX(0.0f);
             host.contentScroll.setAlpha(1.0f);
         }
+    }
+
+    private void prepareSurfaceLayers() {
+        if (currentSurface != null) {
+            currentSurface.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        }
+        if (previewSurface != null) {
+            previewSurface.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        }
+    }
+
+    private void resumeWaveforms() {
+        host.songRows.setWaveformsTransitionPaused(false);
+        host.previewSongRows.setWaveformsTransitionPaused(false);
+        host.mainRenderer.setHomeTransitionPaused(false);
     }
 
     private float clampOffset(float value) {

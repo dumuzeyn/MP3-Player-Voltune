@@ -10,7 +10,6 @@ final class AppearanceState {
     int particlePrimaryColor;
     int particleSecondaryColor;
     int fullPlayerRotationSpeed = 100;
-    int playlistTickerSpeed = 100;
     int cardOpacity = 82;
     int songCardOpacity = 82;
     int favoriteCardOpacity = 82;

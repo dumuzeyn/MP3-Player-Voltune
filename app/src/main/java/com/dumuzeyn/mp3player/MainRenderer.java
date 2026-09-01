@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.os.Trace;
 import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 final class MainRenderer {
     private final MainActivityCore host;
-    private final MenuRenderer homeRenderer;
+    private final HomeMenuRenderer homeRenderer;
     private final SongsMenuRenderer songsRenderer;
     private final FavoritesMenuRenderer favoritesRenderer;
     private final PlaylistsMenuRenderer playlistsRenderer;
@@ -154,6 +155,8 @@ final class MainRenderer {
     }
 
     PreviewState renderPreview(android.widget.LinearLayout target, int targetIndex, String targetSearch) {
+        Trace.beginSection("Voltune/Home.renderTabPreview");
+        try {
         android.widget.LinearLayout previousList = host.list;
         ButtonState previousButton = new ButtonState(host.sourcePlayButton);
         SongsRenderer.BatchState previousBatchState = host.songsRenderer.captureBatchState();
@@ -203,9 +206,14 @@ final class MainRenderer {
             host.songsRenderer.restoreBatchState(previousBatchState);
         }
         return previewState;
+        } finally {
+            Trace.endSection();
+        }
     }
 
     void adoptPreview(int targetIndex, String targetSearch, PreviewState state) {
+        Trace.beginSection("Voltune/Home.adoptPreview");
+        try {
         if (host.songsView != null) {
             host.songsView.hide();
         }
@@ -215,9 +223,14 @@ final class MainRenderer {
         host.songRows.replaceWith(host.previewSongRows);
         host.previewSongRows.clear();
         host.sourcePlayButton = state.sourcePlayButton;
-        host.songRows.refresh(host.songRowStateResolver());
+        if (targetIndex != LibraryTabs.HOME) {
+            host.songRows.refresh(host.songRowStateResolver());
+        }
         host.artworkUi.promoteVisibleArtwork();
         host.playerUiController.updateMini();
+        } finally {
+            Trace.endSection();
+        }
     }
 
     void discardPreview() {
@@ -231,11 +244,23 @@ final class MainRenderer {
         cachedHomeRows.clear();
     }
 
+    void refreshHomePlayback() {
+        if (cachedHomeContent != null && cachedHomeContent.isAttachedToWindow()) {
+            homeRenderer.refreshPlaybackSection();
+        }
+    }
+
+    void setHomeTransitionPaused(boolean paused) {
+        homeRenderer.setPlaybackTransitionPaused(paused);
+    }
+
     private boolean attachCachedHome() {
         if (cachedHomeContent == null || cachedHomeModel != host.libraryState.homeContent
                 || !cachedHomeKey.equals(homeKey())) {
             return false;
         }
+        Trace.beginSection("Voltune/Home.cacheHit");
+        try {
         ViewParent parent = cachedHomeContent.getParent();
         if (parent instanceof ViewGroup && parent != host.list) {
             ((ViewGroup) parent).removeView(cachedHomeContent);
@@ -247,12 +272,17 @@ final class MainRenderer {
         }
         host.activeSongRows().replaceWith(cachedHomeRows);
         host.activeSongRows().refresh(host.songRowStateResolver());
+        homeRenderer.refreshPlaybackSection();
         host.sourcePlayButton = null;
-        host.artworkUi.promoteVisibleArtwork();
         return true;
+        } finally {
+            Trace.endSection();
+        }
     }
 
     private void renderAndCacheHome(MenuRenderer renderer) {
+        Trace.beginSection("Voltune/Home.cacheMiss");
+        try {
         LinearLayout target = host.list;
         LinearLayout content = new LinearLayout(host);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -271,11 +301,13 @@ final class MainRenderer {
         cachedHomeModel = host.libraryState.homeContent;
         cachedHomeKey = homeKey();
         cachedHomeRows.replaceWith(host.activeSongRows());
+        } finally {
+            Trace.endSection();
+        }
     }
 
     private String homeKey() {
-        Track current = host.playbackStateProvider.currentTrack();
-        return (current == null ? "" : current.trackId) + '|' + host.appearanceState.language
+        return host.appearanceState.language
                 + '|' + host.appearanceState.circularCovers + '|' + host.panel
                 + '|' + host.primaryText + '|' + host.secondaryText
                 + '|' + host.appearanceState.playlistCardOpacity

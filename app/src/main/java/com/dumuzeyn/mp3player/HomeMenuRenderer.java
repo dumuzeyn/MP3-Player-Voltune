@@ -11,6 +11,7 @@ import java.util.Set;
 
 final class HomeMenuRenderer implements MenuRenderer {
     private final MainActivityCore host;
+    private HomePlaybackSection playbackSection;
 
     HomeMenuRenderer(MainActivityCore host) {
         this.host = host;
@@ -26,12 +27,9 @@ final class HomeMenuRenderer implements MenuRenderer {
             host.list.addView(empty);
             return;
         }
-        Track current = host.playbackStateProvider.currentTrack();
         Set<String> shownTracks = new HashSet<>();
-        if (current != null) {
-            addTracks(host.tr("Continue listening", "Продолжить прослушивание"),
-                    java.util.Collections.singletonList(current), shownTracks);
-        }
+        playbackSection = new HomePlaybackSection(host);
+        host.list.addView(playbackSection);
         HomeContent content = host.libraryState.homeContent;
         addTracks(host.tr("Recently played", "Недавно слушали"),
                 content.recentlyPlayed, shownTracks);
@@ -43,6 +41,15 @@ final class HomeMenuRenderer implements MenuRenderer {
         addPlaylists(content.playlists);
         addGroups(host.tr("Artists", "Исполнители"), content.artists, true);
         addGroups(host.tr("Albums", "Альбомы"), content.albums, false);
+        playbackSection.setStaticTrackKeys(shownTracks);
+    }
+
+    void refreshPlaybackSection() {
+        if (playbackSection != null) playbackSection.refresh();
+    }
+
+    void setPlaybackTransitionPaused(boolean paused) {
+        if (playbackSection != null) playbackSection.setTransitionPaused(paused);
     }
 
     @Override

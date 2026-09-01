@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.os.Trace;
 import android.view.View;
 
 public class WaveformView extends View {
@@ -11,8 +12,14 @@ public class WaveformView extends View {
     private int color;
     private int accentColor;
     private boolean active;
+    private boolean transitionPaused;
+    private boolean frameScheduled;
     private float progress;
     private long startedAt;
+    private final Runnable nextFrame = () -> {
+        frameScheduled = false;
+        if (shouldAnimate()) invalidate();
+    };
 
     public WaveformView(Context context, String key, int color, int accentColor, boolean active) {
         super(context);
@@ -26,8 +33,10 @@ public class WaveformView extends View {
     }
 
     public void setActive(boolean active) {
+        if (this.active == active) return;
         this.active = active;
-        invalidate();
+        startedAt = System.currentTimeMillis();
+        updateAnimationState();
     }
 
     public void setTrackKey(String key) {
@@ -52,17 +61,28 @@ public class WaveformView extends View {
     }
 
     public void setState(int color, int accentColor, boolean active) {
+        boolean changed = this.color != color || this.accentColor != accentColor
+                || this.active != active;
+        if (!changed) return;
         this.color = color;
         this.accentColor = accentColor;
         if (this.active != active) {
             this.startedAt = System.currentTimeMillis();
         }
         this.active = active;
-        invalidate();
+        updateAnimationState();
+    }
+
+    void setTransitionPaused(boolean paused) {
+        if (transitionPaused == paused) return;
+        transitionPaused = paused;
+        updateAnimationState();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        if (active) Trace.beginSection("Voltune/Home.activeWaveformDraw");
+        try {
         super.onDraw(canvas);
         int width = getWidth();
         int height = getHeight();
@@ -86,6 +106,60 @@ public class WaveformView extends View {
             canvas.drawLine(x, center - half, x, center + half, paint);
         }
 
-        if (active) postInvalidateDelayed(48);
+        scheduleNextFrame();
+        } finally {
+            if (active) Trace.endSection();
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        updateAnimationState();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        cancelNextFrame();
+        super.onDetachedFromWindow();
+    }
+
+    @Override
+    protected void onVisibilityChanged(View changedView, int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        updateAnimationState();
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        updateAnimationState();
+    }
+
+    private boolean shouldAnimate() {
+        return active && !transitionPaused && isAttachedToWindow()
+                && getWindowVisibility() == VISIBLE && isShown();
+    }
+
+    private void updateAnimationState() {
+        if (!shouldAnimate()) {
+            cancelNextFrame();
+            invalidate();
+            return;
+        }
+        invalidate();
+        scheduleNextFrame();
+    }
+
+    private void scheduleNextFrame() {
+        if (!shouldAnimate() || frameScheduled) return;
+        frameScheduled = true;
+        postDelayed(nextFrame, 48L);
+    }
+
+    private void cancelNextFrame() {
+        if (!frameScheduled) return;
+        removeCallbacks(nextFrame);
+        frameScheduled = false;
     }
 }

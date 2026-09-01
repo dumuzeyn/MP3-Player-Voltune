@@ -20,7 +20,6 @@ final class UiVisibilityController {
         if (host.songsView != null) {
             host.songsView.setHostVisible(visible);
         }
-        host.playlistController.setUiActive(visible);
         applyToTree(host.root, visible);
         host.playerUiController.onHostVisibilityChanged(visible);
     }
@@ -33,8 +32,6 @@ final class UiVisibilityController {
             ((PlayerGradientBackground) view).setUiActive(visible);
         } else if (view instanceof RotatingCoverImageView) {
             ((RotatingCoverImageView) view).setUiActive(visible);
-        } else if (view instanceof SmoothPlaylistTicker) {
-            ((SmoothPlaylistTicker) view).setUiActive(visible);
         }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;

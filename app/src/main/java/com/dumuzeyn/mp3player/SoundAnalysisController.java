@@ -33,6 +33,8 @@ final class SoundAnalysisController implements Closeable {
     private volatile int failed;
     private volatile int queued;
     private volatile String activeTitle = "";
+    private volatile boolean rebuildingGroups;
+    private volatile boolean fullReanalysis;
     private volatile SoundAnalysisConstraints.BlockReason blockReason =
             SoundAnalysisConstraints.BlockReason.NONE;
     private volatile boolean closed;
@@ -58,6 +60,8 @@ final class SoundAnalysisController implements Closeable {
         } else {
             generation.incrementAndGet();
             activeTitle = "";
+            rebuildingGroups = false;
+            fullReanalysis = false;
             blockReason = SoundAnalysisConstraints.BlockReason.NONE;
             notifyUi();
         }
@@ -106,6 +110,69 @@ final class SoundAnalysisController implements Closeable {
         return activeTitle;
     }
 
+    boolean rebuildingGroups() {
+        return rebuildingGroups;
+    }
+
+    boolean fullReanalysis() {
+        return fullReanalysis;
+    }
+
+    synchronized boolean rebuildGroupsFromSavedProfiles() {
+        if (closed || rebuildingGroups || fullReanalysis) return false;
+        int requestedGeneration = generation.incrementAndGet();
+        rebuildingGroups = true;
+        activeTitle = "";
+        notifyUi();
+        executor.execute(() -> {
+            try {
+                ensureWorkerResources();
+                LinkedHashMap<String, TrackAudioProfile> profiles = store.loadProfiles();
+                if (requestedGeneration == generation.get()) rebuildGroups(profiles);
+            } catch (RuntimeException error) {
+                VoltuneLog.failure("sound_group_rebuild_failed", error);
+            } finally {
+                rebuildingGroups = false;
+                notifyUi();
+            }
+        });
+        return true;
+    }
+
+    synchronized boolean reanalyzeLibrary() {
+        if (closed || rebuildingGroups || fullReanalysis) return false;
+        host.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putBoolean(ENABLED, true).apply();
+        int requestedGeneration = generation.incrementAndGet();
+        ArrayList<Track> snapshot = new ArrayList<>(host.libraryState.tracks);
+        fullReanalysis = true;
+        total = snapshot.size();
+        analyzed = 0;
+        failed = 0;
+        queued = snapshot.size();
+        activeTitle = "";
+        notifyUi();
+        executor.execute(() -> {
+            try {
+                ensureWorkerResources();
+                store.clearAnalysis();
+                groups = new ArrayList<>();
+                lastLibrarySignature = librarySignature(snapshot);
+                runQueueSafely(requestedGeneration, snapshot);
+            } catch (RuntimeException error) {
+                VoltuneLog.failure("sound_full_reanalysis_failed", error);
+                fullReanalysis = false;
+                notifyUi();
+            } finally {
+                if (queued == 0 || requestedGeneration != generation.get()) {
+                    fullReanalysis = false;
+                    notifyUi();
+                }
+            }
+        });
+        return true;
+    }
+
     SoundAnalysisConstraints.BlockReason blockReason() {
         return blockReason;
     }
@@ -116,6 +183,8 @@ final class SoundAnalysisController implements Closeable {
             return;
         }
         closed = true;
+        rebuildingGroups = false;
+        fullReanalysis = false;
         generation.incrementAndGet();
         executor.execute(this::closeWorkerResources);
         executor.shutdown();
@@ -128,6 +197,8 @@ final class SoundAnalysisController implements Closeable {
             VoltuneLog.failure("sound_analysis_queue_failed", error);
             closeWorkerResources();
             activeTitle = "";
+            rebuildingGroups = false;
+            fullReanalysis = false;
             blockReason = SoundAnalysisConstraints.BlockReason.NONE;
             if (closed || requestedGeneration != generation.get()) {
                 return;
@@ -159,10 +230,7 @@ final class SoundAnalysisController implements Closeable {
         if (!isCurrent(requestedGeneration)) {
             return;
         }
-        if (store == null) {
-            store = new SoundProfileStore(host);
-            extractor = new AudioFeatureExtractor(host);
-        }
+        ensureWorkerResources();
         LinkedHashMap<String, TrackAudioProfile> profiles = store.loadProfiles();
         groups = store.loadGroups();
         ArrayList<Track> pending = prepareQueue(tracks, profiles);
@@ -178,6 +246,7 @@ final class SoundAnalysisController implements Closeable {
         }
         if (clusteringChanged && pending.isEmpty() && usableCount(profiles) >= 4) {
             rebuildGroups(profiles);
+            clusteringChanged = false;
         }
         for (Track track : pending) {
             if (!runAllowedOrRescheduled(requestedGeneration, tracks)) {
@@ -228,7 +297,15 @@ final class SoundAnalysisController implements Closeable {
         }
         activeTitle = "";
         blockReason = SoundAnalysisConstraints.BlockReason.NONE;
+        fullReanalysis = false;
         notifyUi();
+    }
+
+    private void ensureWorkerResources() {
+        if (store == null) {
+            store = new SoundProfileStore(host);
+            extractor = new AudioFeatureExtractor(host);
+        }
     }
 
     private ArrayList<Track> prepareQueue(ArrayList<Track> tracks,

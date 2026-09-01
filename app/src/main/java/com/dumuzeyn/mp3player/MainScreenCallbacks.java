@@ -14,12 +14,13 @@ final class MainScreenCallbacks
     private final BooleanValueProvider animations;
     private final BooleanValueProvider darkTheme;
     private final IntValueProvider baseColor;
+    private final Runnable visibleArtworkPromotion;
 
     MainScreenCallbacks(HeaderController header, TabsController tabs,
             PlayerUiController playerUi, SongsRenderer songs,
             ValueProvider<ParticleEffectsView> particles,
             BooleanValueProvider animations, BooleanValueProvider darkTheme,
-            IntValueProvider baseColor) {
+            IntValueProvider baseColor, Runnable visibleArtworkPromotion) {
         this.header = header;
         this.tabs = tabs;
         this.playerUi = playerUi;
@@ -28,6 +29,7 @@ final class MainScreenCallbacks
         this.animations = animations;
         this.darkTheme = darkTheme;
         this.baseColor = baseColor;
+        this.visibleArtworkPromotion = visibleArtworkPromotion;
     }
 
     @Override
@@ -48,6 +50,7 @@ final class MainScreenCallbacks
     @Override
     public void onContentScrolled() {
         songs.loadMoreIfNearBottom();
+        visibleArtworkPromotion.run();
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player;
 import java.util.Locale;
 
 final class TrackAudioProfile {
+    // Version 2 stays readable so clustering changes never re-decode existing libraries.
     static final int ANALYSIS_VERSION = 2;
     static final int FEATURE_COUNT = 19;
     static final int BPM = 0;

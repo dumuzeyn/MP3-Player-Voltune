@@ -66,8 +66,6 @@ public class TextClippingInstrumentedTest {
         checkDialog(host, "equalizer", host.equalizerController::openDialog);
         checkDialog(host, "particle settings",
                 host.particleSettingsController::openDialog);
-        checkDialog(host, "playlist ticker",
-                host.playlistTickerSettingsController::openDialog);
         checkDialog(host, "sleep timer", host.sleepTimerController::openDialog);
         checkDialog(host, "volume leveling",
                 host.volumeLevelingController::openDialog);

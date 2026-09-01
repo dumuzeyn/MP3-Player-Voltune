@@ -1,7 +1,9 @@
 package com.dumuzeyn.mp3player;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Handler;
+import android.os.Trace;
 import android.widget.ImageView;
 
 /** Owns artwork loading, visible artwork bindings, waveform creation, and memory trimming. */
@@ -27,11 +29,14 @@ final class TrackArtworkUi implements AutoCloseable {
     }
 
     private final Context context;
+    private final Handler mainHandler;
     private final Dependencies dependencies;
     private final CoverLoader coverLoader;
+    private final Runnable promoteVisible = this::promoteVisibleArtwork;
 
     TrackArtworkUi(Context context, Handler mainHandler, Dependencies dependencies) {
         this.context = context;
+        this.mainHandler = mainHandler;
         this.dependencies = dependencies;
         this.coverLoader = new CoverLoader(context, mainHandler);
     }
@@ -67,7 +72,16 @@ final class TrackArtworkUi implements AutoCloseable {
     }
 
     void promoteVisibleArtwork() {
+        mainHandler.removeCallbacks(promoteVisible);
+        Trace.beginSection("Voltune/Home.promoteArtwork");
+        try {
         dependencies.activeRows().forEachCover((uri, cover) -> {
+            Rect visibleBounds = new Rect();
+            if (!cover.isAttachedToWindow() || !cover.isShown()
+                    || !cover.getGlobalVisibleRect(visibleBounds)
+                    || visibleBounds.width() <= 0 || visibleBounds.height() <= 0) {
+                return;
+            }
             Track track = dependencies.findTrack(uri);
             if (track != null) {
                 coverLoader.loadSmooth(cover, track, dependencies.inactiveColor(),
@@ -75,6 +89,14 @@ final class TrackArtworkUi implements AutoCloseable {
                         dependencies.animationsEnabled() ? 180 : 0);
             }
         });
+        } finally {
+            Trace.endSection();
+        }
+    }
+
+    void scheduleVisibleArtworkPromotion() {
+        mainHandler.removeCallbacks(promoteVisible);
+        mainHandler.postDelayed(promoteVisible, 72L);
     }
 
     void seedFromView(ImageView view, Track track) {
@@ -108,6 +130,7 @@ final class TrackArtworkUi implements AutoCloseable {
 
     @Override
     public void close() {
+        mainHandler.removeCallbacks(promoteVisible);
         coverLoader.close();
     }
 

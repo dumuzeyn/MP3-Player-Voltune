@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import android.view.View;
+import android.os.Trace;
 import android.widget.Button;
 import android.widget.TextView;
 import java.util.HashMap;
@@ -97,13 +98,17 @@ final class SongRowStateRegistry {
     }
 
     static void applyPlayState(Button button, boolean playing) {
-        button.setText(playing ? "\u2161" : "\u25b6");
+        String symbol = playing ? "\u2161" : "\u25b6";
+        if (symbol.contentEquals(button.getText())) return;
+        button.setText(symbol);
         int opticalOffset = playing ? 0 : Math.round(
                 button.getResources().getDisplayMetrics().density * 2.0f);
         button.setPadding(opticalOffset, 0, 0, 0);
     }
 
     void refresh(StateResolver resolver) {
+        Trace.beginSection("Voltune/Home.refreshSongRows");
+        try {
         for (Map.Entry<String, Button> entry : playButtons.entrySet()) {
             Track track = resolver.findTrack(entry.getKey());
             boolean current = track != null && resolver.isCurrent(track);
@@ -111,7 +116,11 @@ final class SongRowStateRegistry {
         }
         for (Map.Entry<String, View> entry : currentMarkers.entrySet()) {
             Track track = resolver.findTrack(entry.getKey());
-            entry.getValue().setVisibility(track != null && resolver.isCurrent(track) ? View.VISIBLE : View.INVISIBLE);
+            int visibility = track != null && resolver.isCurrent(track)
+                    ? View.VISIBLE : View.INVISIBLE;
+            if (entry.getValue().getVisibility() != visibility) {
+                entry.getValue().setVisibility(visibility);
+            }
         }
         for (Map.Entry<String, WaveformView> entry : waveforms.entrySet()) {
             Track track = resolver.findTrack(entry.getKey());
@@ -125,6 +134,15 @@ final class SongRowStateRegistry {
             for (RotatingCoverImageView cover : registered) {
                 cover.updatePlaybackState();
             }
+        }
+        } finally {
+            Trace.endSection();
+        }
+    }
+
+    void setWaveformsTransitionPaused(boolean paused) {
+        for (WaveformView waveform : waveforms.values()) {
+            waveform.setTransitionPaused(paused);
         }
     }
 }

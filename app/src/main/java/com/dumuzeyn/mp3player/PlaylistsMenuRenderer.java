@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -46,9 +47,15 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
         card.setPadding(host.dp(7), host.dp(4), host.dp(6), host.dp(4));
         host.uiFactory.setSurface(card, host.panel, false, host.appearanceState.playlistCardOpacity);
 
-        FrameLayoutCover cover = new FrameLayoutCover(host);
+        ImageView cover = host.uiFactory.staticCoverView();
         int fallback = host.appearanceState.dark ? 28 : 235;
-        cover.setFallback(Color.rgb(fallback, fallback, fallback));
+        int fallbackColor = Color.rgb(fallback, fallback, fallback);
+        if (tracks.isEmpty()) {
+            cover.setBackgroundColor(fallbackColor);
+        } else {
+            host.artworkUi.loadUnregisteredCover(
+                    cover, tracks.get(0), fallbackColor, CoverLoader.THUMB_SIZE);
+        }
         int coverSize = host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size);
         card.addView(cover, new LinearLayout.LayoutParams(coverSize, coverSize));
 
@@ -62,10 +69,6 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
         titleColumn.addView(title, new LinearLayout.LayoutParams(-1, host.dp(22)));
         titleColumn.addView(count, new LinearLayout.LayoutParams(-1, host.dp(16)));
 
-        SmoothPlaylistTicker ticker = new SmoothPlaylistTicker(host);
-        ticker.setVisibleLines(1);
-        ticker.setTextSizeSp(12);
-        titleColumn.addView(ticker, new LinearLayout.LayoutParams(-1, host.dp(20)));
         card.addView(titleColumn, new LinearLayout.LayoutParams(0, -1, 1.0f));
 
         LinearLayout actions = host.uiFactory.row();
@@ -100,8 +103,6 @@ final class PlaylistsMenuRenderer implements MenuRenderer {
         });
         actions.addView(shuffle, new LinearLayout.LayoutParams(actionSize, actionSize));
         card.addView(actions, new LinearLayout.LayoutParams(actionSize * 4, actionSize));
-        host.playlistController.bindRollingPreview(ticker, cover, tracks, host.navigationState.songRenderGeneration);
-
         card.setOnClickListener(view -> host.overlayController.openPlaylist(playlist));
 
         FrameLayout container = new FrameLayout(host);

@@ -46,6 +46,7 @@ final class MainActivityViewController {
 
     void refreshPlaybackChrome() {
         host.songRows.refresh(stateResolver());
+        host.mainRenderer.refreshHomePlayback();
         if (host.songsView != null) {
             host.songsView.refreshPlayback();
         }

@@ -37,7 +37,7 @@ final class SettingsSectionResetter {
             case ANIMATIONS:
                 return Arrays.asList("animations", "particlesEnabled", "particleFrequency",
                         "particleSize", "particleLifetime", "particlePrimaryColor",
-                        "particleSecondaryColor", "playlistTickerSpeed");
+                        "particleSecondaryColor");
             default:
                 return java.util.Collections.emptyList();
         }

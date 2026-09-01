@@ -42,11 +42,14 @@ public class SoundClusterEngineTest {
 
     @Test
     public void genuinelyDenseLargePopulationIsNotSplitOnlyBecauseItIsLarge() {
-        ArrayList<TrackAudioProfile> profiles = cloud("dense", 140, 4, 22L);
+        ArrayList<TrackAudioProfile> profiles = new ArrayList<>();
+        for (int index = 0; index < 140; index++) {
+            profiles.add(profile("dense-" + index, values(4)));
+        }
         ArrayList<SoundGroup> groups = new SoundClusterEngine().cluster(profiles);
 
-        assertTrue("groups=" + groups.size(), groups.size() <= 2);
-        assertTrue(largest(groups) >= 110);
+        assertEquals(1, groups.size());
+        assertEquals(140, largest(groups));
     }
 
     @Test
@@ -62,17 +65,36 @@ public class SoundClusterEngineTest {
     }
 
     @Test
-    public void incrementalOutlierIsNotForcedIntoUnrelatedSavedGroup() {
-        ArrayList<TrackAudioProfile> profiles = fourFamilies(16);
+    public void bpmAndTempoConfidenceDoNotChangeMembershipOrNearestGroup() {
+        ArrayList<TrackAudioProfile> profiles = fourFamilies(20);
         SoundClusterEngine engine = new SoundClusterEngine();
-        ArrayList<SoundGroup> groups = engine.cluster(profiles);
-        double[] outlier = values(4);
-        outlier[TrackAudioProfile.BPM] = 55.0d;
-        outlier[TrackAudioProfile.ENERGY] = 0.95d;
-        outlier[TrackAudioProfile.BASS] = 0.95d;
-        outlier[TrackAudioProfile.CENTROID] = 0.95d;
+        ArrayList<SoundGroup> original = engine.cluster(profiles);
+        ArrayList<TrackAudioProfile> tempoChanged = new ArrayList<>();
+        for (int index = 0; index < profiles.size(); index++) {
+            TrackAudioProfile profile = profiles.get(index);
+            double[] changed = profile.features.clone();
+            changed[TrackAudioProfile.BPM] = index % 2 == 0 ? 45.0d : 220.0d;
+            changed[TrackAudioProfile.TEMPO_CONFIDENCE] = index % 3 == 0 ? 0.0d : 1.0d;
+            tempoChanged.add(profile(profile.trackId, changed));
+        }
+        ArrayList<SoundGroup> changed = engine.cluster(tempoChanged);
 
-        assertEquals("", engine.nearestGroup(outlier, profiles, groups));
+        assertEquals(membership(original), membership(changed));
+        double[] candidate = profiles.get(0).features.clone();
+        String nearest = engine.nearestGroup(candidate, profiles, original);
+        candidate[TrackAudioProfile.BPM] = 240.0d;
+        candidate[TrackAudioProfile.TEMPO_CONFIDENCE] = 0.0d;
+        assertEquals(nearest, engine.nearestGroup(candidate, profiles, original));
+    }
+
+    @Test
+    public void everyUsableTrackRemainsAssigned() {
+        ArrayList<TrackAudioProfile> profiles = fourFamilies(41);
+        profiles.add(profile("extra", values(4)));
+        ArrayList<SoundGroup> groups = new SoundClusterEngine().cluster(profiles);
+
+        assertEquals(165, membership(groups).size());
+        assertTrue("groups=" + groups.size(), groups.size() > 3);
     }
 
     @Test(timeout = 12000L)
