@@ -130,7 +130,7 @@ final class QueuePageController implements AutoCloseable {
         });
         ItemTouchHelper helper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
                 ItemTouchHelper.UP | ItemTouchHelper.DOWN,
-                ItemTouchHelper.START) {
+                ItemTouchHelper.LEFT) {
             @Override public boolean onMove(RecyclerView view, RecyclerView.ViewHolder from,
                     RecyclerView.ViewHolder to) {
                 return adapter.move(from.getBindingAdapterPosition(),
