@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.3.0-9b4dff?style=for-the-badge" alt="Скачать Voltune">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.4.0-9b4dff?style=for-the-badge" alt="Скачать Voltune">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -46,7 +46,7 @@ Voltune превращает папку с музыкой в удобную ли
 
 Песни, избранное, плейлисты, похожие треки, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
 
-Вкладка «Похожие» локально анализирует несколько участков композиции и объединяет треки по темпу, энергии, динамике, спектру и тембру. Устойчивые названия вроде «Медленный темп · глубокий бас» строятся из реальных характеристик группы, а BPM учитывается только при достаточной уверенности. Аудио и профили не отправляются в интернет.
+Вкладка «Похожие» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
 
 <p align="center">
   <img src="docs/screenshots/ru/library.png" width="36%" alt="Библиотека песен Voltune">
@@ -182,7 +182,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_3.3.0-9b4dff?style=for-the-badge" alt="Download Voltune">
+    <img src="https://img.shields.io/badge/Download_APK-Version_3.4.0-9b4dff?style=for-the-badge" alt="Download Voltune">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
@@ -212,7 +212,7 @@ Voltune turns a folder of downloaded music into a focused personal library. It f
 
 Songs, Favorites, Playlists, Similar tracks, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltune creates only the rows that are actually visible.
 
-The Similar tab analyzes several local segments of each song and groups tracks by tempo, energy, dynamics, spectrum, and timbre. Deterministic names describe real group characteristics, while uncertain tempo estimates do not drive the grouping or its name. Audio and profiles never leave the device.
+The Similar tab analyzes sound locally and adaptively groups nearby tracks by energy, dynamics, spectrum, and timbre. BPM does not affect group distance, membership, or names. Audio and profiles never leave the device.
 
 <p align="center">
   <img src="docs/screenshots/en/library.png" width="36%" alt="Voltune music library">
