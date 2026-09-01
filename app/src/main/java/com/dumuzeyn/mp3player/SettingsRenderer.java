@@ -19,7 +19,6 @@ final class SettingsRenderer {
     private Button rotationButton;
     private Button animationsButton;
     private Button particlesButton;
-    private Button tickerButton;
     private Button soundAnalysisButton;
     private Button reanalyzeButton;
     private LinearLayout cachedContent;
@@ -113,8 +112,6 @@ final class SettingsRenderer {
                         host.appearanceState.particlesEnabled ? "вкл" : "выкл"), view -> toggleParticles());
         addButton(host.tr("Particle settings", "Настройка частиц"),
                 view -> host.particleSettingsController.openDialog());
-        tickerButton = addButton(host.playlistTickerSettingsController.settingLabel(),
-                view -> host.playlistTickerSettingsController.openDialog());
         defaults(SettingsSectionResetter.Section.ANIMATIONS);
 
         section(host.tr("Library", "Библиотека"));
@@ -253,9 +250,6 @@ final class SettingsRenderer {
             particlesButton.setText(host.tr("Particles: ", "Частицы: ")
                     + host.tr(host.appearanceState.particlesEnabled ? "on" : "off",
                     host.appearanceState.particlesEnabled ? "вкл" : "выкл"));
-        }
-        if (tickerButton != null) {
-            tickerButton.setText(host.playlistTickerSettingsController.settingLabel());
         }
         if (soundAnalysisButton != null) {
             soundAnalysisButton.setText(host.soundAnalysisController.settingLabel());

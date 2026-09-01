@@ -105,7 +105,6 @@ class MainActivityCore extends Activity {
     final StableVolumeController stableVolumeController = new StableVolumeController(this);
     final BackgroundPlaybackSettingsController backgroundPlaybackSettingsController =
             new BackgroundPlaybackSettingsController(this);
-    final PlaylistTickerSettingsController playlistTickerSettingsController = new PlaylistTickerSettingsController(this);
     final CardTransparencyController cardTransparencyController = new CardTransparencyController(this);
     final BackgroundSettingsController backgroundSettingsController = new BackgroundSettingsController(this);
     final LibraryListController libraryListController = new LibraryListController(this);

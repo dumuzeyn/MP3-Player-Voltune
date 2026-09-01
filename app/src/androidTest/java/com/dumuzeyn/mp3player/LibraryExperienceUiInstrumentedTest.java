@@ -3,7 +3,6 @@ package com.dumuzeyn.mp3player;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
@@ -16,6 +15,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.media3.common.Player;
 import androidx.recyclerview.widget.RecyclerView;
@@ -92,7 +92,7 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Compact playlist card was not laid out", 5000L,
                 () -> host.list.findViewById(R.id.playlist_card) != null
                         && host.list.findViewById(R.id.playlist_card).getHeight() > 0);
-        FrameLayoutCover playlistCover = find(host.list, FrameLayoutCover.class);
+        ImageView playlistCover = findStaticPlaylistCover(host.list);
         assertNotNull(playlistCover);
         View playlistCard = host.list.findViewById(R.id.playlist_card);
         assertNotNull(playlistCard);
@@ -100,11 +100,10 @@ public class LibraryExperienceUiInstrumentedTest {
                 playlistCard.getHeight());
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
                 playlistCover.getHeight());
-        assertEquals("Playlist artwork must not keep an empty transition layer",
-                1, playlistCover.getChildCount());
-        assertNull("Playlist artwork container must not expose square fallback corners",
-                playlistCover.getBackground());
-        assertTrue(playlistCover.getChildAt(0).getAlpha() > 0.99f);
+        assertFalse("Playlist cover must stay static",
+                playlistCover instanceof RotatingCoverImageView);
+        assertTrue("Playlist card must not contain a moving ticker",
+                !containsViewClassName(host.list, "SmoothPlaylistTicker"));
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
@@ -231,6 +230,31 @@ public class LibraryExperienceUiInstrumentedTest {
             }
         }
         return null;
+    }
+
+    private static ImageView findStaticPlaylistCover(View view) {
+        if (view instanceof ImageView && !(view instanceof RotatingCoverImageView)) {
+            return (ImageView) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                ImageView found = findStaticPlaylistCover(group.getChildAt(index));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static boolean containsViewClassName(View view, String simpleName) {
+        if (simpleName.equals(view.getClass().getSimpleName())) return true;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                if (containsViewClassName(group.getChildAt(index), simpleName)) return true;
+            }
+        }
+        return false;
     }
 
     private static <T extends TextView> T findText(View view, Class<T> type,
