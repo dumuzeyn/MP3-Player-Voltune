@@ -141,12 +141,13 @@ public class LibraryExperienceUiInstrumentedTest {
         assertTrue("Playlist card must not contain a moving ticker",
                 !containsViewClassName(host.list, "SmoothPlaylistTicker"));
         SystemClock.sleep(500L);
-        instrumentation.waitForIdleSync();
-        Drawable initialPlaylistArtwork = playlistCover.getDrawable();
+        Drawable[] initialPlaylistArtwork = new Drawable[1];
+        instrumentation.runOnMainSync(() ->
+                initialPlaylistArtwork[0] = playlistCover.getDrawable());
         SystemClock.sleep(15050L);
-        instrumentation.waitForIdleSync();
-        assertSame("Playlist artwork changed after the removed ticker interval",
-                initialPlaylistArtwork, playlistCover.getDrawable());
+        instrumentation.runOnMainSync(() -> assertSame(
+                "Playlist artwork changed after the removed ticker interval",
+                initialPlaylistArtwork[0], playlistCover.getDrawable()));
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
@@ -293,7 +294,6 @@ public class LibraryExperienceUiInstrumentedTest {
                     null, System.currentTimeMillis()));
             host.refreshAfterTrackChange();
         });
-        instrumentation.waitForIdleSync();
     }
 
     private void dispatchTouch(View target, MotionEvent event) {
@@ -396,7 +396,10 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(activity);
         MainActivityCore host = (MainActivityCore) activity;
         InstrumentedTestSupport.waitFor("Test library did not load", 10000L,
-                () -> host.libraryState.tracks.size() >= 10 && host.root != null);
+                () -> host.libraryState.tracks.size() >= 10 && host.root != null
+                        && host.librarySnapshotApplier.hasAppliedInitialSnapshot()
+                        && host.list != null && host.list.getChildCount() > 0
+                        && host.list.getChildAt(0).getHeight() > 0);
         return host;
     }
 
