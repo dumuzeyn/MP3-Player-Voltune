@@ -8,37 +8,45 @@ import org.junit.Test;
 
 public class SoundFeatureNormalizerTest {
     @Test
-    public void everyFeatureIsCenteredAndScaled() {
+    public void includedFeaturesUsePreKMeansStandardScaling() {
         SoundFeatureNormalizer.Result result = SoundFeatureNormalizer.normalize(Arrays.asList(
                 profile("a", filled(10.0d)), profile("b", filled(20.0d)),
                 profile("c", filled(30.0d))));
 
         for (int feature = 0; feature < TrackAudioProfile.FEATURE_COUNT; feature++) {
+            if (feature == TrackAudioProfile.BPM
+                    || feature == TrackAudioProfile.TEMPO_CONFIDENCE) continue;
             double mean = 0.0d;
-            for (double[] vector : result.vectors) {
-                mean += vector[feature];
-            }
+            for (double[] vector : result.vectors) mean += vector[feature];
             assertEquals(0.0d, mean / result.vectors.size(), 1.0e-9d);
-            assertEquals(20.0d, result.centers[feature], 1.0e-9d);
+            assertEquals(20.0d, result.means[feature], 1.0e-9d);
         }
     }
 
     @Test
-    public void extremeOutlierDoesNotMoveRobustCenter() {
+    public void bpmAndTempoConfidenceAreAbsentFromVectorsAndDistance() {
+        double[] first = filled(1.0d);
+        double[] second = filled(1.0d);
+        first[TrackAudioProfile.BPM] = 55.0d;
+        second[TrackAudioProfile.BPM] = 190.0d;
+        first[TrackAudioProfile.TEMPO_CONFIDENCE] = 0.0d;
+        second[TrackAudioProfile.TEMPO_CONFIDENCE] = 1.0d;
         SoundFeatureNormalizer.Result result = SoundFeatureNormalizer.normalize(Arrays.asList(
-                profile("a", filled(10.0d)), profile("b", filled(11.0d)),
-                profile("c", filled(12.0d)), profile("outlier", filled(10000.0d))));
+                profile("a", first), profile("b", second)));
 
-        assertTrue(result.centers[TrackAudioProfile.ENERGY] < 12.0d);
-        assertTrue(Math.abs(result.vectors.get(3)[TrackAudioProfile.ENERGY]) <= 3.61d);
+        assertEquals(0.0d, result.vectors.get(0)[TrackAudioProfile.BPM], 0.0d);
+        assertEquals(0.0d, result.vectors.get(1)[TrackAudioProfile.TEMPO_CONFIDENCE], 0.0d);
+        assertEquals(0.0d, SoundFeatureNormalizer.distance(
+                result.vectors.get(0), result.vectors.get(1)), 0.0d);
     }
 
     @Test
     public void distanceIsFiniteAndSymmetric() {
-        double leftToRight = SoundFeatureNormalizer.distance(
-                new double[]{0.0d, 1.0d}, new double[]{2.0d, 1.0d});
-        double rightToLeft = SoundFeatureNormalizer.distance(
-                new double[]{2.0d, 1.0d}, new double[]{0.0d, 1.0d});
+        double[] left = new double[TrackAudioProfile.FEATURE_COUNT];
+        double[] right = new double[TrackAudioProfile.FEATURE_COUNT];
+        right[TrackAudioProfile.ENERGY] = 2.0d;
+        double leftToRight = SoundFeatureNormalizer.distance(left, right);
+        double rightToLeft = SoundFeatureNormalizer.distance(right, left);
         assertTrue(Double.isFinite(leftToRight));
         assertEquals(leftToRight, rightToLeft, 0.0d);
     }

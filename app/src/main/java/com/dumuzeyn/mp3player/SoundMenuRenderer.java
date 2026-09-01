@@ -4,13 +4,10 @@ import android.text.TextUtils;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 final class SoundMenuRenderer extends TrackGroupMenuRenderer {
-    private final Map<String, TempoSummary> summaries = new HashMap<>();
-
     SoundMenuRenderer(MainActivityCore host) {
         super(host);
     }
@@ -39,7 +36,6 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
     @Override
     Map<String, ArrayList<Track>> groupedTracks() {
         LinkedHashMap<String, ArrayList<Track>> result = new LinkedHashMap<>();
-        summaries.clear();
         boolean english = "en".equals(host.appearanceState.language);
         for (SoundGroup group : host.soundAnalysisController.groups()) {
             ArrayList<Track> tracks = new ArrayList<>();
@@ -57,12 +53,6 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
                     result.put(name, namedTracks);
                 }
                 namedTracks.addAll(tracks);
-                TempoSummary summary = summaries.get(name);
-                if (summary == null) {
-                    summary = new TempoSummary();
-                    summaries.put(name, summary);
-                }
-                summary.add(group);
             }
         }
         return result;
@@ -75,12 +65,7 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
 
     @Override
     String groupSubtitle(String name, ArrayList<Track> tracks) {
-        TempoSummary summary = summaries.get(name);
-        String count = tracks.size() + " " + host.tr("tracks", "треков");
-        if (summary == null || summary.weight == 0.0d) {
-            return count;
-        }
-        return Math.round(summary.weightedBpm / summary.weight) + " BPM · " + count;
+        return tracks.size() + " " + host.tr("tracks", "треков");
     }
 
     @Override
@@ -136,22 +121,4 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         host.list.addView(message, new LinearLayout.LayoutParams(-1, host.dp(82)));
     }
 
-    private static final class TempoSummary {
-        double weightedBpm;
-        double weight;
-
-        void add(SoundGroup group) {
-            if (group.centroid.length <= TrackAudioProfile.TEMPO_CONFIDENCE) {
-                return;
-            }
-            double bpm = group.centroid[TrackAudioProfile.BPM];
-            double confidence = group.centroid[TrackAudioProfile.TEMPO_CONFIDENCE];
-            if (bpm <= 0.0d || confidence < 0.45d) {
-                return;
-            }
-            int size = Math.max(1, group.trackIds.size());
-            weightedBpm += bpm * size;
-            weight += size;
-        }
-    }
 }

@@ -138,8 +138,7 @@ final class AudioFeatureExtractor {
         long last = Math.max(0L, duration - SEGMENT_US);
         long middle = Math.max(0L, duration / 2L - SEGMENT_US / 2L);
         ArrayList<Long> result = new ArrayList<>();
-        long afterIntro = duration >= 30_000_000L ? 5_000_000L : 0L;
-        addDistinct(result, Math.min(afterIntro, last));
+        addDistinct(result, 0L);
         addDistinct(result, Math.min(middle, last));
         addDistinct(result, last);
         return result;

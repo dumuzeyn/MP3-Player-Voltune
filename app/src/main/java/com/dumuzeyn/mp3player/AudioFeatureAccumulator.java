@@ -33,8 +33,6 @@ final class AudioFeatureAccumulator {
     private final int envelopeBlockSize;
     private final float[] frame = new float[FRAME_SIZE];
     private final ArrayList<Double> envelope = new ArrayList<>();
-    private final ArrayList<Double> segmentEnvelope = new ArrayList<>();
-    private final ArrayList<TempoEstimator.Estimate> tempoEstimates = new ArrayList<>();
     private final ArrayList<Double> blockLevels = new ArrayList<>();
     private final double[] timbre = new double[TIMBRE_COEFFICIENTS];
     private int framePosition;
@@ -62,9 +60,8 @@ final class AudioFeatureAccumulator {
     }
 
     void beginSegment() {
-        finishEnvelopeBlock();
-        finishTempoSegment();
         hasPrevious = false;
+        finishEnvelopeBlock();
     }
 
     void addPcm(ByteBuffer source, int encoding, int channels) {
@@ -113,9 +110,7 @@ final class AudioFeatureAccumulator {
         }
         double[] result = new double[TrackAudioProfile.FEATURE_COUNT];
         double rms = Math.sqrt(squareSum / sampleCount);
-        finishTempoSegment();
-        TempoEstimator.Estimate tempo = TempoEstimator.combine(tempoEstimates);
-        result[TrackAudioProfile.BPM] = tempo.bpm;
+        result[TrackAudioProfile.BPM] = estimateBpm();
         result[TrackAudioProfile.ENERGY] = absoluteSum / sampleCount;
         result[TrackAudioProfile.LOUDNESS] = decibels(rms);
         result[TrackAudioProfile.DYNAMIC_RANGE] = dynamicRange();
@@ -128,7 +123,6 @@ final class AudioFeatureAccumulator {
         result[TrackAudioProfile.TREBLE] = trebleRatioSum / frames;
         result[TrackAudioProfile.RHYTHM] = rhythmStrength();
         result[TrackAudioProfile.CONTRAST] = contrastSum / frames;
-        result[TrackAudioProfile.TEMPO_CONFIDENCE] = tempo.confidence;
         for (int index = 0; index < TIMBRE_COEFFICIENTS; index++) {
             result[TrackAudioProfile.TIMBRE_START + index] = timbre[index] / frames;
         }
@@ -141,7 +135,6 @@ final class AudioFeatureAccumulator {
         }
         double rms = Math.sqrt(blockSquareSum / blockSamples);
         envelope.add(rms);
-        segmentEnvelope.add(rms);
         blockLevels.add(decibels(rms));
         blockSquareSum = 0.0d;
         blockSamples = 0;
@@ -217,15 +210,31 @@ final class AudioFeatureAccumulator {
         }
     }
 
-    private void finishTempoSegment() {
-        if (segmentEnvelope.isEmpty()) {
-            return;
+    private double estimateBpm() {
+        if (envelope.size() < 100) {
+            return 0.0d;
         }
-        TempoEstimator.Estimate estimate = TempoEstimator.estimateSegment(segmentEnvelope);
-        if (estimate.confidence > 0.0d) {
-            tempoEstimates.add(estimate);
+        int minimumLag = 50 * 60 / 200;
+        int maximumLag = Math.min(envelope.size() / 2, 50 * 60 / 60);
+        double mean = 0.0d;
+        for (double value : envelope) {
+            mean += value;
         }
-        segmentEnvelope.clear();
+        mean /= envelope.size();
+        double best = Double.NEGATIVE_INFINITY;
+        int bestLag = minimumLag;
+        for (int lag = minimumLag; lag <= maximumLag; lag++) {
+            double correlation = 0.0d;
+            for (int index = lag; index < envelope.size(); index++) {
+                correlation += (envelope.get(index) - mean)
+                        * (envelope.get(index - lag) - mean);
+            }
+            if (correlation > best) {
+                best = correlation;
+                bestLag = lag;
+            }
+        }
+        return 3000.0d / bestLag;
     }
 
     private double rhythmStrength() {

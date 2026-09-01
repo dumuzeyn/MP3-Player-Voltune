@@ -178,6 +178,7 @@ final class SoundAnalysisController implements Closeable {
         }
         if (clusteringChanged && pending.isEmpty() && usableCount(profiles) >= 4) {
             rebuildGroups(profiles);
+            clusteringChanged = false;
         }
         for (Track track : pending) {
             if (!runAllowedOrRescheduled(requestedGeneration, tracks)) {
