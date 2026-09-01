@@ -53,7 +53,7 @@ final class TrackLoudnessNormalizer {
     }
 
     float cachedGainDb(Track track) {
-        if (!enabled() || track == null) {
+        if (!isEnabled() || track == null) {
             return 0.0f;
         }
         LoudnessAnalysisResult result = cachedResult(track);
@@ -62,7 +62,7 @@ final class TrackLoudnessNormalizer {
     }
 
     void prefetch(List<Track> queue, int currentIndex) {
-        if (!enabled() || queue == null || queue.isEmpty()) {
+        if (!isEnabled() || queue == null || queue.isEmpty()) {
             return;
         }
         for (int offset = 0; offset < Math.min(3, queue.size()); offset++) {
@@ -326,7 +326,7 @@ final class TrackLoudnessNormalizer {
         }
     }
 
-    private boolean enabled() {
+    boolean isEnabled() {
         return context.getSharedPreferences(EqualizerController.PREFS, Context.MODE_PRIVATE)
                 .getBoolean(VolumeLevelingController.ENABLED, false);
     }

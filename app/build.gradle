@@ -304,6 +304,19 @@ tasks.register("checkArchitecture") {
                 throw new GradleException("MainActivityCore owns forbidden responsibility: ${forbidden}")
             }
         }
+        def playbackService = file(
+                "src/main/java/com/dumuzeyn/mp3player/Media3PlayerService.java")
+                .getText("UTF-8")
+        if (playbackService.contains("TrackStore.load(")) {
+            throw new GradleException(
+                    "Media3PlayerService must not read the full library on its main thread")
+        }
+        if (playbackService.count("TrackStore.updateDuration(") != 1
+                || !playbackService.contains(
+                        "libraryIo.execute(() -> TrackStore.updateDuration(")) {
+            throw new GradleException(
+                    "Media3PlayerService must write duration through its background executor")
+        }
         def manifest = file("src/main/AndroidManifest.xml").getText("UTF-8")
         for (String permission : ["android.permission.INTERNET",
                 "android.permission.MANAGE_EXTERNAL_STORAGE"]) {

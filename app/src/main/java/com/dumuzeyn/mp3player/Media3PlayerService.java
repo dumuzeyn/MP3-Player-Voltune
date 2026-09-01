@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Trace;
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
@@ -23,7 +24,9 @@ import com.dumuzeyn.mp3player.playback.service.PlaybackErrorRecovery;
 import com.dumuzeyn.mp3player.playback.service.PlaybackSleepTimer;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 @SuppressLint("UnsafeOptInUsageError")
 public final class Media3PlayerService extends MediaLibraryService {
@@ -34,6 +37,11 @@ public final class Media3PlayerService extends MediaLibraryService {
     private final PlaybackTransitionPolicy transitionPolicy = new PlaybackTransitionPolicy();
     private final PlaybackErrorRecovery errorRecovery = new PlaybackErrorRecovery();
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private final ExecutorService libraryIo = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "playback-library-io");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final Runnable positionSaver = new Runnable() {
         @Override
         public void run() {
@@ -55,6 +63,7 @@ public final class Media3PlayerService extends MediaLibraryService {
     private Media3SessionCommandHandler commandHandler;
     private PlaybackEventLogger eventLogger;
     private PlaybackHistoryRecorder historyRecorder;
+    private PlaybackSessionRestorer sessionRestorer;
     private VoltuneMediaLibraryCallback libraryCallback;
     private PauseReason pauseReason = PauseReason.NONE;
     private StopReason stopReason = StopReason.NONE;
@@ -118,7 +127,8 @@ public final class Media3PlayerService extends MediaLibraryService {
                         .build();
         provider.setSmallIcon(R.drawable.ic_notification_music);
         setMediaNotificationProvider(provider);
-        new PlaybackSessionRestorer(this, stateManager, mapper).restore(player);
+        sessionRestorer = new PlaybackSessionRestorer(this, stateManager, mapper);
+        sessionRestorer.restore(player);
         sleepTimer.restore();
         PlayerWidgetProvider.updateFromPlayer(this, player);
         logEvent("service_created", "none");
@@ -174,6 +184,11 @@ public final class Media3PlayerService extends MediaLibraryService {
         if (historyRecorder != null) {
             historyRecorder.close();
         }
+        if (sessionRestorer != null) {
+            sessionRestorer.close();
+            sessionRestorer = null;
+        }
+        libraryIo.shutdownNow();
         if (libraryCallback != null) {
             libraryCallback.close();
             libraryCallback = null;
@@ -194,7 +209,8 @@ public final class Media3PlayerService extends MediaLibraryService {
         if (player == null) {
             return;
         }
-        float analyzedGain = loudnessNormalizer.cachedGainDb(currentTrack());
+        float analyzedGain = loudnessNormalizer.isEnabled()
+                ? loudnessNormalizer.cachedGainDb(currentTrack()) : 0.0f;
         float appliedGain = audioEffects.adjustedNormalizationGainDb(analyzedGain);
         player.setVolume(AudioEffectsManager.playerVolumeForGainDb(appliedGain));
         if (audioSessionId == C.AUDIO_SESSION_ID_UNSET) {
@@ -204,11 +220,15 @@ public final class Media3PlayerService extends MediaLibraryService {
     }
 
     private void prefetchLoudness() {
-        List<Track> queue = currentTracks();
-        if (!queue.isEmpty()) {
-            loudnessNormalizer.prefetch(queue,
-                    Math.max(0, Math.min(player.getCurrentMediaItemIndex(), queue.size() - 1)));
+        if (!loudnessNormalizer.isEnabled() || player.getMediaItemCount() == 0) return;
+        ArrayList<Track> upcoming = new ArrayList<>(3);
+        int start = Math.max(0, player.getCurrentMediaItemIndex());
+        for (int offset = 0; offset < Math.min(3, player.getMediaItemCount()); offset++) {
+            Track track = mapper.fromMediaItem(player.getMediaItemAt(
+                    (start + offset) % player.getMediaItemCount()));
+            if (track != null) upcoming.add(track);
         }
+        loudnessNormalizer.prefetch(upcoming, 0);
     }
 
     private void recoverFromError(PlaybackException error) {
@@ -237,30 +257,19 @@ public final class Media3PlayerService extends MediaLibraryService {
         stateManager.save(snapshot(), currentUri(), includeQueue);
     }
 
-    private ArrayList<Track> currentTracks() {
-        ArrayList<Track> queue = new ArrayList<>();
-        List<Track> library = TrackStore.load(this);
-        for (int itemIndex = 0; itemIndex < player.getMediaItemCount(); itemIndex++) {
-            String mediaId = player.getMediaItemAt(itemIndex).mediaId;
-            for (Track track : library) {
-                if (mapper.mediaId(track).equals(mediaId)) {
-                    queue.add(track);
-                    break;
-                }
-            }
-        }
-        return queue;
-    }
-
     @Nullable
     private Track currentTrack() {
-        String mediaId = currentMediaId();
-        for (Track track : TrackStore.load(this)) {
-            if (mapper.mediaId(track).equals(mediaId)) {
-                return track;
-            }
+        return mapper.fromMediaItem(player == null ? null : player.getCurrentMediaItem());
+    }
+
+    private void updateDurationAsync(String uri, int durationMs) {
+        if (uri.isEmpty()) return;
+        try {
+            libraryIo.execute(() -> TrackStore.updateDuration(
+                    Media3PlayerService.this, uri, durationMs));
+        } catch (RejectedExecutionException ignored) {
+            // The service is already closing.
         }
-        return null;
     }
 
     private String currentUri() {
@@ -337,20 +346,25 @@ public final class Media3PlayerService extends MediaLibraryService {
     private final class PlayerEvents implements Player.Listener {
         @Override
         public void onIsPlayingChanged(boolean isPlaying) {
-            historyRecorder.playing(isPlaying);
-            handler.removeCallbacks(positionSaver);
-            if (isPlaying) {
-                pauseReason = PauseReason.NONE;
-                stopReason = StopReason.NONE;
-                lastError = null;
-                errorRecovery.resetConsecutiveErrors();
-                transitionPolicy.onUserPlay();
-                prefetchLoudness();
-                handler.postDelayed(positionSaver, POSITION_SAVE_INTERVAL_MS);
+            Trace.beginSection("Voltune/Playback.isPlayingChanged");
+            try {
+                historyRecorder.playing(isPlaying);
+                handler.removeCallbacks(positionSaver);
+                if (isPlaying) {
+                    pauseReason = PauseReason.NONE;
+                    stopReason = StopReason.NONE;
+                    lastError = null;
+                    errorRecovery.resetConsecutiveErrors();
+                    transitionPolicy.onUserPlay();
+                    prefetchLoudness();
+                    handler.postDelayed(positionSaver, POSITION_SAVE_INTERVAL_MS);
+                }
+                persistState(true);
+                PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
+                logEvent(isPlaying ? "playback_started" : "playback_paused", "none");
+            } finally {
+                Trace.endSection();
             }
-            persistState(true);
-            PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
-            logEvent(isPlaying ? "playback_started" : "playback_paused", "none");
         }
 
         @Override
@@ -376,33 +390,42 @@ public final class Media3PlayerService extends MediaLibraryService {
 
         @Override
         public void onPlaybackStateChanged(int state) {
-            if (state == Player.STATE_READY) {
-                errorRecovery.resetConsecutiveErrors();
-                historyRecorder.sample(player.getDuration());
-                TrackStore.updateDuration(Media3PlayerService.this, currentUri(),
-                        safeInt(player.getDuration()));
-            } else if (state == Player.STATE_ENDED
-                    && player.getRepeatMode() == Player.REPEAT_MODE_OFF) {
-                stopReason = StopReason.QUEUE_ENDED;
-                historyRecorder.ended(player.getDuration());
+            Trace.beginSection("Voltune/Playback.stateChanged");
+            try {
+                if (state == Player.STATE_READY) {
+                    errorRecovery.resetConsecutiveErrors();
+                    historyRecorder.sample(player.getDuration());
+                    updateDurationAsync(currentUri(), safeInt(player.getDuration()));
+                } else if (state == Player.STATE_ENDED
+                        && player.getRepeatMode() == Player.REPEAT_MODE_OFF) {
+                    stopReason = StopReason.QUEUE_ENDED;
+                    historyRecorder.ended(player.getDuration());
+                }
+                persistState(true);
+                PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
+                logEvent("playback_state_changed", "none");
+            } finally {
+                Trace.endSection();
             }
-            persistState(true);
-            PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
-            logEvent("playback_state_changed", "none");
         }
 
         @Override
         public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-            historyRecorder.transition(mediaItem == null ? "" : mediaItem.mediaId,
-                    player.getDuration(), reason);
-            audioEffects.release();
-            errorRecovery.resetConsecutiveErrors();
-            lastError = null;
-            prefetchLoudness();
-            applyAudioEffects();
-            persistState(true);
-            PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
-            logEvent("media_item_transition", "none");
+            Trace.beginSection("Voltune/Playback.mediaItemTransition");
+            try {
+                historyRecorder.transition(mediaItem == null ? "" : mediaItem.mediaId,
+                        player.getDuration(), reason);
+                audioEffects.release();
+                errorRecovery.resetConsecutiveErrors();
+                lastError = null;
+                prefetchLoudness();
+                applyAudioEffects();
+                persistState(true);
+                PlayerWidgetProvider.updateFromPlayer(Media3PlayerService.this, player);
+                logEvent("media_item_transition", "none");
+            } finally {
+                Trace.endSection();
+            }
         }
 
         @Override

@@ -269,7 +269,7 @@ final class SongAdapter extends ListAdapter<Track, SongAdapter.SongViewHolder> {
                 if (host.isCurrent(track)) {
                     host.playbackQueueController.toggleOrStart();
                 } else {
-                    host.playbackQueueController.playTrack(track, true);
+                    host.playbackQueueController.playTrack(track);
                 }
             });
         }

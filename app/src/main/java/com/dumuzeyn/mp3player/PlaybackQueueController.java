@@ -20,16 +20,13 @@ final class PlaybackQueueController {
         this.mutations = new LibraryMutationController(host);
     }
 
-    void playTrack(Track track, boolean refreshList) {
+    void playTrack(Track track) {
         if (track == null || host.libraryState.tracks.indexOf(track) < 0) {
             return;
         }
         ArrayList<Track> queue = new ArrayList<>();
         queue.add(track);
         playback.submitQueue(queue, 0, 0, host.repeatMode(), true);
-        if (refreshList) {
-            host.refreshAfterTrackChange();
-        }
     }
 
     void playList(ArrayList<Track> source, boolean shuffle) {

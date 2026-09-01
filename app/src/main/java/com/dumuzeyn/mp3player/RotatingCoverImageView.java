@@ -103,14 +103,14 @@ final class RotatingCoverImageView extends ImageView {
     }
 
     void updatePlaybackState() {
+        updatePlaybackState(host.playbackStateProvider.currentTrack(),
+                host.isPlaybackPlaying());
+    }
+
+    void updatePlaybackState(Track currentTrack, boolean playing) {
         invalidateOutline();
-        String currentUri = "";
-        int currentIndex = host.currentTrackIndex();
-        if (currentIndex >= 0 && currentIndex < host.libraryState.tracks.size()
-                && host.libraryState.tracks.get(currentIndex) != null
-                && host.libraryState.tracks.get(currentIndex).uri != null) {
-            currentUri = host.libraryState.tracks.get(currentIndex).uri;
-        }
+        String currentUri = currentTrack == null || currentTrack.uri == null
+                ? "" : currentTrack.uri;
         if (!currentUri.isEmpty() && !currentUri.equals(this.lastObservedTrackUri)) {
             if (!this.lastObservedTrackUri.isEmpty()) {
                 stopRotation(true);
@@ -118,9 +118,7 @@ final class RotatingCoverImageView extends ImageView {
             this.lastObservedTrackUri = currentUri;
         }
         boolean shouldRotate = uiActive && host.appearanceState.circularCovers
-                && host.isPlaybackPlaying()
-                && currentIndex >= 0 && currentIndex < host.libraryState.tracks.size()
-                && trackUris.contains(host.libraryState.tracks.get(currentIndex).uri)
+                && playing && trackUris.contains(currentUri)
                 && (!requireActiveQueue || host.playbackQueueController.isCurrentCollection(sourceTracks));
         if (seeking) {
             return;
