@@ -134,7 +134,8 @@ class MainActivityCore extends Activity {
             this.headerController, this.tabsController, this.playerUiController,
             this.songsRenderer, () -> new ParticleEffectsView(this),
             () -> this.appearanceState.animations,
-            () -> this.appearanceState.dark, () -> this.bg);
+            () -> this.appearanceState.dark, () -> this.bg,
+            this.artworkUi::scheduleVisibleArtworkPromotion);
     private final MainActivityViewController activityViewController =
             new MainActivityViewController(this, this.mainScreenView, this.mainScreenCallbacks);
     final TabTransitionCoordinator tabTransitionCoordinator =
