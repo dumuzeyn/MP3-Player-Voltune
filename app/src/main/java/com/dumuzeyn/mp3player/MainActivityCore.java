@@ -21,7 +21,7 @@ import com.dumuzeyn.mp3player.ui.player.PlaybackTimeFormatter;
 import com.dumuzeyn.mp3player.ui.layout.ResponsiveLayoutController;
 import java.util.ArrayList;
 
-class MainActivityCore extends Activity {
+public class MainActivityCore extends Activity {
     static final int COVER_FULL_SIZE = 1024;
     static final int TAB_CYCLES = 5;
     int bg;
