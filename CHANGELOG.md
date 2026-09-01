@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.4.0 - Adaptive Similar restoration and smooth Home playback
+
+- Restored the proven pre-KMeans adaptive clustering behavior from Git history.
+- Removed BPM and tempo confidence from Similar distances, grouping, nearest matching,
+  normalization, and names.
+- Added profile-only group rebuilding and a separate full library re-analysis flow.
+- Split static Home content from playback-dependent state and limited artwork/waveform
+  work to attached visible views.
+- Removed playlist tickers, automatic cover cycling, their timer callbacks, and setting.
+- Added playback-aware Home UI regression tests and a physical-device frame benchmark.
+
 ## 3.3.0 - Similar tracks and responsive Home
 
 - Renamed the Sound section to Similar and changed the user-facing product name to
