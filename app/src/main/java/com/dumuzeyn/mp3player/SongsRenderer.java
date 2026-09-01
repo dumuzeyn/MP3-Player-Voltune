@@ -230,6 +230,10 @@ final class SongsRenderer {
                 host, track, cover);
         cover.setOnClickListener(openOrPlay);
         row.setOnClickListener(openOrPlay);
+        String openDescription = host.tr("Open or play track " + track.title,
+                "Открыть или включить песню " + track.title);
+        cover.setContentDescription(openDescription);
+        row.setContentDescription(openDescription);
         row.addView(cover, host.uiFactory.square(52));
 
         LinearLayout textColumn = new LinearLayout(host);

@@ -278,6 +278,10 @@ final class SongAdapter extends ListAdapter<Track, SongAdapter.SongViewHolder> {
             boundTrack = track;
             title.setText(track.title);
             duration.setText(host.formatTrackDuration(track));
+            String openDescription = host.tr("Open or play track " + track.title,
+                    "Открыть или включить песню " + track.title);
+            card.setContentDescription(openDescription);
+            cover.setContentDescription(openDescription);
             waveform.setTrackKey(track.trackId);
             updatePlayback();
             host.artworkUi.loadUnregisteredCover(
