@@ -6,7 +6,7 @@ import java.security.MessageDigest;
 import java.util.Locale;
 
 /** A persisted SAF tree that owns imported library tracks. */
-final class LibrarySource {
+public final class LibrarySource {
     final String sourceId;
     final String treeUri;
     final String displayName;
