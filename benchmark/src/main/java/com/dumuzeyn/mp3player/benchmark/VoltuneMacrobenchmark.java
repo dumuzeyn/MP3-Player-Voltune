@@ -63,6 +63,8 @@ public class VoltuneMacrobenchmark {
     }
 
     @Test public void repeatedWarmHomeTransitions() {
+        Assume.assumeFalse("Frame timing requires a physical RenderThread trace",
+                isEmulator());
         rule.measureRepeated(PACKAGE_NAME,
                 Arrays.asList(new FrameTimingMetric()), compilationMode(), StartupMode.WARM, 5,
                 scope -> {
@@ -80,6 +82,15 @@ public class VoltuneMacrobenchmark {
                     clickText(scope, "Home", "\u0413\u043b\u0430\u0432\u043d\u0430\u044f");
                     return Unit.INSTANCE;
                 });
+    }
+
+    private static boolean isEmulator() {
+        return Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.contains("emulator")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for")
+                || Build.MODEL.startsWith("sdk_gphone")
+                || Build.PRODUCT.startsWith("sdk_gphone");
     }
 
     private static Intent benchmarkLibraryIntent() {
