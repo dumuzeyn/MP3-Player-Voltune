@@ -14,7 +14,7 @@ final class TrackTapController {
             host.artworkUi.seedFromView(cover, track);
         }
         if (TrackTapPolicy.action(host.isCurrent(track)) == TrackTapPolicy.Action.PLAY) {
-            host.playbackQueueController.playTrack(track, true);
+            host.playbackQueueController.playTrack(track);
             return;
         }
         host.navigationState.fullPlayerOpening = true;

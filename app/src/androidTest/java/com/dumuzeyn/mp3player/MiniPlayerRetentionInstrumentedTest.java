@@ -1,6 +1,8 @@
 package com.dumuzeyn.mp3player;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -57,6 +59,24 @@ public class MiniPlayerRetentionInstrumentedTest {
                 .restore(unusedPlayer);
 
         assertTrue(stateManager.load().queueUris.isEmpty());
+    }
+
+    @Test
+    public void playbackItemCarriesLoudnessIdentityWithoutDatabaseLookup() {
+        Track source = new Track("track-rich", "content://music/rich", "Song", "Artist",
+                "Album", "Electronic", 123000, 4567L, 890L, "fingerprint");
+
+        Track restored = new MediaItemMapper().fromMediaItem(
+                new MediaItemMapper().toMediaItem(source));
+
+        assertNotNull(restored);
+        assertEquals(source.trackId, restored.trackId);
+        assertEquals(source.uri, restored.uri);
+        assertEquals(source.genre, restored.genre);
+        assertEquals(source.durationMs, restored.durationMs);
+        assertEquals(source.fileSize, restored.fileSize);
+        assertEquals(source.lastModified, restored.lastModified);
+        assertEquals(source.fingerprint, restored.fingerprint);
     }
 
     private void clearPreferences() {

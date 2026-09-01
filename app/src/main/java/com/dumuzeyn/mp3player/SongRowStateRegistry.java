@@ -10,8 +10,7 @@ import java.util.ArrayList;
 
 final class SongRowStateRegistry {
     interface StateResolver {
-        Track findTrack(String uri);
-        boolean isCurrent(Track track);
+        Track currentTrack();
         boolean isPlaying();
         int activeColor();
         int secondaryActiveColor();
@@ -109,30 +108,29 @@ final class SongRowStateRegistry {
     void refresh(StateResolver resolver) {
         Trace.beginSection("Voltune/Home.refreshSongRows");
         try {
+        Track current = resolver.currentTrack();
+        String currentUri = current == null ? "" : current.uri;
+        boolean playing = resolver.isPlaying();
         for (Map.Entry<String, Button> entry : playButtons.entrySet()) {
-            Track track = resolver.findTrack(entry.getKey());
-            boolean current = track != null && resolver.isCurrent(track);
-            applyPlayState(entry.getValue(), current && resolver.isPlaying());
+            applyPlayState(entry.getValue(), entry.getKey().equals(currentUri) && playing);
         }
         for (Map.Entry<String, View> entry : currentMarkers.entrySet()) {
-            Track track = resolver.findTrack(entry.getKey());
-            int visibility = track != null && resolver.isCurrent(track)
+            int visibility = entry.getKey().equals(currentUri)
                     ? View.VISIBLE : View.INVISIBLE;
             if (entry.getValue().getVisibility() != visibility) {
                 entry.getValue().setVisibility(visibility);
             }
         }
         for (Map.Entry<String, WaveformView> entry : waveforms.entrySet()) {
-            Track track = resolver.findTrack(entry.getKey());
-            boolean current = track != null && resolver.isCurrent(track);
+            boolean rowCurrent = entry.getKey().equals(currentUri);
             entry.getValue().setState(
-                    current ? resolver.activeColor() : resolver.inactiveColor(),
+                    rowCurrent ? resolver.activeColor() : resolver.inactiveColor(),
                     resolver.secondaryActiveColor(),
-                    current && resolver.isPlaying());
+                    rowCurrent && playing);
         }
         for (ArrayList<RotatingCoverImageView> registered : covers.values()) {
             for (RotatingCoverImageView cover : registered) {
-                cover.updatePlaybackState();
+                cover.updatePlaybackState(current, playing);
             }
         }
         } finally {

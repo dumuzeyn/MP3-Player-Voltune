@@ -71,11 +71,7 @@ public final class PlaybackStateManager {
             editor.putString(QUEUE, queueJson);
             lastSavedQueueJson = queueJson;
         }
-        if (includeQueue) {
-            editor.commit();
-        } else {
-            editor.apply();
-        }
+        editor.apply();
     }
 
     public void save(PlaybackSnapshot snapshot, String currentUri, List<Track> queue,

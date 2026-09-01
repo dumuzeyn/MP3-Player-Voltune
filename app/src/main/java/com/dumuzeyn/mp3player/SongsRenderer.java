@@ -294,7 +294,7 @@ final class SongsRenderer {
                 if (host.isCurrent(track)) {
                     host.playbackQueueController.toggleOrStart();
                 } else {
-                    host.playbackQueueController.playTrack(track, true);
+                    host.playbackQueueController.playTrack(track);
                 }
                 if (afterPlay != null) {
                     afterPlay.run();

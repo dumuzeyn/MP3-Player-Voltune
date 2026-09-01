@@ -110,7 +110,7 @@ final class TrackSelectionOverlayController {
                 if (host.isCurrent(track)) {
                     host.playbackQueueController.toggleOrStart();
                 } else {
-                    host.playbackQueueController.playTrack(track, false);
+                    host.playbackQueueController.playTrack(track);
                 }
                 renderRows(parent, selected, tracks);
             });

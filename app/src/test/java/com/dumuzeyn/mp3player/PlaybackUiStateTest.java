@@ -6,6 +6,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import androidx.media3.common.Player;
+import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Test;
 
@@ -31,5 +32,24 @@ public class PlaybackUiStateTest {
         state.updateSnapshot(PlaybackSnapshot.empty());
         assertFalse(state.isPlaying());
         assertSame(track, library.tracks.get(0));
+    }
+
+    @Test
+    public void cachedCurrentIndexIsValidatedAfterLibraryReorder() {
+        LibraryState library = new LibraryState();
+        Track current = new Track("track-current", "content://song/current", "Current",
+                "Artist", "Album", "Genre", 1000, 10L, 20L, "fingerprint");
+        Track other = new Track("content://song/other", "Other", "Artist");
+        library.tracks.addAll(Arrays.asList(current, other));
+        PlaybackUiState state = new PlaybackUiState();
+        state.updateSnapshot(new PlaybackSnapshot(
+                Collections.singletonList(current.trackId), current.trackId, 0,
+                0L, 1000L, false, Player.STATE_READY, Player.REPEAT_MODE_OFF,
+                false, PlaybackPhase.READY, PauseReason.NONE, StopReason.NONE, null, 1L));
+
+        assertEquals(0, state.currentTrackIndex(library));
+        Collections.swap(library.tracks, 0, 1);
+
+        assertEquals(1, state.currentTrackIndex(library));
     }
 }

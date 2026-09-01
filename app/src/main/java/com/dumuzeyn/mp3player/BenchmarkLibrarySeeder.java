@@ -26,11 +26,12 @@ final class BenchmarkLibrarySeeder {
         ArrayList<Track> tracks = new ArrayList<>(count);
         String playableUri = createTestTone(context);
         for (int index = 0; index < count; index++) {
-            String uri = index == 0 && !playableUri.isEmpty()
+            boolean recentlyAddedPlayable = index == count - 1 && !playableUri.isEmpty();
+            String uri = recentlyAddedPlayable
                     ? playableUri : "content://voltune.benchmark/track/" + index;
             String title = String.format(java.util.Locale.ROOT,
                     "Benchmark song %05d", index);
-            if (index == 0 && !playableUri.isEmpty()) {
+            if (recentlyAddedPlayable) {
                 tracks.add(new Track("benchmark-playable-track", uri, title,
                         "Benchmark artist 0", "Benchmark album 0", "Benchmark genre 0",
                         8000, -1L, 0L, "benchmark"));

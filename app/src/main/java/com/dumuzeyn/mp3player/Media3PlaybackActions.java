@@ -15,7 +15,7 @@ final class Media3PlaybackActions implements PlaybackActions {
 
     @Override
     public void playTrack(Track track) {
-        queue.playTrack(track, true);
+        queue.playTrack(track);
     }
 
     @Override

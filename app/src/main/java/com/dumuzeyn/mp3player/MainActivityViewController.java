@@ -62,13 +62,8 @@ final class MainActivityViewController {
     SongRowStateRegistry.StateResolver stateResolver() {
         return new SongRowStateRegistry.StateResolver() {
             @Override
-            public Track findTrack(String uri) {
-                return host.findTrack(uri);
-            }
-
-            @Override
-            public boolean isCurrent(Track track) {
-                return host.isCurrent(track);
+            public Track currentTrack() {
+                return host.playbackStateProvider.currentTrack();
             }
 
             @Override

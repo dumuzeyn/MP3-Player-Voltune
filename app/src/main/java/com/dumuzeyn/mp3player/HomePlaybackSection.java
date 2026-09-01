@@ -77,7 +77,7 @@ final class HomePlaybackSection extends LinearLayout {
             if (host.isCurrent(boundTrack)) {
                 host.playbackQueueController.toggleOrStart();
             } else {
-                host.playbackQueueController.playTrack(boundTrack, true);
+                host.playbackQueueController.playTrack(boundTrack);
             }
         });
         row.addView(play, host.uiFactory.square(44));
