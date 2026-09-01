@@ -127,6 +127,18 @@ final class SoundProfileStore implements Closeable {
                 + "NOT IN (SELECT DISTINCT group_id FROM audio_profiles WHERE group_id<>'')");
     }
 
+    synchronized void clearAnalysis() {
+        SQLiteDatabase db = database.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete("sound_groups", null, null);
+            db.delete("audio_profiles", null, null);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     @Override
     public synchronized void close() {
         database.close();

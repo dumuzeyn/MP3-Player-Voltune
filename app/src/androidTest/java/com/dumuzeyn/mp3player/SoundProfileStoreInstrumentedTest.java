@@ -78,6 +78,22 @@ public class SoundProfileStoreInstrumentedTest {
         assertTrue(profiles.loadProfiles().isEmpty());
     }
 
+    @Test
+    public void fullReanalysisResetClearsProfilesAndGroupsButKeepsLibrary() {
+        Track track = track("reanalyze");
+        library.upsertTrack(track);
+        profiles.saveProfile(TrackAudioProfile.analyzed(track, features(1.0d)));
+        profiles.replaceGroups(Arrays.asList(new SoundGroup("sound-reanalyze",
+                "Глубокий бас", "Deep bass", features(0.2d),
+                Arrays.asList(track.trackId))));
+
+        profiles.clearAnalysis();
+
+        assertTrue(profiles.loadProfiles().isEmpty());
+        assertTrue(profiles.loadGroups().isEmpty());
+        assertEquals(1, library.loadTracks().size());
+    }
+
     private static Track track(String id) {
         return new Track(id, "content://sound/" + id, "Title", "Artist", "Album",
                 "Genre", 120000, 100L, 200L, "fingerprint");

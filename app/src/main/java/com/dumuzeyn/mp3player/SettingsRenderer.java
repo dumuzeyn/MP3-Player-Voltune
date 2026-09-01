@@ -21,6 +21,7 @@ final class SettingsRenderer {
     private Button particlesButton;
     private Button tickerButton;
     private Button soundAnalysisButton;
+    private Button reanalyzeButton;
     private LinearLayout cachedContent;
     private String cachedAppearanceKey = "";
 
@@ -119,6 +120,7 @@ final class SettingsRenderer {
         section(host.tr("Library", "Библиотека"));
         soundAnalysisButton = addButton(host.soundAnalysisController.settingLabel(),
                 view -> host.soundAnalysisController.toggle());
+        reanalyzeButton = addButton(reanalysisLabel(), view -> confirmFullReanalysis());
         addButton(host.tr("Check songs", "Проверить песни"),
                 view -> host.openSongDiagnostics());
         addButton(host.tr("Music folders", "Музыкальные папки"),
@@ -258,6 +260,31 @@ final class SettingsRenderer {
         if (soundAnalysisButton != null) {
             soundAnalysisButton.setText(host.soundAnalysisController.settingLabel());
         }
+        if (reanalyzeButton != null) {
+            reanalyzeButton.setText(reanalysisLabel());
+            reanalyzeButton.setEnabled(!host.soundAnalysisController.rebuildingGroups()
+                    && !host.soundAnalysisController.fullReanalysis());
+        }
+    }
+
+    private String reanalysisLabel() {
+        SoundAnalysisController analysis = host.soundAnalysisController;
+        if (analysis.fullReanalysis()) {
+            return host.tr("Re-analyzing library: ", "Повторный анализ: ")
+                    + analysis.analyzed() + " / " + analysis.total();
+        }
+        return host.tr("Re-analyze library", "Повторно проанализировать библиотеку");
+    }
+
+    private void confirmFullReanalysis() {
+        host.showConfirmPanel(
+                host.tr("Re-analyze library", "Повторный анализ библиотеки"),
+                host.tr("Saved sound profiles will be rebuilt for every available track. "
+                                + "Playback can continue, but the operation may take time.",
+                        "Сохранённые звуковые признаки будут заново построены для всех "
+                                + "доступных треков. Воспроизведение продолжит работать, "
+                                + "но операция может занять время."),
+                () -> host.soundAnalysisController.reanalyzeLibrary());
     }
 
     private Button addButton(String label, View.OnClickListener listener) {

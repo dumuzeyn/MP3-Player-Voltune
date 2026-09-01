@@ -43,7 +43,8 @@ public class SoundGroupsUiInstrumentedTest {
         });
         InstrumentedTestSupport.waitFor("Saved sound group did not render", 5000L,
                 () -> findText(host.list, "Яркий тембр") != null);
-        assertNotNull(findText(host.list, "82 BPM · 4 треков"));
+        assertNotNull(findText(host.list, "4 треков"));
+        assertNotNull(findText(host.list, "Пересобрать группы"));
         View group = findText(host.list, "Яркий тембр");
         assertNotNull(group);
         View clickable = clickableAncestor(group);

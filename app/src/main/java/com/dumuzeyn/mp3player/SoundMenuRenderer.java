@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player;
 
 import android.text.TextUtils;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.ArrayList;
@@ -28,9 +29,11 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         if (host.soundAnalysisController.groups().isEmpty()) {
             addMessage(host.tr("Similar tracks will appear after local analysis",
                     "Похожие треки появятся после локального анализа"));
+            addRebuildButton();
             return;
         }
         super.render();
+        addRebuildButton();
     }
 
     @Override
@@ -78,6 +81,8 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         String status;
         if (!analysis.enabled()) {
             status = host.tr("Analysis disabled", "Анализ выключен");
+        } else if (analysis.rebuildingGroups()) {
+            status = host.tr("Rebuilding groups", "Пересборка групп");
         } else if (!analysis.activeTitle().isEmpty()) {
             status = host.tr("Analyzing: ", "Анализ: ") + analysis.activeTitle();
         } else if (analysis.blockReason() != SoundAnalysisConstraints.BlockReason.NONE) {
@@ -119,6 +124,22 @@ final class SoundMenuRenderer extends TrackGroupMenuRenderer {
         message.setGravity(android.view.Gravity.CENTER);
         message.setPadding(host.dp(20), host.dp(12), host.dp(20), host.dp(12));
         host.list.addView(message, new LinearLayout.LayoutParams(-1, host.dp(82)));
+    }
+
+    private void addRebuildButton() {
+        SoundAnalysisController analysis = host.soundAnalysisController;
+        boolean busy = analysis.rebuildingGroups() || analysis.fullReanalysis();
+        String label = analysis.rebuildingGroups()
+                ? host.tr("Rebuilding groups...", "Пересборка групп...")
+                : host.tr("Rebuild groups", "Пересобрать группы");
+        Button button = host.uiFactory.button(label);
+        host.uiFactory.applySecondaryButtonStyle(button,
+                host.appearanceState.genreCardOpacity);
+        button.setEnabled(!busy && analysis.analyzed() >= 4);
+        button.setOnClickListener(view -> analysis.rebuildGroupsFromSavedProfiles());
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, host.dp(48));
+        params.setMargins(0, host.dp(10), 0, host.dp(4));
+        host.list.addView(button, params);
     }
 
 }
