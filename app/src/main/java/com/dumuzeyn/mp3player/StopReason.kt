@@ -1,11 +1,11 @@
-package com.dumuzeyn.mp3player;
+package com.dumuzeyn.mp3player
 
-public enum StopReason {
+enum class StopReason {
     NONE,
     USER,
     QUEUE_ENDED,
     SLEEP_TIMER,
     ALL_ITEMS_UNAVAILABLE,
     FATAL_ERROR,
-    SERVICE_DESTROYED
+    SERVICE_DESTROYED,
 }

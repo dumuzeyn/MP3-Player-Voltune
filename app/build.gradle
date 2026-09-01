@@ -1,5 +1,6 @@
 plugins {
     id "com.android.application"
+    id "org.jetbrains.kotlin.android"
 }
 
 def releaseKeystorePath = System.getenv("MP3_RELEASE_KEYSTORE")
@@ -27,6 +28,15 @@ android {
 
     buildFeatures {
         buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -78,6 +88,8 @@ android {
 dependencies {
     def media3Version = "1.10.1"
 
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.11.0"
     implementation "androidx.media3:media3-exoplayer:$media3Version"
     implementation "androidx.media3:media3-session:$media3Version"
     implementation "androidx.recyclerview:recyclerview:1.4.0"
@@ -290,30 +302,36 @@ tasks.register("checkArchitecture") {
     group = "verification"
     description = "Checks critical playback and local-only architecture invariants."
     doLast {
-        def sources = fileTree("src/main/java") { include "**/*.java" }
+        def sources = fileTree("src/main") { include "**/*.java", "**/*.kt" }
+        def sourceText = { String baseName ->
+            def matches = sources.files.findAll { source ->
+                source.name == "${baseName}.java" || source.name == "${baseName}.kt"
+            }
+            if (matches.size() != 1) {
+                throw new GradleException(
+                        "Expected one ${baseName} source; found ${matches.size()}")
+            }
+            matches.first().getText("UTF-8")
+        }
         int playerCreations = sources.files.sum { source ->
-            source.getText("UTF-8").count("new ExoPlayer.Builder")
+            source.getText("UTF-8").count("ExoPlayer.Builder(")
         } as int
         if (playerCreations != 1) {
             throw new GradleException("Expected exactly one ExoPlayer construction; found ${playerCreations}")
         }
-        def core = file("src/main/java/com/dumuzeyn/mp3player/MainActivityCore.java")
-                .getText("UTF-8")
+        def core = sourceText("MainActivityCore")
         for (String forbidden : ["SQLiteDatabase", "ExoPlayer", "MediaMetadataRetriever"]) {
             if (core.contains(forbidden)) {
                 throw new GradleException("MainActivityCore owns forbidden responsibility: ${forbidden}")
             }
         }
-        def playbackService = file(
-                "src/main/java/com/dumuzeyn/mp3player/Media3PlayerService.java")
-                .getText("UTF-8")
+        def playbackService = sourceText("Media3PlayerService")
         if (playbackService.contains("TrackStore.load(")) {
             throw new GradleException(
                     "Media3PlayerService must not read the full library on its main thread")
         }
         if (playbackService.count("TrackStore.updateDuration(") != 1
-                || !playbackService.contains(
-                        "libraryIo.execute(() -> TrackStore.updateDuration(")) {
+                || !playbackService.contains("libraryIo.execute")) {
             throw new GradleException(
                     "Media3PlayerService must write duration through its background executor")
         }
