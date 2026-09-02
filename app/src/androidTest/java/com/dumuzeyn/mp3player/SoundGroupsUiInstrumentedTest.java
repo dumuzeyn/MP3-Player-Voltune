@@ -64,7 +64,9 @@ public class SoundGroupsUiInstrumentedTest {
         context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
                 .putString("language", "ru").putBoolean("animations", false)
                 .putBoolean("particlesEnabled", false)
-                .putBoolean("soundAnalysisEnabled", true).commit();
+                .putBoolean("soundAnalysisEnabled", true)
+                .putInt("similarClusteringVersion", SoundClusterEngine.CLUSTERING_VERSION)
+                .commit();
         ArrayList<Track> tracks = new ArrayList<>();
         for (int index = 0; index < 4; index++) {
             File wave = InstrumentedTestSupport.createTestWave(context,
