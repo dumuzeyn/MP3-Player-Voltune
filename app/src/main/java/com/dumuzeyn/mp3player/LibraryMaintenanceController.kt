@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Reconciles persisted tracks and repairs old metadata entirely off the UI thread. */
 class LibraryMaintenanceController(
-    context: Context,
+    private val ownerContext: Context,
     private val mainHandler: Handler,
 ) : AutoCloseable {
     fun interface Callback {
@@ -22,7 +22,9 @@ class LibraryMaintenanceController(
         fun finished(unavailable: List<Track>)
     }
 
-    private val context = context.applicationContext ?: context
+    private val context: Context by lazy(LazyThreadSafetyMode.NONE) {
+        ownerContext.applicationContext ?: ownerContext
+    }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val started = AtomicBoolean()
     @Volatile private var closed = false
