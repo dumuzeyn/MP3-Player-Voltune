@@ -53,7 +53,7 @@ final class ButtonFactory {
 
     Button shuffleButton() {
         Button button = icon("⇄");
-        button.setTextSize(31.0f);
+        button.setTextSize(27.0f);
         button.setTypeface(Typeface.DEFAULT_BOLD);
         return button;
     }
