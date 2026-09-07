@@ -20,7 +20,7 @@ internal class PlayerUiController(
 
     fun syncPlaybackUi() {
         miniPlayerController.updateState()
-        if (fullPlayerController.isOpen) fullPlayerController.refresh()
+        if (fullPlayerController.isOpen()) fullPlayerController.refresh()
     }
 
     fun onHostVisibilityChanged(visible: Boolean) =
