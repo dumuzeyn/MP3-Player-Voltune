@@ -168,10 +168,9 @@ internal class QueuePageController(
             "",
             false,
         ) { value ->
-            host.playlistController.createPlaylist(value)?.let { playlist ->
-                state.activeQueue().forEach { track -> playlist.uris.add(track.uri) }
-                host.saveLibraryState()
-            }
+            val playlist = host.playlistController.createPlaylist(value)
+            state.activeQueue().forEach { track -> playlist.uris.add(track.uri) }
+            host.saveLibraryState()
         }
     }
 

@@ -129,10 +129,9 @@ internal class QueueOverlayController(
             "",
             false,
         ) { value ->
-            host.playlistController.createPlaylist(value)?.let { playlist ->
-                host.playbackUiState.queue.forEach { track -> playlist.uris.add(track.uri) }
-                host.saveLibraryState()
-            }
+            val playlist = host.playlistController.createPlaylist(value)
+            host.playbackUiState.queue.forEach { track -> playlist.uris.add(track.uri) }
+            host.saveLibraryState()
         }
     }
 
