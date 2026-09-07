@@ -50,4 +50,35 @@ public class CrashReportStoreInstrumentedTest {
         assertFalse(body.contains("private/song.mp3"));
         assertFalse(body.contains("emulated/0/Music"));
     }
+
+    @Test
+    public void latestSummaryAndClearReflectStoredReport() {
+        CrashReportStore.record(context, Thread.currentThread(),
+                new IllegalArgumentException("broken metadata"));
+
+        assertTrue(CrashReportStore.latestSummary(context)
+                .contains("IllegalArgumentException: broken metadata"));
+        CrashReportStore.clear(context);
+        assertEquals(0, CrashReportStore.count(context));
+        assertEquals("", CrashReportStore.latestSummary(context));
+    }
+
+    @Test
+    public void recordingPrunesOldReportsToFive() throws Exception {
+        File directory = new File(context.getFilesDir(), "crash-reports");
+        assertTrue(directory.mkdirs() || directory.isDirectory());
+        for (int index = 0; index < 6; index++) {
+            File report = new File(directory, "crash-old-" + index + ".txt");
+            Files.write(report.toPath(), ("exception=old-" + index)
+                    .getBytes(StandardCharsets.UTF_8));
+            assertTrue(report.setLastModified(1_000L + index));
+        }
+
+        assertNotNull(CrashReportStore.record(context, Thread.currentThread(),
+                new IllegalStateException("new report")));
+
+        assertEquals(5, CrashReportStore.count(context));
+        assertFalse(new File(directory, "crash-old-0.txt").exists());
+        assertFalse(new File(directory, "crash-old-1.txt").exists());
+    }
 }
