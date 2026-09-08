@@ -62,23 +62,23 @@ public class MediaLibraryCallbacksInstrumentedTest {
 
     @Test
     public void rootSongsPlaylistsSmartListsAndSearchAreBrowsable() throws Exception {
-        LibraryResult<MediaItem> root = callback.onGetLibraryRoot(null, null, null)
+        LibraryResult<MediaItem> root = callback.browseRoot(null)
                 .get(2, TimeUnit.SECONDS);
         assertNotNull(root.value);
-        LibraryResult<ImmutableList<MediaItem>> categories = callback.onGetChildren(
-                null, null, root.value.mediaId, 0, 20, null).get(2, TimeUnit.SECONDS);
+        LibraryResult<ImmutableList<MediaItem>> categories = callback.browseChildren(
+                root.value.mediaId, 0, 20, null).get(2, TimeUnit.SECONDS);
         assertEquals(5, categories.value.size());
 
         String songsId = findCategory(categories.value, "Songs").mediaId;
         String playlistsId = findCategory(categories.value, "Playlists").mediaId;
         String smartId = findCategory(categories.value, "Smart playlists").mediaId;
-        assertEquals(2, callback.onGetChildren(null, null, songsId, 0, 20, null)
+        assertEquals(2, callback.browseChildren(songsId, 0, 20, null)
                 .get(2, TimeUnit.SECONDS).value.size());
-        assertEquals(1, callback.onGetChildren(null, null, playlistsId, 0, 20, null)
+        assertEquals(1, callback.browseChildren(playlistsId, 0, 20, null)
                 .get(2, TimeUnit.SECONDS).value.size());
-        assertFalse(callback.onGetChildren(null, null, smartId, 0, 20, null)
+        assertFalse(callback.browseChildren(smartId, 0, 20, null)
                 .get(2, TimeUnit.SECONDS).value.isEmpty());
-        assertEquals("Alpha", callback.onGetSearchResult(null, null, " alpha ", 0, 20, null)
+        assertEquals("Alpha", callback.browseSearchResult(" alpha ", 0, 20, null)
                 .get(2, TimeUnit.SECONDS).value.get(0).mediaMetadata.title.toString());
     }
 
