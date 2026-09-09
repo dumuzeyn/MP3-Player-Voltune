@@ -26,8 +26,9 @@ internal class SongsRenderer(private val host: MainActivityCore) {
     }
 
     fun renderLibrary(tracks: ArrayList<Track>, query: String) {
-        if (!host.navigationState.renderingTabPreview && host.songsView != null) {
-            host.songsView.show(tracks, query)
+        val songsView = host.songsView
+        if (!host.navigationState.renderingTabPreview && songsView != null) {
+            songsView.show(tracks, query)
             return
         }
         renderSongsState(host.libraryListController.filter(tracks))

@@ -59,7 +59,7 @@ internal class MainActivityViewController(
         object : SongRowStateRegistry.StateResolver {
             override fun currentTrack(): Track? = host.playbackStateProvider.currentTrack()
 
-            override fun isPlaying(): Boolean = host.isPlaybackPlaying
+            override fun isPlaying(): Boolean = host.isPlaybackPlaying()
 
             override fun activeColor(): Int = host.purple
 

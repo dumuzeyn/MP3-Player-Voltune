@@ -112,7 +112,7 @@ internal class TrackSelectionOverlayController(private val host: MainActivityCor
             val mark = host.uiFactory.icon("")
             row.addView(mark, host.uiFactory.square(48))
             val play = host.uiFactory.icon(
-                if (host.isCurrent(track) && host.isPlaybackPlaying) "Ⅱ" else "▶",
+                if (host.isCurrent(track) && host.isPlaybackPlaying()) "Ⅱ" else "▶",
             ).apply {
                 setOnClickListener {
                     if (host.isCurrent(track)) {

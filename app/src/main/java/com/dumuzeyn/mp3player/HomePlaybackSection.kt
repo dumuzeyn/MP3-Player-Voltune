@@ -126,8 +126,8 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
                 )
             }
         }
-        waveform.setState(host.purple, host.yellow, host.isPlaybackPlaying)
-        SongRowStateRegistry.applyPlayState(play, host.isPlaybackPlaying)
+        waveform.setState(host.purple, host.yellow, host.isPlaybackPlaying())
+        SongRowStateRegistry.applyPlayState(play, host.isPlaybackPlaying())
         if (cover is RotatingCoverImageView) cover.updatePlaybackState()
     }
 

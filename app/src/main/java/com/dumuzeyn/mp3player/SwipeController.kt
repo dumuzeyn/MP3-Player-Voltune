@@ -183,10 +183,11 @@ internal class SwipeController(private val host: MainActivityCore) {
                 targetIndex,
                 direction,
             )
-            if (targetIndex == LibraryTabs.SONGS && host.songsView != null) {
+            val songsView = host.songsView
+            if (targetIndex == LibraryTabs.SONGS && songsView != null) {
                 previewUsesSongsSurface = true
-                host.songsView.prepareForTransition(host.libraryState.tracks, targetSearch)
-                previewSurface = host.songsView
+                songsView.prepareForTransition(host.libraryState.tracks, targetSearch)
+                previewSurface = songsView
                 previewSurface?.translationX = direction * transitionDistance.toFloat()
                 prepareSurfaceLayers()
                 return
@@ -322,11 +323,12 @@ internal class SwipeController(private val host: MainActivityCore) {
         previewScroll?.let { scroll ->
             if (scroll.parent === host.contentHost) host.contentHost.removeView(scroll)
         }
+        val songsView = host.songsView
         if (
-            previewUsesSongsSurface && host.songsView != null &&
+            previewUsesSongsSurface && songsView != null &&
             host.navigationState.tabIndex != LibraryTabs.HOME
         ) {
-            host.songsView.hide()
+            songsView.hide()
         }
         previewScroll = null
         previewList = null
