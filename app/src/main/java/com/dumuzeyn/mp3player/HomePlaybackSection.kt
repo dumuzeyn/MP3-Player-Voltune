@@ -16,7 +16,6 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
     private val title: TextView
     private val duration: TextView
     private val waveform: WaveformView
-    private val actions: Button
     private val play: Button
     private var staticTrackKeys: Set<String> = emptySet()
     private var boundTrack: Track? = null
@@ -70,13 +69,16 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         textColumn.addView(metaRow)
         row.addView(textColumn, LayoutParams(0, host.dp(62), 1f))
 
-        actions = host.uiFactory.icon("⋯").apply {
-            host.uiFactory.applyPlainIconStyle(this)
+        val properties = View.OnLongClickListener {
+            boundTrack?.let(host.overlayController::openSongActions)
+            true
         }
-        row.addView(actions, host.uiFactory.square(44))
+        row.setOnLongClickListener(properties)
+        cover.setOnLongClickListener(properties)
+        row.setOnClickListener { TrackTapController.handle(host, boundTrack, cover) }
 
         play = host.uiFactory.icon("").apply {
-            host.uiFactory.applyPrimaryButtonStyle(this)
+            host.uiFactory.applyPlainIconStyle(this, host.purple)
             setOnClickListener {
                 val track = boundTrack ?: return@setOnClickListener
                 if (host.isCurrent(track)) {
@@ -116,7 +118,6 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
                 TrackTapController.handle(host, current, cover)
             }
             cover.setOnClickListener(openOrPlay)
-            actions.setOnClickListener { host.overlayController.openSongActions(current) }
             if (isAttachedToWindow) {
                 host.artworkUi.loadUnregisteredCover(
                     cover,

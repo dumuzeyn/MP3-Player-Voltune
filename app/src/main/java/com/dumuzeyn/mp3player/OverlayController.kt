@@ -45,10 +45,10 @@ internal class OverlayController(private val host: MainActivityCore) : AutoClose
                 host.playbackQueueController.playList(tracks, false)
             }
         }
-        header.addView(play, host.uiFactory.square(52))
         val shuffle = host.uiFactory.shuffleButton()
         shuffle.setOnClickListener { host.playbackQueueController.playList(tracks, true) }
         header.addView(shuffle, host.uiFactory.square(52))
+        header.addView(play, host.uiFactory.square(52))
         if (playlist != null) {
             val add = host.uiFactory.icon("+")
             add.setOnClickListener {

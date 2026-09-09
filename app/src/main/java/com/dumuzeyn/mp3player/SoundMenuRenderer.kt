@@ -67,7 +67,10 @@ internal class SoundMenuRenderer(host: MainActivityCore) : TrackGroupMenuRendere
             analysis.blockReason() != SoundAnalysisConstraints.BlockReason.NONE ->
                 blockedText(analysis.blockReason())
             analysis.queued() > 0 -> host.tr("Waiting: ", "В очереди: ") + analysis.queued()
-            else -> host.tr("Similar tracks are up to date", "Похожие треки актуальны")
+            analysis.failed() > 0 -> host.tr("Analysis completed with errors", "Анализ завершён с ошибками")
+            analysis.total() == 0 -> host.tr("No tracks to analyze", "Нет треков для анализа")
+            analysis.analyzed() < analysis.total() -> host.tr("Preparing analysis", "Подготовка анализа")
+            else -> host.tr("All tracks analyzed", "Все треки проанализированы")
         }
         var progress = "${analysis.analyzed()} / ${analysis.total()}"
         if (analysis.failed() > 0) {
@@ -77,12 +80,12 @@ internal class SoundMenuRenderer(host: MainActivityCore) : TrackGroupMenuRendere
             orientation = LinearLayout.VERTICAL
             setPadding(host.dp(12), host.dp(7), host.dp(12), host.dp(9))
             addView(host.uiFactory.text(status, 15, true).apply {
-                isSingleLine = true
+                maxLines = 2
                 ellipsize = TextUtils.TruncateAt.END
             })
             addView(host.uiFactory.text(progress, 13, false))
         }
-        host.list.addView(block, LinearLayout.LayoutParams(-1, host.dp(58)))
+        host.list.addView(block, LinearLayout.LayoutParams(-1, -2))
     }
 
     private fun blockedText(reason: SoundAnalysisConstraints.BlockReason): String = when (reason) {

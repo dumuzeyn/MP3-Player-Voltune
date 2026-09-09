@@ -196,21 +196,22 @@ internal class SongsRenderer(private val host: MainActivityCore) {
                 host.render()
             }
             row.addView(favorite, host.uiFactory.square(40))
-        } else if (showActions) {
-            val actions = host.uiFactory.icon("⋯")
-            host.uiFactory.applyPlainIconStyle(actions)
-            actions.setOnClickListener {
+        }
+        if (showActions) {
+            val properties = View.OnLongClickListener {
                 if (actionOverride != null) {
                     actionOverride.run()
                 } else {
                     host.overlayController.openSongActions(track)
                 }
+                true
             }
-            row.addView(actions, host.uiFactory.square(44))
+            row.setOnLongClickListener(properties)
+            cover.setOnLongClickListener(properties)
         }
 
         val play = host.uiFactory.icon("")
-        host.uiFactory.applyPrimaryButtonStyle(play)
+        host.uiFactory.applyPlainIconStyle(play, host.purple)
         SongRowStateRegistry.applyPlayState(
             play,
             host.isCurrent(track) && host.isPlaybackPlaying(),

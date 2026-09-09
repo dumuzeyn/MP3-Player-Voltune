@@ -191,6 +191,12 @@ internal class TabsController(private val host: MainActivityCore) {
 
     private fun styleTab(button: Button, index: Int) {
         button.textSize = 15f
+        button.setSingleLine(false)
+        button.maxLines = 2
+        button.ellipsize = null
+        androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+            button, 10, 15, 1, android.util.TypedValue.COMPLEX_UNIT_SP,
+        )
         button.gravity = Gravity.CENTER
         button.setPadding(host.dp(14), 0, host.dp(14), 0)
         (button as? OutlinedButton)?.setTextOutline(false, Color.TRANSPARENT, 1f)

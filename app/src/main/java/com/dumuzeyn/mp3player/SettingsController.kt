@@ -115,7 +115,7 @@ internal class SettingsController(private val host: MainActivityCore) {
             ),
             host.tr("Cancel", "Отмена"),
             host.tr("Support", "Поддержать"),
-            false,
+            true,
             ::openSupportPage,
         )
     }

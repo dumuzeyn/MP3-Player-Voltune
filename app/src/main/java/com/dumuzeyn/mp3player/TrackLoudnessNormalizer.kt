@@ -19,7 +19,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 /** Performs bounded EBU R128-style analysis and caches content-versioned results. */
 internal class TrackLoudnessNormalizer(context: Context) {
@@ -47,12 +46,36 @@ internal class TrackLoudnessNormalizer(context: Context) {
     fun cachedGainDb(track: Track?): Float {
         if (!isEnabled || track == null) return 0f
         val result = cachedResult(track) ?: return 0f
-        return LoudnessGainPolicy.gainDb(
+        val settings = context.getSharedPreferences(EqualizerController.PREFS, Context.MODE_PRIVATE)
+        val mode = LoudnessLevelingMode.fromPreference(
+            settings.getString(LoudnessLevelingMode.PREFERENCE, null),
+            settings.getBoolean(REDUCE_ONLY, false),
+        )
+        return mode.gainDb(
             result.integratedLufs,
             result.peakDbfs,
-            targetLufs(),
-            reduceOnly(),
+            cache.getFloat(REFERENCE_TARGET_PREFIX + mode.name, mode.fallbackTarget),
         )
+    }
+
+    fun updateReferenceTracks(tracks: List<Track>) {
+        val snapshot = tracks.toList()
+        executor.execute {
+            val keys = snapshot.mapTo(HashSet()) { RESULT_PREFIX + cacheKeyFor(it) }
+            cache.edit().putStringSet(REFERENCE_KEYS, keys).apply()
+            updateReferenceLevels()
+        }
+    }
+
+    private fun updateReferenceLevels() {
+        val levels = cache.getStringSet(REFERENCE_KEYS, emptySet()).orEmpty().mapNotNull { key ->
+            cache.getString(key, null)?.substringBefore(',')?.toFloatOrNull()
+        }
+        val editor = cache.edit()
+        LoudnessLevelingMode.entries.forEach { mode ->
+            editor.putFloat(REFERENCE_TARGET_PREFIX + mode.name, mode.referenceTarget(levels))
+        }
+        editor.apply()
     }
 
     fun prefetch(queue: List<Track>?, currentIndex: Int) {
@@ -71,6 +94,10 @@ internal class TrackLoudnessNormalizer(context: Context) {
         cancelRequested.set(false)
         batchRunning = true
         executor.execute {
+            if (!cache.contains(REFERENCE_KEYS)) {
+                cache.edit().putStringSet(REFERENCE_KEYS,
+                    source.mapTo(HashSet()) { RESULT_PREFIX + cacheKeyFor(it) }).apply()
+            }
             var completed = 0
             var errors = 0
             for (track in source) {
@@ -80,6 +107,7 @@ internal class TrackLoudnessNormalizer(context: Context) {
                 notifyProgress(listener, completed, source.size, errors, false, false)
             }
             val cancelled = cancelRequested.get() || completed < source.size
+            updateReferenceLevels()
             batchRunning = false
             notifyProgress(listener, completed, source.size, errors, true, cancelled)
         }
@@ -91,7 +119,8 @@ internal class TrackLoudnessNormalizer(context: Context) {
 
     fun clearCache() {
         cancelAnalysis()
-        cache.edit().clear().commit()
+        val references = cache.getStringSet(REFERENCE_KEYS, emptySet()).orEmpty().toSet()
+        cache.edit().clear().putStringSet(REFERENCE_KEYS, references).commit()
     }
 
     fun analyzedCount(tracks: List<Track>?): Int =
@@ -124,6 +153,7 @@ internal class TrackLoudnessNormalizer(context: Context) {
         executor.execute {
             try {
                 analyzeAndCache(track)
+                updateReferenceLevels()
             } finally {
                 pending.remove(track.trackId)
             }
@@ -272,16 +302,6 @@ internal class TrackLoudnessNormalizer(context: Context) {
         }
     }
 
-    private fun reduceOnly(): Boolean = context
-        .getSharedPreferences(EqualizerController.PREFS, Context.MODE_PRIVATE)
-        .getBoolean(REDUCE_ONLY, false)
-
-    private fun targetLufs(): Float {
-        val target = context.getSharedPreferences(EqualizerController.PREFS, Context.MODE_PRIVATE)
-            .getInt(TARGET_LUFS, LoudnessGainPolicy.DEFAULT_TARGET_LUFS.roundToInt())
-        return target.coerceIn(-24, -10).toFloat()
-    }
-
     private fun notifyProgress(
         listener: ProgressListener?,
         completed: Int,
@@ -301,6 +321,8 @@ internal class TrackLoudnessNormalizer(context: Context) {
         const val PREFS = "track_loudness_cache"
         const val REDUCE_ONLY = "reduce_only"
         const val TARGET_LUFS = "target_lufs"
+        private const val REFERENCE_KEYS = "reference_keys"
+        private const val REFERENCE_TARGET_PREFIX = "reference_target_"
         private const val ANALYSIS_PROFILE = "kweight-400ms-100ms-gates70-10-peak4"
         private const val RESULT_PREFIX = "r128_result_"
         private const val ERROR_PREFIX = "r128_error_"

@@ -18,9 +18,10 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
         host.libraryRepository.reindex()
         host.playbackController.restorePersistedUiState()
         host.playbackController.connect()
-        initialSnapshotApplied = true
         host.render()
+        initialSnapshotApplied = true
         host.soundAnalysisController.onLibraryReady(host.libraryState.tracks)
+        host.volumeLevelingController.onLibraryReady(host.libraryState.tracks)
         host.audioImportController.onLibraryReady()
         if (host.intent.getIntExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 0) == 0) {
             host.libraryMaintenanceController.run(host.libraryState.tracks, ::applyMaintenance)
@@ -47,6 +48,7 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
     fun rebuildDerivedAndRender() {
         val generation = ++derivedGeneration
         host.soundAnalysisController.onLibraryReady(host.libraryState.tracks)
+        host.volumeLevelingController.onLibraryReady(host.libraryState.tracks)
         val songsVisible = host.navigationState.tabIndex == LibraryTabs.SONGS
         host.songsView?.refreshFilteredSource(host.libraryState.tracks)
         if (songsVisible) host.render()

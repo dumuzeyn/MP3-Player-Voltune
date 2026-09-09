@@ -5,7 +5,6 @@ import android.widget.LinearLayout
 
 /** Connects top-level screen construction to focused UI controllers. */
 internal class MainScreenCallbacks(
-    private val header: HeaderController,
     private val tabs: TabsController,
     private val playerUi: PlayerUiController,
     private val songs: SongsRenderer,
@@ -15,10 +14,6 @@ internal class MainScreenCallbacks(
     private val baseColor: IntValueProvider,
     private val visibleArtworkPromotion: Runnable,
 ) : MainScreenView.Callbacks, PlayerGradientBackground.Config {
-    override fun buildHeader(page: LinearLayout) {
-        header.buildAppHeader(page)
-    }
-
     override fun buildTabs(page: LinearLayout) {
         tabs.buildTabs(page)
     }

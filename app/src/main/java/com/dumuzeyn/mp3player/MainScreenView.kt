@@ -12,7 +12,6 @@ internal class MainScreenView(
     private val layout: ResponsiveLayoutController,
 ) {
     interface Callbacks {
-        fun buildHeader(page: LinearLayout)
         fun buildTabs(page: LinearLayout)
         fun buildMiniPlayer(root: FrameLayout)
         fun onContentScrolled()
@@ -55,7 +54,6 @@ internal class MainScreenView(
             setPadding(horizontalPadding, layout.pageTopPadding(), horizontalPadding, 0)
         }
         root.addView(page, layout.mainPageParams())
-        callbacks.buildHeader(page)
         callbacks.buildTabs(page)
 
         val contentHost = FrameLayout(context)

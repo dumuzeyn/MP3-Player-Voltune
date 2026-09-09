@@ -72,11 +72,11 @@ internal abstract class TrackGroupMenuRenderer(
                 host.playbackQueueController.playList(tracks, false)
             }
         }
-        row.addView(play, host.uiFactory.square(44))
         val shuffle = host.uiFactory.shuffleButton()
         host.uiFactory.applyPlainIconStyle(shuffle)
         shuffle.setOnClickListener { host.playbackQueueController.playList(tracks, true) }
         row.addView(shuffle, host.uiFactory.square(44))
+        row.addView(play, host.uiFactory.square(44))
         row.setOnClickListener { host.overlayController.openGroup(name, tracks) }
         return row
     }

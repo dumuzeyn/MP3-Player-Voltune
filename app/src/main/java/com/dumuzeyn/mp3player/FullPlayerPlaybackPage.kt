@@ -21,6 +21,7 @@ internal class FullPlayerPlaybackPage(
     private val actions: PlaybackActions,
     private val state: PlaybackStateProvider,
 ) : AutoCloseable {
+    private val tools = PlayerToolActions(host)
     private val progress = FullPlayerProgressController(
         host,
         state,
@@ -35,6 +36,7 @@ internal class FullPlayerPlaybackPage(
     private var save: Button? = null
     private var repeat: Button? = null
     private var play: Button? = null
+    private var speed: Button? = null
     private var boundTrack: Track? = null
     private var active = false
 
@@ -89,13 +91,17 @@ internal class FullPlayerPlaybackPage(
         }
         save?.let {
             it.text = saveText(track)
-            host.uiFactory.applyPlayerToolStyle(it, host.libraryState.favorites.contains(track.uri))
+            host.uiFactory.applyPlayerToolStyle(it, tools.isSaved(track))
         }
         repeat?.let {
             it.text = host.loopLabel()
             host.uiFactory.applyPlayerToolStyle(it, state.repeatMode() != 0)
         }
         play?.text = if (state.isPlaying()) "Ⅱ" else "▶"
+        speed?.let {
+            it.text = tools.speedText()
+            host.uiFactory.applyPlayerToolStyle(it, host.playbackController.playbackSpeed() != 1f)
+        }
         rotatingCover()?.updatePlaybackState()
     }
 
@@ -132,26 +138,35 @@ internal class FullPlayerPlaybackPage(
     private fun addActionRow(content: LinearLayout, track: Track) {
         val row = host.uiFactory.row()
         timer = host.uiFactory.button(host.timerButtonText()).apply {
-            setOnClickListener { host.sleepTimerController.openDialog() }
+            setOnClickListener { tools.toggleTimer(); refresh(false) }
+            setOnLongClickListener { host.sleepTimerController.openDialog(); true }
         }.also { row.addView(it, toolParams()) }
         save = host.uiFactory.button(saveText(track)).apply {
             setOnClickListener {
-                state.currentTrack()?.let(host.overlayController::chooseCollection)
+                state.currentTrack()?.let(tools::toggleSaved)
+                refresh(false)
             }
+            setOnLongClickListener { state.currentTrack()?.let(tools::chooseCollection); true }
         }.also { row.addView(it, toolParams()) }
         repeat = host.uiFactory.button(host.loopLabel()).apply {
             setOnClickListener {
                 actions.cycleRepeatMode()
                 refresh(false)
             }
+            setOnLongClickListener { tools.chooseRepeat(); true }
         }.also { row.addView(it, toolParams()) }
         content.addView(row)
     }
 
     private fun addAudioTools(content: LinearLayout) {
         val row = host.uiFactory.row()
-        row.addView(host.equalizerController.createPlayerButton(), halfParams(true))
-        row.addView(host.volumeLevelingController.createPlayerButton(), halfParams(false))
+        row.addView(host.equalizerController.createPlayerButton(), toolParams())
+        row.addView(host.volumeLevelingController.createPlayerButton(), toolParams())
+        speed = host.uiFactory.button(tools.speedText()).apply {
+            contentDescription = host.tr("Playback speed", "Скорость воспроизведения")
+            setOnClickListener { tools.toggleSpeed(); refresh(false) }
+            setOnLongClickListener { tools.chooseSpeed(); true }
+        }.also { row.addView(it, toolParams()) }
         content.addView(row)
     }
 
@@ -242,16 +257,6 @@ internal class FullPlayerPlaybackPage(
             setMargins(host.dp(3), host.dp(3), host.dp(3), host.dp(3))
         }
 
-    private fun halfParams(left: Boolean): LinearLayout.LayoutParams =
-        LinearLayout.LayoutParams(0, host.dp(52), 1f).apply {
-            setMargins(
-                if (left) 0 else host.dp(4),
-                host.dp(3),
-                if (left) host.dp(4) else 0,
-                host.dp(3),
-            )
-        }
-
     private fun coverFallback(): Int = if (host.appearanceState.dark) {
         Color.rgb(28, 28, 28)
     } else {
@@ -259,7 +264,7 @@ internal class FullPlayerPlaybackPage(
     }
 
     private fun saveText(track: Track): String =
-        if (host.libraryState.favorites.contains(track.uri)) {
+        if (tools.isSaved(track)) {
             host.tr("Saved ♥︎", "Добавлено ♥︎")
         } else {
             host.tr("Save ♡︎", "Добавить ♡︎")
@@ -278,6 +283,7 @@ internal class FullPlayerPlaybackPage(
         save = null
         repeat = null
         play = null
+        speed = null
         boundTrack = null
     }
 }

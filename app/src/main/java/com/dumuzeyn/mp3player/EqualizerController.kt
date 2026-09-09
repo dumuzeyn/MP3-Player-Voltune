@@ -10,9 +10,11 @@ internal class EqualizerController(private val host: MainActivityCore) {
 
     fun createPlayerButton(): Button {
         val button = host.uiFactory.button(host.tr("Equalizer ≋", "Эквалайзер ≋")).apply {
-            setSingleLine(true)
+            setSingleLine(false)
+            maxLines = 2
             textSize = 14f
-            setOnClickListener { openDialog() }
+            setOnClickListener { setEnabled(!enabled()) }
+            setOnLongClickListener { openDialog(); true }
         }
         playerButton = button
         refreshButton()

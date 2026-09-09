@@ -12,7 +12,7 @@ class LocalizationController(private val host: MainActivityCore) {
             text("Songs", "Песни"),
             text("Favorites", "Избранное"),
             text("Playlists", "Плейлисты"),
-            text("Similar", "Похожие"),
+            text("Thematic albums", "Тематические альбомы"),
             text("Genres", "Жанры"),
             text("Artists", "Исполнители"),
             text("Albums", "Альбомы"),

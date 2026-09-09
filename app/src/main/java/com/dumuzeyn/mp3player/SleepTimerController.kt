@@ -68,6 +68,8 @@ internal class SleepTimerController(private val host: MainActivityCore) {
     }
 
     fun start(minutes: Int) {
+        host.appearanceState.customTimerMinutes = max(1, minutes)
+        host.saveUiState()
         val delayMs = max(1L, minutes.toLong()) * 60L * 1000L
         host.playbackUiState.sleepTimerEndsAt = System.currentTimeMillis() + delayMs
         host.playbackController.startSleepTimer(delayMs)

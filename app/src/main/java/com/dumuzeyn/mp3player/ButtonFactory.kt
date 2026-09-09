@@ -86,7 +86,9 @@ internal class ButtonFactory(private val host: MainActivityCore) {
     }
 
     fun applyPlayerTool(button: Button, active: Boolean) {
-        button.setSingleLine(true)
+        button.setSingleLine(false)
+        button.maxLines = 2
+        button.ellipsize = null
         button.textSize = 14f
         button.setTextColor(if (active) host.yellow else host.primaryText)
         val drawable = background(

@@ -81,11 +81,11 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
                 host.playbackQueueController.playList(tracks, false)
             }
         }
-        actions.addView(play, LinearLayout.LayoutParams(actionSize, actionSize))
         val shuffle = host.uiFactory.shuffleButton()
         host.uiFactory.applyPlainIconStyle(shuffle)
         shuffle.setOnClickListener { host.playbackQueueController.playList(tracks, true) }
         actions.addView(shuffle, LinearLayout.LayoutParams(actionSize, actionSize))
+        actions.addView(play, LinearLayout.LayoutParams(actionSize, actionSize))
         card.addView(actions, LinearLayout.LayoutParams(actionSize * 4, actionSize))
         card.setOnClickListener { host.overlayController.openPlaylist(playlist) }
 

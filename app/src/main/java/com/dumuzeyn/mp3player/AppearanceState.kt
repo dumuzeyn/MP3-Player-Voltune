@@ -23,9 +23,9 @@ class AppearanceState {
     @JvmField var dialogCardOpacity = 82
     @JvmField var dark = false
     @JvmField var animations = true
-    @JvmField var particlesEnabled = true
+    @JvmField var particlesEnabled = false
     @JvmField var playerBackgroundMode = BackgroundSettingsController.MODE_GRADIENT
-    @JvmField var mainBackgroundMode = BackgroundSettingsController.MODE_SOLID
+    @JvmField var mainBackgroundMode = BackgroundSettingsController.MODE_GRADIENT
     @JvmField var mainSolidBackground = 0
     @JvmField var playerSolidBackground = 0
     @JvmField var mainBackgroundMediaUri = ""

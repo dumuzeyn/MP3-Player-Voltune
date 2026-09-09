@@ -18,7 +18,10 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
     fun restorePersistedUiState() {
         val stateManager = PlaybackStateManager(host)
         val state = stateManager.load()
-        if (!hasSavedSession(state)) return
+        if (!hasSavedSession(state)) {
+            host.getSharedPreferences("player_tool_session", 0).edit().remove("collection").apply()
+            return
+        }
         val resumeWindowMs = host.appearanceState.resumeWindowMinutes.coerceAtLeast(0).toLong() * 60_000L
         if (
             MiniPlayerRetentionPolicy.isExpired(
@@ -144,6 +147,16 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
         connection.execute { it.repeatMode = RepeatModeMapper.toMedia3(nextMode) }
     }
 
+    fun setRepeatMode(mode: Int) = connection.execute {
+        it.repeatMode = RepeatModeMapper.toMedia3(mode.coerceIn(0, 2))
+    }
+
+    fun playbackSpeed(): Float = connection.controller?.playbackParameters?.speed ?: 1f
+
+    fun setPlaybackSpeed(speed: Float) = connection.execute {
+        it.setPlaybackSpeed(PlaybackSpeedPolicy.constrain(speed))
+    }
+
     fun clearQueue() = connection.execute { controller ->
         controller.stop()
         controller.clearMediaItems()
@@ -264,6 +277,7 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
     }
 
     private fun clearProjectedSession() {
+        host.getSharedPreferences("player_tool_session", 0).edit().remove("collection").apply()
         host.playbackUiState.queue.clear()
         host.updatePlaybackSnapshot(PlaybackSnapshot.empty())
         host.playerUiController.updateMini()

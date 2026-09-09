@@ -18,7 +18,7 @@ object LoudnessGainPolicy {
         targetLufs: Float,
         reduceOnly: Boolean,
     ): Float {
-        if (!integratedLufs.isFinite() || !peakDbfs.isFinite()) return 0.0f
+        if (!integratedLufs.isFinite() || !peakDbfs.isFinite() || !targetLufs.isFinite()) return 0.0f
         val safeTarget = targetLufs.coerceIn(-24.0f, -10.0f)
         val targetGain = safeTarget - integratedLufs
         val peakSafeGain = PEAK_HEADROOM_DB - peakDbfs

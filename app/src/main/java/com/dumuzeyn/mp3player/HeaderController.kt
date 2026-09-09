@@ -1,59 +1,11 @@
 package com.dumuzeyn.mp3player
 
-import android.graphics.Typeface
-import android.text.SpannableString
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 
 internal class HeaderController(private val host: MainActivityCore) {
-    fun buildAppHeader(page: LinearLayout) {
-        val header = FrameLayout(host).apply {
-            host.uiFactory.applyCardStyle(this, host.appearanceState.headerCardOpacity)
-            setPadding(host.dp(12), 0, host.dp(12), 0)
-        }
-        val row = host.uiFactory.row()
-        val icon = ImageView(host).apply {
-            setImageBitmap(AppIconRenderer.renderLogo(host, host.purple, host.yellow, host.dp(42)))
-            scaleType = ImageView.ScaleType.CENTER_INSIDE
-            contentDescription = host.getString(R.string.app_name)
-        }
-        val iconParams = host.uiFactory.square(36).apply {
-            setMargins(0, 0, host.dp(8), 0)
-        }
-        row.addView(icon, iconParams)
-
-        val brand = SpannableString(host.getString(R.string.app_name)).apply {
-            setSpan(
-                ForegroundColorSpan(host.purple),
-                0,
-                1,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-            )
-        }
-        val title = host.uiFactory.text(brand.toString(), 22, true).apply {
-            text = brand
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-            setTextColor(host.primaryText)
-            gravity = Gravity.CENTER_VERTICAL
-            includeFontPadding = false
-            letterSpacing = 0f
-        }
-        row.addView(title, LinearLayout.LayoutParams(0, host.dp(52), 1f))
-        header.addView(row, FrameLayout.LayoutParams(-1, -1))
-        page.addView(
-            header,
-            LinearLayout.LayoutParams(-1, host.dp(60)).apply {
-                setMargins(0, 0, 0, host.dp(8))
-            },
-        )
-    }
-
     fun renderSectionHeader() {
         host.list.addView(createSectionHeader())
     }
@@ -117,7 +69,6 @@ internal class HeaderController(private val host: MainActivityCore) {
             }
         }.apply { id = R.id.section_play }
         host.sourcePlayButton = play
-        addView(play, host.uiFactory.square(52))
 
         val shuffle = host.uiFactory.shuffleButton().apply {
             setOnClickListener {
@@ -125,6 +76,7 @@ internal class HeaderController(private val host: MainActivityCore) {
             }
         }
         addView(shuffle, host.uiFactory.square(52))
+        addView(play, host.uiFactory.square(52))
     }
 
     private fun actionButton(symbol: String, listener: (View) -> Unit): Button =

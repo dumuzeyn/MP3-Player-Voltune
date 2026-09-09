@@ -127,7 +127,6 @@ internal class SongAdapter(private val host: MainActivityCore) :
         private val waveform = WaveformView(host, "", host.purpleSoft, host.yellow, false)
         private val title: TextView = itemView.findViewById(R.id.song_title)
         private val duration: TextView = itemView.findViewById(R.id.song_duration)
-        private val actions: Button = itemView.findViewById(R.id.song_actions)
         private val play: Button = itemView.findViewById(R.id.song_play)
         private val marker: View = itemView.findViewById(R.id.song_current_marker)
         private var boundTrack: Track? = null
@@ -150,20 +149,20 @@ internal class SongAdapter(private val host: MainActivityCore) :
             title.ellipsize = TextUtils.TruncateAt.END
             duration.setTextColor(host.secondaryText)
             NowPlayingIndicator.style(marker, host.yellow)
-            configureButton(actions)
             configureButton(play)
-            actions.text = "⋯"
-            host.uiFactory.applyPlainIconStyle(actions)
-            host.uiFactory.applyPrimaryButtonStyle(play)
+            host.uiFactory.applyPlainIconStyle(play, host.purple)
 
             val openOrPlay = View.OnClickListener {
                 TrackTapController.handle(host, boundTrack, cover)
             }
             card.setOnClickListener(openOrPlay)
             cover.setOnClickListener(openOrPlay)
-            actions.setOnClickListener {
+            val properties = View.OnLongClickListener {
                 boundTrack?.let(host.overlayController::openSongActions)
+                true
             }
+            card.setOnLongClickListener(properties)
+            cover.setOnLongClickListener(properties)
             play.setOnClickListener {
                 val track = boundTrack ?: return@setOnClickListener
                 if (host.isCurrent(track)) {

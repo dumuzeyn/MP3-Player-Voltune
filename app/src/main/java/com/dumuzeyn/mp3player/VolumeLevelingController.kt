@@ -3,9 +3,7 @@ package com.dumuzeyn.mp3player
 import android.content.SharedPreferences
 import android.widget.Button
 import android.widget.LinearLayout
-import android.widget.SeekBar
 import android.widget.TextView
-import kotlin.math.roundToInt
 
 internal class VolumeLevelingController(private val host: MainActivityCore) {
     private var playerButton: Button? = null
@@ -16,13 +14,52 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
 
     fun createPlayerButton(): Button {
         val button = host.uiFactory.button(buttonText()).apply {
-            setSingleLine(true)
+            setSingleLine(false)
+            maxLines = 2
             textSize = 13f
+            contentDescription = host.tr("Volume leveling", "Единая громкость")
             setOnClickListener { toggle() }
+            setOnLongClickListener { openModeDialog(); true }
         }
         playerButton = button
         refreshButton()
         return button
+    }
+
+    fun onLibraryReady(tracks: List<Track>) {
+        normalizer().updateReferenceTracks(tracks)
+    }
+
+    private fun mode(): LoudnessLevelingMode = LoudnessLevelingMode.fromPreference(
+        prefs().getString(LoudnessLevelingMode.PREFERENCE, null),
+        prefs().getBoolean(TrackLoudnessNormalizer.REDUCE_ONLY, false),
+    )
+
+    private fun modeLabel(value: LoudnessLevelingMode): String = when (value) {
+        LoudnessLevelingMode.REDUCE -> host.tr("Make loud tracks quieter", "Громкие до уровня тихих")
+        LoudnessLevelingMode.BOOST -> host.tr("Make quiet tracks louder", "Тихие до уровня громких")
+        LoudnessLevelingMode.BALANCED -> host.tr("Balanced", "Сбалансированный")
+    }
+
+    fun openModeDialog() {
+        val shade = host.uiFactory.shade()
+        val panel = host.uiFactory.panelCard()
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Leveling mode", "Режим громкости")),
+            host.uiFactory.dialogTitleParams())
+        LoudnessLevelingMode.entries.forEach { value ->
+            val option = dialogButton(modeLabel(value)).apply {
+                isSelected = value == mode()
+                if (isSelected) host.uiFactory.applyPrimaryButtonStyle(this)
+                setOnClickListener {
+                    prefs().edit().putString(LoudnessLevelingMode.PREFERENCE, value.name).apply()
+                    dispatchSettings()
+                    host.overlayHost.removeView(shade)
+                }
+            }
+            panel.addView(option, LinearLayout.LayoutParams(-1, host.dp(60)))
+        }
+        shade.addView(panel, host.centerParams(host.dp(350), -2))
+        host.overlayHost.addView(shade)
     }
 
     fun openDialog() {
@@ -42,39 +79,12 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
         }
         panel.addView(enabledButton, rowParams())
 
-        val reduceOnly = dialogButton(reduceOnlyLabel())
-        reduceOnly.setOnClickListener {
-            prefs().edit().putBoolean(TrackLoudnessNormalizer.REDUCE_ONLY, !reduceOnly()).apply()
-            reduceOnly.text = reduceOnlyLabel()
-            dispatchSettings()
-        }
-        panel.addView(reduceOnly, rowParams())
-
-        val targetLabel = host.uiFactory.text(targetLabel(), 14, false).apply {
-            minHeight = host.dp(28)
-        }
-        panel.addView(targetLabel, LinearLayout.LayoutParams(-1, -2))
-        val target = SeekBar(host).apply {
-            max = 14
-            progress = targetLufs() + 24
-        }
-        host.uiFactory.applySeekBarColors(target)
-        target.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (!fromUser) return
-                prefs().edit()
-                    .putInt(TrackLoudnessNormalizer.TARGET_LUFS, progress - 24)
-                    .apply()
-                targetLabel.text = targetLabel()
+        panel.addView(dialogButton(modeLabel(mode())).apply {
+            setOnClickListener {
+                host.overlayHost.removeView(shade)
+                openModeDialog()
             }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar) = Unit
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                dispatchSettings()
-            }
-        })
-        panel.addView(target, LinearLayout.LayoutParams(-1, host.dp(36)))
+        }, rowParams())
 
         val status = host.uiFactory.text(statusText(normalizer), 14, false).apply {
             minHeight = host.dp(50)
@@ -177,23 +187,6 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
             host.tr(" · file errors: ", " · ошибок файлов: ") +
             normalizer.errorCount(host.libraryState.tracks)
 
-    private fun reduceOnlyLabel(): String =
-        host.tr(
-            "Advanced mode, reduce only: ",
-            "Расширенный режим, только уменьшение: ",
-        ) + host.tr(
-            if (reduceOnly()) "on" else "off",
-            if (reduceOnly()) "вкл" else "выкл",
-        )
-
-    private fun targetLabel(): String =
-        host.tr("Target level: ", "Целевой уровень: ") + targetLufs() + " LUFS"
-
-    private fun targetLufs(): Int = prefs().getInt(
-        TrackLoudnessNormalizer.TARGET_LUFS,
-        LoudnessGainPolicy.DEFAULT_TARGET_LUFS.roundToInt(),
-    ).coerceIn(-24, -10)
-
     private fun toggle() {
         prefs().edit().putBoolean(ENABLED, !enabled()).apply()
         refreshButton()
@@ -201,9 +194,6 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
     }
 
     private fun enabled(): Boolean = prefs().getBoolean(ENABLED, false)
-
-    private fun reduceOnly(): Boolean =
-        prefs().getBoolean(TrackLoudnessNormalizer.REDUCE_ONLY, false)
 
     private fun buttonText(): String = host.tr(
         if (enabled()) "Level ●" else "Level ○",

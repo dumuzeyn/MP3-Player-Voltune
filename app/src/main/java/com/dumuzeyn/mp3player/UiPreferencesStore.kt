@@ -47,7 +47,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
                 .coerceIn(35, 100)
             dialogCardOpacity = preferences.getInt(DIALOG_CARD_OPACITY, cardOpacity)
                 .coerceIn(35, 100)
-            particlesEnabled = preferences.getBoolean(PARTICLES_ENABLED, true)
+            particlesEnabled = preferences.getBoolean(PARTICLES_ENABLED, false)
             circularCovers = preferences.getBoolean(CIRCULAR_COVERS, false)
             mainBackgroundMode = if (preferences.contains(MAIN_BACKGROUND_MODE)) {
                 clampBackgroundMode(
@@ -56,7 +56,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
                         BackgroundSettingsController.MODE_SOLID,
                     ),
                 )
-            } else if (preferences.getBoolean(MAIN_GRADIENT, false)) {
+            } else if (preferences.getBoolean(MAIN_GRADIENT, true)) {
                 BackgroundSettingsController.MODE_GRADIENT
             } else {
                 BackgroundSettingsController.MODE_SOLID

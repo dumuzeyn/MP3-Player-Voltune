@@ -69,6 +69,8 @@ public class TextClippingInstrumentedTest {
         checkDialog(host, "sleep timer", host.sleepTimerController::openDialog);
         checkDialog(host, "volume leveling",
                 host.volumeLevelingController::openDialog);
+        checkDialog(host, "leveling modes", host.volumeLevelingController::openModeDialog);
+        checkDialog(host, "playback speed", () -> new PlayerToolActions(host).chooseSpeed());
         checkDialog(host, "text input", () -> host.overlayController.showInput(
                 "Название нового плейлиста", "Название плейлиста", "", false,
                 value -> { }));
@@ -81,7 +83,7 @@ public class TextClippingInstrumentedTest {
                 .clear().commit();
         MainActivityCore host = launchRussianActivity();
         assertEquals("Voltune", host.getString(R.string.app_name));
-        assertEquals("Похожие", host.tabs[LibraryTabs.SOUND]);
+        assertEquals("Тематические альбомы", host.tabs[LibraryTabs.SOUND]);
         assertHomeTabCentered(host, "clean launch");
         List<String> duplicates = new ArrayList<>();
         instrumentation.runOnMainSync(() -> collectExactText(

@@ -139,7 +139,6 @@ open class MainActivityCore : Activity() {
     @JvmField val responsiveLayoutController = ResponsiveLayoutController(this)
     private val mainScreenView = MainScreenView(this, responsiveLayoutController)
     private val mainScreenCallbacks = MainScreenCallbacks(
-        headerController,
         tabsController,
         playerUiController,
         songsRenderer,
