@@ -43,6 +43,7 @@ class Media3PlayerService : MediaLibraryService() {
     private lateinit var sleepTimer: PlaybackSleepTimer
     private lateinit var audioEffects: AudioEffectsManager
     private lateinit var loudnessNormalizer: TrackLoudnessNormalizer
+    private lateinit var fadeController: PlaybackFadeController
     private lateinit var commandHandler: Media3SessionCommandHandler
     private lateinit var eventLogger: PlaybackEventLogger
     private lateinit var historyRecorder: PlaybackHistoryRecorder
@@ -76,6 +77,7 @@ class Media3PlayerService : MediaLibraryService() {
             .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
         playbackState = PlaybackServiceState(player, mapper, stateManager)
+        fadeController = PlaybackFadeController(this, player)
         player.addListener(PlayerEvents())
 
         commandHandler = Media3SessionCommandHandler(
@@ -143,6 +145,7 @@ class Media3PlayerService : MediaLibraryService() {
         playbackState.persist(true)
         logEvent("service_destroyed", "none", false)
         mediaSession.release()
+        fadeController.close()
         player.release()
         audioEffects.release()
         loudnessNormalizer.release()
@@ -170,7 +173,7 @@ class Media3PlayerService : MediaLibraryService() {
             0.0f
         }
         val appliedGain = audioEffects.adjustedNormalizationGainDb(analyzedGain)
-        player.volume = AudioEffectsManager.playerVolumeForGainDb(appliedGain)
+        fadeController.setBaseVolume(AudioEffectsManager.playerVolumeForGainDb(appliedGain))
         if (audioSessionId != C.AUDIO_SESSION_ID_UNSET) {
             audioEffects.apply(audioSessionId, appliedGain.coerceAtLeast(0.0f))
         }

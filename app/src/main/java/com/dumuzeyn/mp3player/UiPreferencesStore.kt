@@ -79,10 +79,10 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
             playerBackgroundMediaUri = preferences.getString(PLAYER_BACKGROUND_MEDIA_URI, "") ?: ""
             mainBackgroundBlur = preferences.getInt(MAIN_BACKGROUND_BLUR, 20).coerceIn(0, 100)
             playerBackgroundBlur = preferences.getInt(PLAYER_BACKGROUND_BLUR, 20).coerceIn(0, 100)
-            mainGradientStart = preferences.getInt(MAIN_GRADIENT_START, 0xff351b5d.toInt())
-            mainGradientEnd = preferences.getInt(MAIN_GRADIENT_END, 0xff3a3013.toInt())
-            playerGradientStart = preferences.getInt(PLAYER_GRADIENT_START, 0xff351b5d.toInt())
-            playerGradientEnd = preferences.getInt(PLAYER_GRADIENT_END, 0xff3a3013.toInt())
+            mainGradientStart = preferences.getInt(MAIN_GRADIENT_START, VoltunePalette.GRADIENT_BLUE)
+            mainGradientEnd = preferences.getInt(MAIN_GRADIENT_END, VoltunePalette.GRADIENT_PURPLE)
+            playerGradientStart = preferences.getInt(PLAYER_GRADIENT_START, VoltunePalette.GRADIENT_BLUE)
+            playerGradientEnd = preferences.getInt(PLAYER_GRADIENT_END, VoltunePalette.GRADIENT_PURPLE)
         }
     }
 

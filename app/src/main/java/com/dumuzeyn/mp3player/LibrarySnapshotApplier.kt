@@ -5,6 +5,7 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
     private var derivedGeneration = 0
     private var loadedContentVersion = 0L
     @Volatile private var initialSnapshotApplied = false
+    private var snapshotGeneration = 0
 
     fun apply(snapshot: LibraryLoader.Snapshot) {
         host.libraryState.tracks.clear()
@@ -16,6 +17,16 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
         host.libraryState.homeContent = snapshot.homeContent
         loadedContentVersion = snapshot.contentVersion
         host.libraryRepository.reindex()
+        val generation = ++snapshotGeneration
+        val covers = prefetchTracks(snapshot)
+        host.artworkUi.prefetchBeforeRender(covers) {
+            if (generation != snapshotGeneration) return@prefetchBeforeRender
+            finishApply(snapshot, covers)
+        }
+    }
+
+    private fun finishApply(snapshot: LibraryLoader.Snapshot, covers: List<Track>) {
+        host.artworkUi.prefetch(covers)
         host.playbackController.restorePersistedUiState()
         host.playbackController.connect()
         host.render()
@@ -104,4 +115,15 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
     fun applyRemovedRecords(unavailable: List<Track>) {
         applyMaintenance(emptyList(), unavailable)
     }
+
+    private fun prefetchTracks(snapshot: LibraryLoader.Snapshot): List<Track> = buildList {
+        addAll(snapshot.homeContent.recentlyPlayed)
+        addAll(snapshot.homeContent.recentlyAdded)
+        addAll(snapshot.homeContent.mostPlayed)
+        addAll(snapshot.homeContent.favorites)
+        snapshot.homeContent.playlists.forEach { playlist ->
+            playlist.uris.firstOrNull()?.let(host::findTrack)?.let(::add)
+        }
+        addAll(snapshot.tracks.take(32))
+    }.distinctBy { it.trackId }
 }

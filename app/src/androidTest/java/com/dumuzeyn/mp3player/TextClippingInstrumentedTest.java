@@ -69,6 +69,7 @@ public class TextClippingInstrumentedTest {
         checkDialog(host, "sleep timer", host.sleepTimerController::openDialog);
         checkDialog(host, "volume leveling",
                 host.volumeLevelingController::openDialog);
+        checkDialog(host, "track fade", () -> new FadeSettingsController(host).openDialog());
         checkDialog(host, "leveling modes", host.volumeLevelingController::openModeDialog);
         checkDialog(host, "playback speed", () -> new PlayerToolActions(host).chooseSpeed());
         checkDialog(host, "text input", () -> host.overlayController.showInput(

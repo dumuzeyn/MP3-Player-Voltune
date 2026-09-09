@@ -35,19 +35,34 @@ It is not a release-completion declaration.
 ## Verification
 
 - `:app:qualityCheck :app:assembleDebugAndroidTest`: passed.
-- 122 JVM unit tests: no failures or errors, including speed bounds/round trips,
+- 129 JVM unit tests: no failures or errors, including speed bounds/round trips,
   directional normalization, clipping limits, invalid values, and mode migration.
-- API 35 headless emulator: 6 instrumented tests passed, covering real Media3
+- API 35 headless emulator: 19 instrumented tests passed across both completed
+  stages, covering real Media3
   speed changes, slider endpoint selection, level tap/hold, Russian text at
-  enlarged sizing, Home reuse, navigation, queue, playlists, and settings.
+  enlarged sizing, Home reuse, navigation, queue, playlists, settings and
+  alphabet fast scrolling, background playback, repeat, reconnect and service
+  lifecycle behavior.
 - Physical-device verification and signed release installation are still pending.
+
+## Implemented in the second stage
+
+- Visible covers are prefetched before the first library render and additional
+  covers continue warming in the background. Missing embedded artwork uses a
+  neutral themed surface without a white field or a Voltune logo fallback.
+- Added an optional 1-12 second end-of-track fade. It combines with loudness
+  normalization, follows playback-speed changes, and resets on track transitions.
+- Fresh palette defaults use blue, purple, gold and white while explicit saved
+  custom themes remain unchanged.
+- Songs has a compact alphabet rail with present English letters first, followed
+  by present Russian letters and `#`. The rail does not duplicate English for an
+  English-only library. App scrollbars now use a themed blue-to-gold thumb.
+- Added unit coverage for fade boundaries, short tracks and speed changes, plus
+  alphabet ordering and normalization. Headless UI coverage verifies rail jumps
+  and checks the fade dialog for clipped Russian text.
 
 ## Remaining work from the full request
 
-- Cover prefetch and stable nonblank artwork for songs, playlists and groups.
-- Fade-out setting and playback integration, with seek/track-transition tests.
-- Final blue/purple/gold/white default palette, preserving saved custom themes.
-- Alphabet fast navigation in Songs; themed scrollbars throughout the app.
 - Audio editor after Folders: non-destructive trim, split, remove range,
   concatenate and multitrack arrangement/export.
 - Real stem separation, vocal removal, speech cleanup, BPM and key detection.

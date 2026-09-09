@@ -29,7 +29,7 @@ internal class ThemeController(private val host: MainActivityCore) {
         host.appearanceState.customFg = preferences.getInt(CUSTOM_FG, Color.BLACK)
         host.appearanceState.customSecondaryAccent = preferences.getInt(
             CUSTOM_SECONDARY_ACCENT,
-            Color.rgb(255, 208, 0),
+            VoltunePalette.GOLD,
         )
     }
 

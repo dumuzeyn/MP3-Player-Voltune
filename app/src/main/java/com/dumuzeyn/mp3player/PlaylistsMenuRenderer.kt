@@ -34,8 +34,7 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
         }
         host.uiFactory.setSurface(card, host.panel, false, host.appearanceState.playlistCardOpacity)
         val cover = host.uiFactory.staticCoverView()
-        val fallback = if (host.appearanceState.dark) 28 else 235
-        val fallbackColor = Color.rgb(fallback, fallback, fallback)
+        val fallbackColor = host.purpleSoft
         if (tracks.isEmpty()) {
             cover.setBackgroundColor(fallbackColor)
         } else {

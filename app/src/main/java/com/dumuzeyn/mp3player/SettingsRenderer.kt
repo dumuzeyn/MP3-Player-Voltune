@@ -13,6 +13,8 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
     private var memoryButton: Button? = null
     private var backgroundPlaybackButton: Button? = null
     private var volumeButton: Button? = null
+    private val fadeSettings = FadeSettingsController(host)
+    private var fadeButton: Button? = null
     private var coverStyleButton: Button? = null
     private var rotationButton: Button? = null
     private var animationsButton: Button? = null
@@ -39,6 +41,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
             host.settingsController.resumeWindowText()
         backgroundPlaybackButton?.text = host.backgroundPlaybackSettingsController.settingLabel()
         volumeButton?.text = host.volumeLevelingController.settingLabel()
+        fadeButton?.text = fadeSettings.label()
         rotationButton?.text = host.coverRotationSettingsController.settingLabel()
         coverStyleButton?.text = coverStyleLabel()
         animationsButton?.text = animationsLabel()
@@ -83,6 +86,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         ) { host.backgroundPlaybackSettingsController.openDialog() }
 
         section(host.tr("Sound", "Звук"))
+        fadeButton = addButton(fadeSettings.label()) { fadeSettings.openDialog() }
         volumeButton = addButton(host.volumeLevelingController.settingLabel()) {
             host.volumeLevelingController.openDialog()
         }

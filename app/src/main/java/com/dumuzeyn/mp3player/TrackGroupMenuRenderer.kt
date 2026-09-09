@@ -1,6 +1,5 @@
 package com.dumuzeyn.mp3player
 
-import android.graphics.Color
 import android.text.TextUtils
 import android.widget.LinearLayout
 import java.util.Locale
@@ -40,8 +39,7 @@ internal abstract class TrackGroupMenuRenderer(
         }
         host.uiFactory.setSurface(row, host.panel, false, cardOpacity())
         val cover = host.uiFactory.coverView()
-        val fallback = if (host.appearanceState.dark) 28 else 235
-        val fallbackColor = Color.rgb(fallback, fallback, fallback)
+        val fallbackColor = host.purpleSoft
         if (tracks.isEmpty()) {
             cover.setBackgroundColor(fallbackColor)
         } else {

@@ -256,6 +256,7 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
         ?: PlaybackStateManager(host).load().queueUris.isNotEmpty()
 
     override fun onEvents(player: Player, events: Player.Events) {
+        if (events.size() == 1 && events.contains(Player.EVENT_VOLUME_CHANGED)) return
         val refreshRows = events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION) ||
             events.contains(Player.EVENT_IS_PLAYING_CHANGED) ||
             events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED)

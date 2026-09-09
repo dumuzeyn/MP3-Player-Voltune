@@ -4,6 +4,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.view.Gravity
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +15,7 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
     private val songAdapter = SongAdapter(host)
     private val headerAdapter = HeaderAdapter()
     private val emptyAdapter = EmptyAdapter()
+    private val alphabetRail = AlphabetRailView(host)
     private val searchOwner = "songs-" + Integer.toHexString(System.identityHashCode(this))
     private val progressTicker = object : Runnable {
         override fun run() {
@@ -41,13 +43,18 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
-        recyclerView.setPadding(0, 0, 0, host.dp(88))
+        recyclerView.setPadding(0, 0, host.dp(24), host.dp(88))
         recyclerView.itemAnimator = null
         val config = ConcatAdapter.Config.Builder()
             .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
             .build()
         recyclerView.adapter = ConcatAdapter(config, headerAdapter, songAdapter, emptyAdapter)
         addView(recyclerView, LayoutParams(-1, -1))
+        addView(alphabetRail, LayoutParams(host.dp(24), -1, Gravity.END).apply {
+            topMargin = host.dp(58)
+            bottomMargin = host.dp(96)
+            marginEnd = host.dp(1)
+        })
         visibility = View.GONE
     }
 
@@ -114,6 +121,23 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             songAdapter.submitList(ArrayList(filtered)) {
                 emptyAdapter.setEmpty(filtered.isEmpty())
                 headerAdapter.refresh()
+                updateAlphabet(filtered)
+            }
+        }
+    }
+
+    private fun updateAlphabet(tracks: List<Track>) {
+        val entries = AlphabetIndex.build(tracks.map(Track::title))
+        alphabetRail.configure(
+            entries,
+            host.primaryText,
+            host.cardSurfaceColor(host.card, host.appearanceState.cardOpacity.coerceAtLeast(82)),
+            host.yellow,
+        ) { position ->
+            recyclerView.stopScroll()
+            recyclerView.post {
+                (recyclerView.layoutManager as? LinearLayoutManager)
+                    ?.scrollToPositionWithOffset(position + headerAdapter.itemCount, 0)
             }
         }
     }

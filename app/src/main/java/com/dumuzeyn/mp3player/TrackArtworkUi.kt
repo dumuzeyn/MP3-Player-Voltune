@@ -62,6 +62,14 @@ internal class TrackArtworkUi(
         coverLoader.load(view, track, fallbackColor, maxSize)
     }
 
+    fun prefetch(tracks: List<Track>) {
+        coverLoader.prefetch(tracks)
+    }
+
+    fun prefetchBeforeRender(tracks: List<Track>, onComplete: () -> Unit) {
+        coverLoader.prefetchBeforeRender(tracks, onComplete)
+    }
+
     fun promoteVisibleArtwork() {
         mainHandler.removeCallbacks(promoteVisible)
         Trace.beginSection("Voltune/Home.promoteArtwork")
