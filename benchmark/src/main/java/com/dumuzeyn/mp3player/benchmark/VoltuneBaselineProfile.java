@@ -1,5 +1,7 @@
 package com.dumuzeyn.mp3player.benchmark;
 
+import android.content.ComponentName;
+import android.content.Intent;
 import android.os.Build;
 import androidx.benchmark.macro.MacrobenchmarkScope;
 import androidx.benchmark.macro.junit4.BaselineProfileRule;
@@ -22,7 +24,10 @@ public class VoltuneBaselineProfile {
         Assume.assumeTrue("Baseline profile generation requires Android 14+ on vendor devices",
                 Build.VERSION.SDK_INT >= 34);
         rule.collect(PACKAGE_NAME, scope -> {
-            scope.startActivityAndWait();
+            scope.startActivityAndWait(new Intent(Intent.ACTION_MAIN)
+                    .setComponent(new ComponentName(
+                            PACKAGE_NAME,
+                            "com.dumuzeyn.mp3player.BenchmarkLauncher")));
             click(scope, "Songs", "\u041f\u0435\u0441\u043d\u0438");
             click(scope, "Favorites", "\u0418\u0437\u0431\u0440\u0430\u043d\u043d\u043e\u0435");
             click(scope, "Settings", "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438");
