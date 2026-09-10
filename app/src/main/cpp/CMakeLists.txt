@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(voltune_audio LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(THIRD_PARTY "${CMAKE_CURRENT_LIST_DIR}/../../../../third_party")
+set(RNNOISE "${THIRD_PARTY}/rnnoise")
+if(NOT EXISTS "${RNNOISE}/src/rnn_data.c")
+    message(FATAL_ERROR "Run git submodule update --init third_party/rnnoise")
+endif()
+add_library(voltune_audio SHARED speech_jni.cpp
+    ${RNNOISE}/src/denoise.c ${RNNOISE}/src/rnn.c ${RNNOISE}/src/rnn_data.c
+    ${RNNOISE}/src/pitch.c ${RNNOISE}/src/kiss_fft.c ${RNNOISE}/src/celt_lpc.c)
+target_include_directories(voltune_audio PRIVATE ${RNNOISE}/include ${RNNOISE}/src)
+target_compile_options(voltune_audio PRIVATE -O2)
+if(CMAKE_HOST_WIN32)
+    # Windows 8.3 paths strip "++" from clang++ and otherwise select the C linker driver.
+    target_link_options(voltune_audio PRIVATE --driver-mode=g++)
+endif()
+target_link_libraries(voltune_audio m)

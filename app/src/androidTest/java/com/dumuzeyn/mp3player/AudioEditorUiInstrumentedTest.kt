@@ -260,6 +260,56 @@ class AudioEditorUiInstrumentedTest {
         }
     }
 
+    @Test fun speechCleanupCanBeUndoneRestoredAndCancelled() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-speech-ui.wav", 6)
+        val track = Track(Uri.fromFile(wave).toString(), "Речь для очистки", "Voltune", "Test", "Test", 6000)
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+        val originalBytes = wave!!.readBytes()
+        instrumentation.runOnMainSync {
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            host.audioEditorController.add(track, 0)
+            AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single())
+        }
+        awaitLayout(host)
+        instrumentation.runOnMainSync {
+            descendants(host.overlayHost).filterIsInstance<TextView>()
+                .first { it.text.toString() == "Очистить речь" }.performClick()
+            assertTrue(host.audioEditorController.busy)
+            assertEquals(0, host.overlayHost.childCount)
+            assertFalse(host.audioEditorController.canUndo)
+        }
+        InstrumentedTestSupport.waitFor("Speech processing did not finish", 30000) {
+            var done = false
+            instrumentation.runOnMainSync { done = !host.audioEditorController.processing.active }
+            done
+        }
+        var processed: AudioEditClip? = null
+        instrumentation.runOnMainSync {
+            val editor = host.audioEditorController
+            processed = editor.project.clips.single()
+            assertNotEquals(track.uri, processed!!.uri)
+            assertEquals(6000L, processed!!.durationMs)
+            editor.undo()
+            assertEquals(track.uri, editor.project.clips.single().uri)
+            editor.redo()
+            assertEquals(processed, editor.project.clips.single())
+            assertTrue(editor.processing.cleanSpeech(editor.project.clips.single()))
+            editor.processing.cancel()
+            assertFalse(editor.busy)
+            assertEquals(processed, editor.project.clips.single())
+        }
+        assertArrayEquals(originalBytes, wave!!.readBytes())
+        InstrumentedTestSupport.finishActivity(instrumentation, host)
+        val restored = launch()
+        instrumentation.runOnMainSync {
+            restored.audioEditorController.load()
+            assertEquals(processed, restored.audioEditorController.project.clips.single())
+        }
+        File(Uri.parse(processed!!.uri).path!!).delete()
+    }
+
     private fun launch(): MainActivityCore {
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         context.startActivity(Intent(context, MainActivity::class.java)

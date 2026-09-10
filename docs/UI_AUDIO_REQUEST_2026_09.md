@@ -154,14 +154,39 @@ It is not a release-completion declaration.
 - Key reference: https://extra.humdrum.org/man/keycor/
 - FFT dependency: https://github.com/wendykierp/JTransforms (BSD-2-Clause).
 
+## Implemented in the seventh stage
+
+- Real offline speech cleanup uses RNNoise v0.1, pinned as a Git submodule at
+  cdf196b1e9de2f8ff1003328ebf9a4316477429d. Its embedded model needs no downloads
+  at runtime. License text is included in the APK.
+- Processing reads the selected fragment, resamples with Media3 Sonic to 48 kHz,
+  keeps separate channel states and compensates the 10 ms RNNoise delay. A new
+  16-bit WAV replaces the draft clip without changing the source, lane, offset or
+  gain. Undo/redo and persisted drafts preserve access to both versions.
+- One background processing job has progress, cancellation, disk-space checks and
+  partial-file cleanup. Activity destruction cancels unfinished processing.
+  Mono/stereo input is supported; unsupported multichannel processing fails clearly.
+- NDK 27.2.12479018 and CMake 3.22.1 build ARM64, ARM32 and x86_64 libraries with
+  flexible page-size support. Windows short-path C++ linker mode is explicit.
+  Initialize submodules before building: `git submodule update --init --recursive`.
+- `qualityCheck` passed with 148 JVM tests and lint. 21 unique Android cases passed
+  across final runs: neural noise reduction, exact selected length, channel isolation,
+  silence, cancellation/retry, source integrity, UI undo/restart, waveform/analysis,
+  AAC export, preview and Russian text layout.
+- The pinned MIT demucs.cpp/Eigen source is prepared for the next stage, but stem
+  separation is not yet exposed or claimed complete.
+- RNNoise: https://github.com/xiph/rnnoise/tree/v0.1
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
   `Voltune — аудио плеер и редактор`, then publish a tested signed release.
-- Real stem separation, vocal removal and speech cleanup.
+- Real stem separation and vocal removal.
   Do not substitute frequency filtering for source separation, or upload users'
   audio to cloud services without explicit consent.
 - Verify supported playback/import/export formats before adding new decoders.
+- Close the full player when the retained playback session expires while the
+  screen is off; keep it open for a still-valid paused session or active playback.
 - Full device matrix, version/release artifacts and production-phone installation.
 
 ## Editor research references

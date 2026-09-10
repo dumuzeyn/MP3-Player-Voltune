@@ -1,4 +1,5 @@
 -keep class com.dumuzeyn.mp3player.Track { *; }
+-keep class com.dumuzeyn.mp3player.SpeechDenoiser { native <methods>; }
 -keep class com.dumuzeyn.mp3player.PlayerService { *; }
 -keep class com.dumuzeyn.mp3player.MainActivity { *; }
 -keep class com.dumuzeyn.mp3player.DarkMainActivity { *; }

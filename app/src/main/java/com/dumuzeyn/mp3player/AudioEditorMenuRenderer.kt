@@ -66,16 +66,26 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         val status = host.uiFactory.text(controller.status, 14, false)
         status.visibility = if (controller.status.isEmpty()) View.GONE else View.VISIBLE
         host.list.addView(status)
+        val processing = controller.processing
+        val processingStatus = host.uiFactory.text(processing.status, 14, false)
+        processingStatus.visibility = if (processing.status.isEmpty()) View.GONE else View.VISIBLE
+        host.list.addView(processingStatus)
         val progress = ProgressBar(host, null, android.R.attr.progressBarStyleHorizontal).apply {
             visibility = if (controller.busy && !controller.preview.active) View.VISIBLE else View.GONE
-            isIndeterminate = controller.progress < 0
-            this.progress = controller.progress.coerceAtLeast(0)
+            isIndeterminate = !processing.active && controller.progress < 0
+            this.progress = if (processing.active) processing.progress else controller.progress.coerceAtLeast(0)
         }
         host.list.addView(progress, LinearLayout.LayoutParams(-1, host.dp(12)))
         if (!host.navigationState.renderingTabPreview) controller.onProgress = {
             progress.isIndeterminate = controller.progress < 0
             progress.progress = controller.progress.coerceAtLeast(0)
         }
+        if (!host.navigationState.renderingTabPreview) processing.onProgress = {
+            progress.isIndeterminate = false
+            progress.progress = processing.progress
+        }
+        if (processing.active) host.list.addView(command(host.tr("Cancel processing", "Отменить обработку"),
+            true, processing::cancel))
         host.list.addView(command(host.tr("Export M4A", "Экспорт M4A"),
             !controller.busy && controller.project.clips.isNotEmpty(), controller::export).apply {
             host.uiFactory.applyPrimaryButtonStyle(this)

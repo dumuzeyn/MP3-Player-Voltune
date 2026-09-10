@@ -163,6 +163,14 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
             controller.change { it.remove(clip.id) }
             host.overlayHost.removeView(shade)
         })
+        content.addView(action(host.tr("Clean speech", "Очистить речь")) {
+            runCatching {
+                clip.copy(startMs = millis(from), endMs = millis(to), offsetMs = millis(offset),
+                    lane = lane.selectedItemPosition, gain = gain.progress / 100f)
+            }.onSuccess { selected ->
+                if (controller.processing.cleanSpeech(selected)) host.overlayHost.removeView(shade)
+            }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
+        })
         panel.addView(action(host.tr("Apply trim and settings", "Применить обрезку и настройки")) {
             if (controller.change { it.replace(clip.copy(startMs = millis(from), endMs = millis(to),
                     offsetMs = millis(offset), lane = lane.selectedItemPosition, gain = gain.progress / 100f)) }) {

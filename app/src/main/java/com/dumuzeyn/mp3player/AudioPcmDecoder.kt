@@ -104,7 +104,10 @@ internal class AudioPcmDecoder(context: Context) {
                         fun frameAt(time: Long) = ceil((time - info.presentationTimeUs) * pcmFormat.sampleRate / 1000000.0)
                             .toInt().coerceIn(0, count)
                         val first = frameAt(startUs)
-                        val last = frameAt(endUs)
+                        // Codec timestamps are rounded to microseconds. Do not let rounding
+                        // at the two selection edges add an extra PCM frame to the result.
+                        val budget = ceil((endUs - startUs) * pcmFormat.sampleRate / 1000000.0).toLong()
+                        val last = minOf(frameAt(endUs), first + (budget - frames).coerceIn(0, count.toLong()).toInt())
                         if (last > first) {
                             output.limit(info.offset + last * pcmFormat.frameBytes)
                             output.position(info.offset + first * pcmFormat.frameBytes)

@@ -17,6 +17,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     val preview get() = previewController.value
     private val analysisRepository = lazy { AudioEditorAnalysisRepository(host) }
     val analysis get() = analysisRepository.value
+    private val processingController = lazy { AudioEditorProcessing(host, ::render) }
+    val processing get() = processingController.value
     private val files = Executors.newSingleThreadExecutor()
     private val undo = ArrayDeque<AudioEditProject>()
     private val redo = ArrayDeque<AudioEditProject>()
@@ -25,7 +27,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     private var loaded = false
     private var closed = false
     private var working = false
-    val busy get() = working || (previewController.isInitialized() && preview.active)
+    val busy get() = working || (previewController.isInitialized() && preview.active) ||
+        (processingController.isInitialized() && processing.active)
     var exporting = false
         private set
     var status = ""
@@ -182,6 +185,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         closed = true
         if (previewController.isInitialized()) preview.close()
         if (analysisRepository.isInitialized()) analysis.close()
+        if (processingController.isInitialized()) processing.close()
         onProgress = null
         exporter.close()
         files.shutdown()
