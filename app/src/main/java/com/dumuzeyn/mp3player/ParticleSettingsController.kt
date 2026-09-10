@@ -191,7 +191,8 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
     ) {
         val value = initial.coerceIn(minimum, maximum)
         val label = host.uiFactory.text("$name: $value%", 15, false)
-        panel.addView(label, LinearLayout.LayoutParams(-1, host.dp(34)))
+        label.minHeight = host.dp(34)
+        panel.addView(label, LinearLayout.LayoutParams(-1, -2))
         val seek = SeekBar(host).apply {
             max = maximum - minimum
             progress = value - minimum

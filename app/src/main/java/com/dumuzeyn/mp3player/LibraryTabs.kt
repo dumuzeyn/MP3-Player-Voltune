@@ -10,5 +10,6 @@ object LibraryTabs {
     const val ARTISTS = 6
     const val ALBUMS = 7
     const val FOLDERS = 8
-    const val SETTINGS = 9
+    const val EDITOR = 9
+    const val SETTINGS = 10
 }

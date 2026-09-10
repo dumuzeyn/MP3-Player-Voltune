@@ -20,6 +20,7 @@ internal class MainRenderer(private val host: MainActivityCore) {
     private val albumsRenderer: MenuRenderer = AlbumsMenuRenderer(host)
     private val settingsRenderer: MenuRenderer = SettingsMenuRenderer(host)
     private val foldersRenderer: MenuRenderer = FoldersMenuRenderer(host)
+    private val editorRenderer: MenuRenderer = AudioEditorMenuRenderer(host)
     private val scrollPositions = HashMap<String, Int>()
     private val cachedHomeRows = SongRowStateRegistry()
     private var cachedHomeContent: LinearLayout? = null
@@ -289,6 +290,7 @@ internal class MainRenderer(private val host: MainActivityCore) {
         LibraryTabs.ARTISTS -> artistsRenderer
         LibraryTabs.ALBUMS -> albumsRenderer
         LibraryTabs.FOLDERS -> foldersRenderer
+        LibraryTabs.EDITOR -> editorRenderer
         LibraryTabs.SETTINGS -> settingsRenderer
         else -> songsRenderer
     }

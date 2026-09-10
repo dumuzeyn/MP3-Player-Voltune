@@ -35,7 +35,7 @@ It is not a release-completion declaration.
 ## Verification
 
 - `:app:qualityCheck :app:assembleDebugAndroidTest`: passed.
-- 129 JVM unit tests: no failures or errors, including speed bounds/round trips,
+- 137 JVM unit tests: no failures or errors, including speed bounds/round trips,
   directional normalization, clipping limits, invalid values, and mode migration.
 - API 35 headless emulator: 19 instrumented tests passed across both completed
   stages, covering real Media3
@@ -61,10 +61,35 @@ It is not a release-completion declaration.
   alphabet ordering and normalization. Headless UI coverage verifies rail jumps
   and checks the fade dialog for clipped Russian text.
 
+## Implemented in the third stage
+
+- Added Editor immediately after Folders. Original audio files are not modified.
+- Editable clip ranges with millisecond precision, splitting, removing a selected
+  range, concatenation in displayed lane/clip order, and up to eight mixed lanes.
+- Clips have independent timeline offsets and volume. Overlapping clips on the
+  same lane are rejected; separate lanes are mixed by Media3 Transformer 1.10.1.
+- Drafts persist between activity launches. Undo/redo retains up to 32 edits in
+  the current session; clearing the project can also be undone.
+- Real AAC/M4A export with progress/cancel, Android document saving and automatic
+  reimport through the existing library importer. A finished export remains
+  available to save again if the file picker is cancelled or saving fails.
+- Export is activity-owned: destroying the activity cancels an unfinished export,
+  while the draft and completed cached export can be restored. No cloud service
+  or network permission was added.
+- System bar/cutout insets protect tabs, dialogs and the mini-player on Android 15.
+  Particle lifetime labels now expand vertically on narrow screens.
+- `qualityCheck --no-problems-report`: passed, including 137 JVM tests and lint.
+- API 35 headless verification: four real export tests verify source integrity,
+  encoded duration, non-silent decoded PCM and the 25% volume ratio. Two editor UI
+  tests verify draft restoration, undo/redo, sliders, saving and library reimport.
+  Three text-layout tests and two existing library UI tests also passed.
+- Editor flow verified at 393dp and 320dp widths and in a 640x320dp landscape
+  viewport. Russian dialog clipping also passed at 320dp with 1.3x test text.
+- Screenshots are generated under `app/build/reports/audio-editor*.png`.
+
 ## Remaining work from the full request
 
-- Audio editor after Folders: non-destructive trim, split, remove range,
-  concatenate and multitrack arrangement/export.
+- Further editor work: waveform-based selection and in-editor audition.
 - Real stem separation, vocal removal, speech cleanup, BPM and key detection.
   Do not substitute frequency filtering for source separation, or upload users'
   audio to cloud services without explicit consent.
@@ -78,6 +103,10 @@ It is not a release-completion declaration.
 - BandLab Splitter:
   https://help.bandlab.com/hc/en-us/articles/16560236938777-Using-BandLab-Splitter
 - Moises features: https://moises.ai/features/
+- Media3 composition/export:
+  https://developer.android.com/media/media3/transformer/composition
+- Media3 clipping/effects:
+  https://developer.android.com/media/media3/transformer/transformations
 
 Use a non-destructive clip timeline and an established media export engine.
 Choose and validate a real local separation model, including its redistribution

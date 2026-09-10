@@ -4,6 +4,8 @@ import android.content.Context
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.dumuzeyn.mp3player.ui.layout.ResponsiveLayoutController
 
 /** Builds and owns the stable top-level view tree of the main screen. */
@@ -45,6 +47,12 @@ internal class MainScreenView(
     fun build(appearance: Appearance, callbacks: Callbacks): References {
         val root = FrameLayout(context).apply {
             setBackgroundColor(appearance.solidColor)
+            ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+                val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or
+                    WindowInsetsCompat.Type.displayCutout())
+                view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                insets
+            }
         }
         addBackground(root, appearance, callbacks)
 

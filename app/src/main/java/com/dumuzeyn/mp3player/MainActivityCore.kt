@@ -93,6 +93,7 @@ open class MainActivityCore : Activity() {
     @JvmField val tabsController = TabsController(this)
     @JvmField val swipeController = SwipeController(this)
     @JvmField val audioImportController = AudioImportController(this)
+    @JvmField val audioEditorController = AudioEditorController(this)
     @JvmField val libraryMaintenanceController = LibraryMaintenanceController(this, uiHandler)
     @JvmField val uiFactory = UiFactory(this)
     @JvmField val headerController = HeaderController(this)
@@ -372,6 +373,7 @@ open class MainActivityCore : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (overlayController.handleActivityResult(requestCode, resultCode)) return
+        if (audioEditorController.handleActivityResult(requestCode, resultCode, data)) return
         if (settingsController.handleActivityResult(requestCode, resultCode, data)) return
         if (backgroundPlaybackSettingsController.handleActivityResult(requestCode)) return
         if (backgroundSettingsController.handleActivityResult(requestCode, resultCode, data)) return

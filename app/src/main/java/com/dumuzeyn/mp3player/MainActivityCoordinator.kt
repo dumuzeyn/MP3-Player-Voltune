@@ -26,6 +26,7 @@ internal class MainActivityCoordinator(private val host: MainActivityCore) {
         add(AutoCloseable(host.songsRenderer::close))
         add(AutoCloseable(host.backgroundSettingsController::close))
         add(AutoCloseable(host.audioImportController::close))
+        add(host.audioEditorController)
         add(AutoCloseable(host.playbackQueueController::close))
         add(host.soundAnalysisController)
     }

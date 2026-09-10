@@ -9,6 +9,7 @@ public class LibraryTabsTest {
     public void soundIsImmediatelyAfterPlaylists() {
         assertEquals(LibraryTabs.PLAYLISTS + 1, LibraryTabs.SOUND);
         assertEquals(LibraryTabs.SOUND + 1, LibraryTabs.GENRES);
-        assertEquals(9, LibraryTabs.SETTINGS);
+        assertEquals(LibraryTabs.FOLDERS + 1, LibraryTabs.EDITOR);
+        assertEquals(LibraryTabs.EDITOR + 1, LibraryTabs.SETTINGS);
     }
 }

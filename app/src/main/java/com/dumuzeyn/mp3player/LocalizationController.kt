@@ -17,6 +17,7 @@ class LocalizationController(private val host: MainActivityCore) {
             text("Artists", "Исполнители"),
             text("Albums", "Альбомы"),
             text("Folders", "Папки"),
+            text("Editor", "Редактор"),
             text("Settings", "Настройки"),
         )
         if (host.navigationState.tabIndex >= host.tabs.size) {

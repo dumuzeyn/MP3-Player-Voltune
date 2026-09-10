@@ -72,6 +72,10 @@ public class TextClippingInstrumentedTest {
         checkDialog(host, "track fade", () -> new FadeSettingsController(host).openDialog());
         checkDialog(host, "leveling modes", host.volumeLevelingController::openModeDialog);
         checkDialog(host, "playback speed", () -> new PlayerToolActions(host).chooseSpeed());
+        checkDialog(host, "editor clip", () -> new AudioEditorDialogs(host).edit(
+                new AudioEditClip("clipping-test", "content://test/audio", "Длинное название аудиофрагмента",
+                        120000L, 0L, 120000L, 0, 0L, 1.0f)));
+        checkDialog(host, "editor source picker", () -> new AudioEditorDialogs(host).chooseTrack(0));
         checkDialog(host, "text input", () -> host.overlayController.showInput(
                 "Название нового плейлиста", "Название плейлиста", "", false,
                 value -> { }));

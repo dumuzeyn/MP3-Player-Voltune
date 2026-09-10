@@ -89,6 +89,10 @@ internal class AudioImportController(private val host: MainActivityCore) {
         importExecutor.shutdown()
     }
 
+    fun importExported(uri: Uri, permissionFlags: Int) = handleActivityResult(
+        PICK_AUDIO, Activity.RESULT_OK, Intent().setData(uri).setFlags(permissionFlags),
+    )
+
     fun onLibraryReady() {
         libraryReady = true
         autoImportDeviceMusicIfAllowed()
