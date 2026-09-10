@@ -117,6 +117,10 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
             level.text = "${host.tr("Volume", "Громкость")}: $value%"
         })
         content.addView(gain, LinearLayout.LayoutParams(-1, host.dp(48)))
+        content.addView(AudioEditorPreviewControls(host, {
+            AudioEditProject(listOf(clip.copy(startMs = millis(from), endMs = millis(to),
+                offsetMs = 0, lane = 0, gain = gain.progress / 100f)))
+        }, stopOnDetach = true))
         val cutLabel = host.uiFactory.text("", 14, false)
         content.addView(cutLabel)
         val cut = SeekBar(host).apply {

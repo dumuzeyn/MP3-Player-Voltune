@@ -13,6 +13,7 @@ internal class PlaybackFadeController(context: Context, private val player: Play
     private val handler = Handler(player.applicationLooper)
     private var baseVolume = 1f
     private var closed = false
+    private var preview = false
     private val tick = Runnable { update() }
 
     init {
@@ -25,16 +26,18 @@ internal class PlaybackFadeController(context: Context, private val player: Play
         update()
     }
 
+    fun setPreviewMode(value: Boolean) { preview = value; update() }
+
     private fun update() {
         if (closed) return
         handler.removeCallbacks(tick)
-        val enabled = preferences.getBoolean(PlaybackFadePolicy.ENABLED, false)
+        val enabled = !preview && preferences.getBoolean(PlaybackFadePolicy.ENABLED, false)
         val fadeMs = preferences.getInt(PlaybackFadePolicy.SECONDS, PlaybackFadePolicy.DEFAULT_SECONDS)
             .coerceIn(1, 12) * 1000L
         val gain = if (enabled) PlaybackFadePolicy.gain(
             player.currentPosition, player.duration, fadeMs, player.playbackParameters.speed,
         ) else 1f
-        val volume = baseVolume * gain
+        val volume = if (preview) 1f else baseVolume * gain
         if (abs(player.volume - volume) > 0.0001f) player.volume = volume
         if (enabled && player.isPlaying) handler.postDelayed(tick, if (gain < 1f) 50L else 250L)
     }

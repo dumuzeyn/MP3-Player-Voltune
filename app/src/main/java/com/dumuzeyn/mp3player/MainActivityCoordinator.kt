@@ -64,6 +64,7 @@ internal class MainActivityCoordinator(private val host: MainActivityCore) {
     }
 
     fun onStop() {
+        host.audioEditorController.preview.stop()
         UiVisibilityController.apply(host, false)
         if (!host.isChangingConfigurations) host.themeController.onHostStopped()
     }

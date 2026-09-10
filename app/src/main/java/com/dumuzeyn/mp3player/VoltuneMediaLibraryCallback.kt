@@ -34,6 +34,10 @@ internal class VoltuneMediaLibraryCallback(
         fun handle(command: SessionCommand, args: Bundle): ListenableFuture<SessionResult>
 
         fun onCommand(action: String)
+        fun preview(controller: MediaSession.ControllerInfo, args: Bundle): SessionResult =
+            SessionResult(SessionError.ERROR_NOT_SUPPORTED)
+        fun beforePlayerCommand() = Unit
+        fun disconnected(controller: MediaSession.ControllerInfo) = Unit
     }
 
     private val smartResolver = SmartPlaylistResolver()
@@ -54,6 +58,7 @@ internal class VoltuneMediaLibraryCallback(
             .add(Media3Commands.AUDIO_EFFECTS_COMMAND)
             .add(Media3Commands.CLEAR_QUEUE_COMMAND)
             .add(Media3Commands.DIAGNOSTIC_SNAPSHOT_COMMAND)
+            .apply { if (controller.uid == android.os.Process.myUid()) add(Media3Commands.EDITOR_PREVIEW_COMMAND) }
             .build()
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
             .setAvailableSessionCommands(available)
@@ -67,8 +72,23 @@ internal class VoltuneMediaLibraryCallback(
         args: Bundle,
     ): ListenableFuture<SessionResult> {
         val action = customCommand.customAction
+        if (action == Media3Commands.EDITOR_PREVIEW) {
+            return Futures.immediateFuture(if (controller.uid == android.os.Process.myUid())
+                commands.preview(controller, args) else SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+        }
         commands.onCommand(action)
         return commands.handle(customCommand, args)
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onPlayerCommandRequest(session: MediaSession, controller: MediaSession.ControllerInfo,
+        playerCommand: Int): Int {
+        commands.beforePlayerCommand()
+        return SessionResult.RESULT_SUCCESS
+    }
+
+    override fun onDisconnected(session: MediaSession, controller: MediaSession.ControllerInfo) {
+        commands.disconnected(controller)
     }
 
     override fun onGetLibraryRoot(

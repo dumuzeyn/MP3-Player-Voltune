@@ -26,6 +26,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                 Runnable { controller.change { AudioEditProject() } })
         })
         host.list.addView(toolbar)
+        if (controller.project.clips.isNotEmpty()) host.list.addView(AudioEditorPreviewControls(host, { controller.project }))
         if (controller.project.clips.isEmpty()) {
             host.list.addView(host.uiFactory.text(host.tr("No audio clips", "Нет аудиофрагментов"), 17, false))
         } else {
@@ -66,7 +67,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         status.visibility = if (controller.status.isEmpty()) View.GONE else View.VISIBLE
         host.list.addView(status)
         val progress = ProgressBar(host, null, android.R.attr.progressBarStyleHorizontal).apply {
-            visibility = if (controller.busy) View.VISIBLE else View.GONE
+            visibility = if (controller.busy && !controller.preview.active) View.VISIBLE else View.GONE
             isIndeterminate = controller.progress < 0
             this.progress = controller.progress.coerceAtLeast(0)
         }

@@ -15,6 +15,7 @@ class PlaybackServiceState(
     var pauseReason: PauseReason = PauseReason.NONE
     var stopReason: StopReason = StopReason.NONE
     var lastError: PlaybackErrorInfo? = null
+    var persistenceSuspended = false
 
     fun currentTrack(): Track? = mapper.fromMediaItem(player.currentMediaItem)
 
@@ -27,6 +28,7 @@ class PlaybackServiceState(
     fun currentMediaId(): String = player.currentMediaItem?.mediaId.orEmpty()
 
     fun persist(includeQueue: Boolean) {
+        if (persistenceSuspended || EditorPreviewSession.isPreview(player.currentMediaItem)) return
         stateManager.save(snapshot(), currentUri(), includeQueue)
     }
 
@@ -41,7 +43,7 @@ class PlaybackServiceState(
         player.playWhenReady,
         player.playbackState,
         player.repeatMode,
-        false,
+        player.shuffleModeEnabled,
         phase(),
         pauseReason,
         stopReason,

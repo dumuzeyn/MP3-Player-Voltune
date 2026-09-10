@@ -10,6 +10,8 @@ object Media3Commands {
     const val CLEAR_QUEUE = "com.dumuzeyn.mp3player.media3.CLEAR_QUEUE"
     const val DIAGNOSTIC_SNAPSHOT = "com.dumuzeyn.mp3player.media3.DIAGNOSTIC_SNAPSHOT"
     const val ARG_TIMER_MS = "timerMs"
+    const val EDITOR_PREVIEW = "com.dumuzeyn.mp3player.media3.EDITOR_PREVIEW"
+    @JvmField val EDITOR_PREVIEW_COMMAND = SessionCommand(EDITOR_PREVIEW, Bundle.EMPTY)
 
     @JvmField val TIMER_START_COMMAND = SessionCommand(TIMER_START, Bundle.EMPTY)
     @JvmField val TIMER_CANCEL_COMMAND = SessionCommand(TIMER_CANCEL, Bundle.EMPTY)

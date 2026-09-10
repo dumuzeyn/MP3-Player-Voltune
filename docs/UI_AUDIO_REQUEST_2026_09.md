@@ -113,10 +113,34 @@ It is not a release-completion declaration.
 - Screenshots: `app/build/reports/audio-editor-waveform*.png`.
 - No production-phone installation or release was performed in this stage.
 
+## Implemented in the fifth stage
+
+- Project and selected-range preview use the same Media3 composition renderer as
+  export, including lane mixing, offsets and clip gain. An unchanged project uses
+  its cached preview rather than encoding again. Added play/pause, seek and stop.
+- The existing service player temporarily borrows the rendered audio; no second
+  playback engine was introduced. Queue, index, position, repeat, shuffle and
+  speed are restored when preview stops, ends, fails or its controller disconnects.
+- A paused copy of the original queue is persisted before preview. Preview never
+  replaces resume data, track durations or listening history. Playback fade/EQ and
+  normalization do not alter the preview mix. Sleep timer/audio focus loss stop
+  preview without resuming the original music.
+- Preview commands are restricted to the application UID and app-owned cached M4A
+  files. Ordinary player commands return to the original music queue first.
+- Closing/backgrounding the activity, leaving Editor or dismissing clip preview
+  stops preview; preparation is cancellable. Editing/export cannot race preview.
+- `qualityCheck --no-problems-report` passed with 143 JVM tests, lint and existing
+  architecture/source-size checks. API 35 headless tests: 21 unique scenarios across
+  runs, including seven preview-service cases, four editor workflows, three text
+  layout checks and seven background playback regressions. All passed.
+- Screenshot: `app/build/reports/audio-editor-preview.png`.
+- The session callback contract was checked against the pinned Media3 1.10.1 source:
+  https://github.com/androidx/media/blob/1.10.1/libraries/session/src/main/java/androidx/media3/session/MediaSession.java
+
 ## Remaining work from the full request
 
-- In-editor audition using the existing playback service, with ordinary queue,
-  position and session persistence preserved. No second playback engine was added.
+- Final requested order: complete the remaining stages, then rename the app to
+  `Voltune — аудио плеер и редактор`, then publish a tested signed release.
 - Real stem separation, vocal removal, speech cleanup, BPM and key detection.
   Do not substitute frequency filtering for source separation, or upload users'
   audio to cloud services without explicit consent.

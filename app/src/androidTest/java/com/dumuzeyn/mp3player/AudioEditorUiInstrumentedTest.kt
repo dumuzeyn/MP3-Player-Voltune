@@ -194,6 +194,72 @@ class AudioEditorUiInstrumentedTest {
         }
     }
 
+    @Test fun previewControlsPauseSeekAndRestoreMusicAndCancelPreparation() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-preview-ui.wav", 6)
+        val track = Track(Uri.fromFile(wave).toString(), "Preview UI", "Voltune", "Test", "Test", 6000)
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+        instrumentation.runOnMainSync {
+            host.playbackController.submitQueue(listOf(track), 0, 1200, 0, false)
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            host.audioEditorController.add(track, 0)
+        }
+        InstrumentedTestSupport.waitFor("Music session not ready", 15000) {
+            var ready = false
+            instrumentation.runOnMainSync { ready = host.playbackSnapshot().phase == PlaybackPhase.READY }
+            ready
+        }
+        awaitLayout(host)
+        instrumentation.runOnMainSync {
+            descendants(host.list).first { it.contentDescription == "Прослушать аудио" }.performClick()
+        }
+        fun awaitPreview(phase: AudioEditorPreviewController.Phase) {
+            InstrumentedTestSupport.waitFor("Preview did not reach $phase", 20000) {
+                var ready = false
+                instrumentation.runOnMainSync { ready = host.audioEditorController.preview.phase == phase }
+                ready
+            }
+        }
+        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
+        instrumentation.runOnMainSync {
+            assertTrue(host.audioEditorController.busy)
+            host.audioEditorController.preview.toggle()
+        }
+        awaitPreview(AudioEditorPreviewController.Phase.PAUSED)
+        instrumentation.runOnMainSync { host.audioEditorController.preview.seek(1000) }
+        InstrumentedTestSupport.waitFor("Preview did not seek", 5000) {
+            var ready = false
+            instrumentation.runOnMainSync { ready = host.audioEditorController.preview.positionMs == 1000L }
+            ready
+        }
+        capture("audio-editor-preview.png")
+        instrumentation.runOnMainSync { host.audioEditorController.preview.stop() }
+        awaitPreview(AudioEditorPreviewController.Phase.IDLE)
+        InstrumentedTestSupport.waitFor("Music not restored", 5000) {
+            var ready = false
+            instrumentation.runOnMainSync {
+                ready = host.playbackController.currentPosition() == 1200L && !host.playbackSnapshot().playWhenReady
+            }
+            ready
+        }
+        instrumentation.runOnMainSync {
+            val editor = host.audioEditorController
+            editor.preview.start(editor.project)
+            assertEquals("Unchanged project was encoded again", AudioEditorPreviewController.Phase.STARTING, editor.preview.phase)
+            editor.preview.stop()
+            editor.change { it.replace(it.clips.single().copy(endMs = 4000)) }
+            editor.preview.start(editor.project)
+            editor.preview.stop()
+        }
+        Thread.sleep(500)
+        instrumentation.runOnMainSync {
+            assertFalse(host.audioEditorController.preview.active)
+            assertFalse(host.audioEditorController.busy)
+            host.playbackController.clearQueue()
+        }
+    }
+
     private fun launch(): MainActivityCore {
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         context.startActivity(Intent(context, MainActivity::class.java)

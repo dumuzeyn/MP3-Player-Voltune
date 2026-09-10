@@ -13,6 +13,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     private val exporter by lazy { AudioEditExporter(host) }
     private val waveformRepository = lazy { AudioWaveformRepository(host) }
     val waveforms get() = waveformRepository.value
+    private val previewController = lazy { AudioEditorPreviewController(host, ::render) }
+    val preview get() = previewController.value
     private val files = Executors.newSingleThreadExecutor()
     private val undo = ArrayDeque<AudioEditProject>()
     private val redo = ArrayDeque<AudioEditProject>()
@@ -20,8 +22,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         private set
     private var loaded = false
     private var closed = false
-    var busy = false
-        private set
+    private var working = false
+    val busy get() = working || (previewController.isInitialized() && preview.active)
     var exporting = false
         private set
     var status = ""
@@ -87,7 +89,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
 
     fun export() {
         if (busy || project.clips.isEmpty()) return
-        busy = true
+        working = true
         exporting = true
         status = host.tr("Exporting M4A", "Экспорт M4A")
         render()
@@ -95,7 +97,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             progress = value
             onProgress?.invoke()
         }) { result ->
-            busy = false
+            working = false
             exporting = false
             progress = -1
             result.fold(onSuccess = { file ->
@@ -116,7 +118,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     fun cancelExport() {
         if (!exporting) return
         exporter.close()
-        busy = false
+        working = false
         exporting = false
         progress = -1
         status = host.tr("Export cancelled", "Экспорт отменён")
@@ -142,7 +144,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         val file = readyFile ?: return true
         if (busy) return true
         val sourceUris = project.clips.map { Uri.parse(it.uri) }.toSet()
-        busy = true
+        working = true
         status = host.tr("Saving", "Сохранение")
         render()
         val resolver = host.applicationContext.contentResolver
@@ -156,7 +158,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             }
             host.uiHandler.post {
                 if (closed) return@post
-                busy = false
+                working = false
                 if (result.isSuccess) host.audioImportController.importExported(uri, data.flags)
                 status = if (result.isSuccess) host.tr("Audio saved", "Аудио сохранено")
                     else host.tr("Saving failed; export is available to retry",
@@ -176,6 +178,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
 
     override fun close() {
         closed = true
+        if (previewController.isInitialized()) preview.close()
         onProgress = null
         exporter.close()
         files.shutdown()

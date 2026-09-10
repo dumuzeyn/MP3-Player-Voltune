@@ -50,6 +50,7 @@ class Media3PlayerService : MediaLibraryService() {
     private lateinit var sessionRestorer: PlaybackSessionRestorer
     private lateinit var libraryCallback: VoltuneMediaLibraryCallback
     private lateinit var playbackState: PlaybackServiceState
+    private lateinit var editorPreview: EditorPreviewSession
     private var positionSaveJob: Job? = null
     private var audioSessionId = C.AUDIO_SESSION_ID_UNSET
     private var audioFocusState = "managed"
@@ -78,6 +79,18 @@ class Media3PlayerService : MediaLibraryService() {
             .build()
         playbackState = PlaybackServiceState(player, mapper, stateManager)
         fadeController = PlaybackFadeController(this, player)
+        editorPreview = EditorPreviewSession(this, player) { active ->
+            playbackState.persistenceSuspended = active
+            stopPositionSaver()
+            historyRecorder.playing(false)
+            fadeController.setPreviewMode(active)
+            if (active) audioEffects.release() else {
+                applyAudioEffects()
+                playbackState.persist(true)
+                PlayerWidgetProvider.updateFromPlayer(this, player)
+                if (player.isPlaying) startPositionSaver()
+            }
+        }
         player.addListener(PlayerEvents())
 
         commandHandler = Media3SessionCommandHandler(
@@ -95,7 +108,16 @@ class Media3PlayerService : MediaLibraryService() {
                 override fun handle(
                     command: SessionCommand,
                     args: Bundle,
-                ): ListenableFuture<SessionResult> = commandHandler.handle(command, args)
+                ): ListenableFuture<SessionResult> {
+                    if (command.customAction == Media3Commands.CLEAR_QUEUE) editorPreview.stop(false)
+                    return commandHandler.handle(command, args)
+                }
+
+                override fun preview(controller: MediaSession.ControllerInfo, args: Bundle) =
+                    editorPreview.command(controller, args)
+
+                override fun beforePlayerCommand() = editorPreview.stop()
+                override fun disconnected(controller: MediaSession.ControllerInfo) = editorPreview.disconnected(controller)
 
                 override fun onCommand(action: String) {
                     val separator = action.lastIndexOf('.')
@@ -132,11 +154,13 @@ class Media3PlayerService : MediaLibraryService() {
         mediaSession
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        editorPreview.stop(false)
         logEvent("task_removed", "none")
         if (!player.isPlaying && player.playbackState != Player.STATE_BUFFERING) stopSelf()
     }
 
     override fun onDestroy() {
+        editorPreview.close()
         stopPositionSaver()
         sleepTimer.close()
         if (playbackState.stopReason == StopReason.NONE) {
@@ -158,6 +182,7 @@ class Media3PlayerService : MediaLibraryService() {
     }
 
     private fun onSleepTimerExpired() {
+        editorPreview.stop(false)
         playbackState.pauseReason = PauseReason.SLEEP_TIMER
         playbackState.stopReason = StopReason.SLEEP_TIMER
         player.pause()
@@ -167,6 +192,7 @@ class Media3PlayerService : MediaLibraryService() {
     }
 
     private fun applyAudioEffects() {
+        if (editorPreview.active) return
         val analyzedGain = if (loudnessNormalizer.isEnabled) {
             loudnessNormalizer.cachedGainDb(playbackState.currentTrack())
         } else {
@@ -271,6 +297,7 @@ class Media3PlayerService : MediaLibraryService() {
     private inner class PlayerEvents : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) =
             traced("Voltune/Playback.isPlayingChanged") {
+                if (editorPreview.active) return@traced
                 historyRecorder.playing(isPlaying)
                 stopPositionSaver()
                 if (isPlaying) {
@@ -288,6 +315,7 @@ class Media3PlayerService : MediaLibraryService() {
             }
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            if (editorPreview.active) return
             if (!playWhenReady) {
                 when {
                     reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS -> {
@@ -313,6 +341,7 @@ class Media3PlayerService : MediaLibraryService() {
 
         override fun onPlaybackStateChanged(state: Int) =
             traced("Voltune/Playback.stateChanged") {
+                if (editorPreview.active) return@traced
                 if (state == Player.STATE_READY) {
                     errorRecovery.resetConsecutiveErrors()
                     historyRecorder.sample(player.duration)
@@ -331,6 +360,7 @@ class Media3PlayerService : MediaLibraryService() {
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) =
             traced("Voltune/Playback.mediaItemTransition") {
+                if (editorPreview.active || EditorPreviewSession.isPreview(mediaItem)) return@traced
                 historyRecorder.transition(mediaItem?.mediaId.orEmpty(), player.duration, reason)
                 audioEffects.release()
                 errorRecovery.resetConsecutiveErrors()
@@ -342,7 +372,9 @@ class Media3PlayerService : MediaLibraryService() {
                 logEvent("media_item_transition", "none")
             }
 
-        override fun onPlayerError(error: PlaybackException) = recoverFromError(error)
+        override fun onPlayerError(error: PlaybackException) {
+            if (!editorPreview.active) recoverFromError(error)
+        }
 
         override fun onAudioSessionIdChanged(audioSessionId: Int) {
             this@Media3PlayerService.audioSessionId = audioSessionId

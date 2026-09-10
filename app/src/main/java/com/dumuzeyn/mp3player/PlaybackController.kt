@@ -5,6 +5,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import androidx.media3.session.SessionResult
 import com.dumuzeyn.mp3player.data.playback.PlaybackStateManager
 
 /** Sends UI commands to Media3 and publishes one read-only playback projection. */
@@ -96,6 +97,14 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
     }
 
     fun release() = connection.close()
+
+    internal fun editorPreviewCommand(args: Bundle, valid: () -> Boolean = { true },
+        done: (SessionResult?) -> Unit) = connection.execute { controller ->
+        if (!valid()) return@execute
+        val future = controller.sendCustomCommand(Media3Commands.EDITOR_PREVIEW_COMMAND, args)
+        future.addListener({ host.uiHandler.post { if (valid()) done(runCatching { future.get() }.getOrNull()) } },
+            java.util.concurrent.Executor(Runnable::run))
+    }
 
     fun submitQueue(
         source: List<Track>,
@@ -242,11 +251,13 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
     }
 
     fun currentPosition(): Long = connection.controller
+        ?.takeUnless { EditorPreviewSession.isPreview(it.currentMediaItem) }
         ?.currentPosition
         ?.coerceAtLeast(0L)
         ?: host.playbackSnapshot().positionMs
 
     fun duration(): Long {
+        if (EditorPreviewSession.isPreview(connection.controller?.currentMediaItem)) return host.playbackSnapshot().durationMs
         val value = connection.controller?.duration ?: return host.playbackSnapshot().durationMs
         return if (value == C.TIME_UNSET) host.playbackSnapshot().durationMs else value.coerceAtLeast(0L)
     }
@@ -285,6 +296,7 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
     }
 
     private fun synchronizeUi(controller: MediaController, refreshRows: Boolean) {
+        if (EditorPreviewSession.isPreview(controller.currentMediaItem)) return
         val previous = host.libraryState.tracks.getOrNull(host.currentTrackIndex())
         val current = currentTrack(controller)
         host.updatePlaybackSnapshot(snapshotFromController(controller))
