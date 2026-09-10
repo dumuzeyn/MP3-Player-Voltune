@@ -39,6 +39,7 @@ internal class AudioFeatureAccumulator(sampleRate: Int) {
     private var trebleRatioSum = 0.0
     private var contrastSum = 0.0
     private var spectralFrames = 0
+    private var tempoConfidence = 0.0
 
     fun beginSegment() {
         hasPrevious = false
@@ -89,6 +90,7 @@ internal class AudioFeatureAccumulator(sampleRate: Int) {
         val result = DoubleArray(TrackAudioProfile.FEATURE_COUNT)
         val rms = sqrt(squareSum / sampleCount)
         result[TrackAudioProfile.BPM] = estimateBpm()
+        result[TrackAudioProfile.TEMPO_CONFIDENCE] = tempoConfidence
         result[TrackAudioProfile.ENERGY] = absoluteSum / sampleCount
         result[TrackAudioProfile.LOUDNESS] = decibels(rms)
         result[TrackAudioProfile.DYNAMIC_RANGE] = dynamicRange()
@@ -190,6 +192,8 @@ internal class AudioFeatureAccumulator(sampleRate: Int) {
         var mean = 0.0
         for (value in envelope) mean += value
         mean /= envelope.size
+        val variance = envelope.sumOf { (it - mean) * (it - mean) }
+        if (variance < 1e-9 || variance / envelope.size < mean * mean * 0.002) return 0.0
         var best = Double.NEGATIVE_INFINITY
         var bestLag = minimumLag
         for (lag in minimumLag..maximumLag) {
@@ -202,6 +206,8 @@ internal class AudioFeatureAccumulator(sampleRate: Int) {
                 bestLag = lag
             }
         }
+        tempoConfidence = (best / variance).coerceIn(0.0, 1.0)
+        if (tempoConfidence < 0.3) return 0.0
         return 3_000.0 / bestLag
     }
 

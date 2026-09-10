@@ -82,6 +82,8 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         panel.addView(scroll, LinearLayout.LayoutParams(-1, bodyHeight(340, 230)))
         val waveform = AudioEditorWaveformView(host, clip)
         content.addView(waveform, LinearLayout.LayoutParams(-1, minOf(host.dp(140), bodyHeight(340, 230))))
+        val analysis = AudioEditorAnalysisView(host, clip)
+        content.addView(analysis)
         val from = secondsField(content, host.tr("Start, s", "Начало, с"), clip.startMs)
         val to = secondsField(content, host.tr("End, s", "Конец, с"), clip.endMs)
         var updatingRange = false
@@ -90,11 +92,15 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
             from.setText(seconds(start))
             to.setText(seconds(end))
             updatingRange = false
+            analysis.selection(start, end)
         }
         val rangeWatcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (!updatingRange) runCatching { waveform.setSelection(millis(from), millis(to)) }
+                if (!updatingRange) runCatching {
+                    waveform.setSelection(millis(from), millis(to))
+                    analysis.selection(millis(from), millis(to))
+                }
             }
             override fun afterTextChanged(s: Editable?) = Unit
         }

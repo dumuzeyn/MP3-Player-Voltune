@@ -137,15 +137,30 @@ It is not a release-completion declaration.
 - The session callback contract was checked against the pinned Media3 1.10.1 source:
   https://github.com/androidx/media/blob/1.10.1/libraries/session/src/main/java/androidx/media3/session/MediaSession.java
 
+## Implemented in the sixth stage
+
+- Editor automatically estimates BPM and musical key for the selected fragment.
+  Selection changes debounce analysis; detaching the dialog cancels its request.
+  Uncertain/silent material is shown as undetermined, not assigned a fake key.
+- JTransforms 3.1 FFT feeds a chroma estimator with the Krumhansl-Kessler profiles
+  and correlation/margin checks. BPM rejects silence and low-confidence envelopes.
+- Waveforms and library/editor analysis share one streaming PCM decoder, with
+  precise selection bounds, cancellation and preservation of AAC priming packets.
+  PCM 8/16/24/32-bit and float output are handled explicitly. Analysis version is 3.
+- `qualityCheck` passed: 148 JVM tests, lint, APK and architecture checks.
+  API 35 headless: 19 unique Android scenarios passed across two runs, including
+  exact PCM boundaries, real chord identification, silence, waveform/cache,
+  feature extraction, AAC export, editor workflow and enlarged Russian text.
+- Key reference: https://extra.humdrum.org/man/keycor/
+- FFT dependency: https://github.com/wendykierp/JTransforms (BSD-2-Clause).
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
   `Voltune — аудио плеер и редактор`, then publish a tested signed release.
-- Real stem separation, vocal removal, speech cleanup, BPM and key detection.
+- Real stem separation, vocal removal and speech cleanup.
   Do not substitute frequency filtering for source separation, or upload users'
   audio to cloud services without explicit consent.
-- Audit negative AAC priming timestamps in the separate AudioFeatureExtractor
-  before extending its BPM/key analysis; its old input loop still checks time < 0.
 - Verify supported playback/import/export formats before adding new decoders.
 - Full device matrix, version/release artifacts and production-phone installation.
 

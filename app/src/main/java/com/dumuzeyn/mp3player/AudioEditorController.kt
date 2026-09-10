@@ -15,6 +15,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     val waveforms get() = waveformRepository.value
     private val previewController = lazy { AudioEditorPreviewController(host, ::render) }
     val preview get() = previewController.value
+    private val analysisRepository = lazy { AudioEditorAnalysisRepository(host) }
+    val analysis get() = analysisRepository.value
     private val files = Executors.newSingleThreadExecutor()
     private val undo = ArrayDeque<AudioEditProject>()
     private val redo = ArrayDeque<AudioEditProject>()
@@ -179,6 +181,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     override fun close() {
         closed = true
         if (previewController.isInitialized()) preview.close()
+        if (analysisRepository.isInitialized()) analysis.close()
         onProgress = null
         exporter.close()
         files.shutdown()

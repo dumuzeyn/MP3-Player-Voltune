@@ -50,7 +50,7 @@ internal class TrackAudioProfile(
     }
 
     companion object {
-        const val ANALYSIS_VERSION = 2
+        const val ANALYSIS_VERSION = 3
         const val FEATURE_COUNT = 19
         const val BPM = 0
         const val ENERGY = 1
