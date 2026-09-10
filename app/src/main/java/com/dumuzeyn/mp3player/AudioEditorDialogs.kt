@@ -80,8 +80,26 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(host).apply { addView(content) }
         panel.addView(scroll, LinearLayout.LayoutParams(-1, bodyHeight(340, 230)))
+        val waveform = AudioEditorWaveformView(host, clip)
+        content.addView(waveform, LinearLayout.LayoutParams(-1, minOf(host.dp(140), bodyHeight(340, 230))))
         val from = secondsField(content, host.tr("Start, s", "Начало, с"), clip.startMs)
         val to = secondsField(content, host.tr("End, s", "Конец, с"), clip.endMs)
+        var updatingRange = false
+        waveform.onSelection = { start, end ->
+            updatingRange = true
+            from.setText(seconds(start))
+            to.setText(seconds(end))
+            updatingRange = false
+        }
+        val rangeWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (!updatingRange) runCatching { waveform.setSelection(millis(from), millis(to)) }
+            }
+            override fun afterTextChanged(s: Editable?) = Unit
+        }
+        from.addTextChangedListener(rangeWatcher)
+        to.addTextChangedListener(rangeWatcher)
         val offset = secondsField(content, host.tr("Timeline position, s", "Позиция на шкале, с"), clip.offsetMs)
         content.addView(host.uiFactory.text(host.tr("Lane", "Дорожка"), 14, false))
         val lane = Spinner(host).apply {
@@ -106,10 +124,21 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
             progress = 500
             contentDescription = host.tr("Split position", "Точка разделения")
         }
-        fun cutPosition() = clip.startMs + clip.durationMs * cut.progress / 1000
-        fun updateCut() { cutLabel.text = host.tr("Split at ", "Разделить в ") + seconds(cutPosition()) + " s" }
+        fun cutPosition() = waveform.cursorMs
+        fun updateCut() { cutLabel.text = host.tr("Split at ", "Разделить в ") + seconds(cutPosition()) + host.tr(" s", " с") }
         host.uiFactory.applySeekBarColors(cut)
-        cut.setOnSeekBarChangeListener(listener { updateCut() })
+        cut.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar, value: Int, fromUser: Boolean) {
+                if (fromUser) waveform.setCursor(clip.startMs + clip.durationMs * value / 1000)
+                updateCut()
+            }
+            override fun onStartTrackingTouch(bar: SeekBar) = Unit
+            override fun onStopTrackingTouch(bar: SeekBar) = Unit
+        })
+        waveform.onCursor = { value ->
+            cut.progress = ((value - clip.startMs) * 1000 / clip.durationMs).toInt()
+            updateCut()
+        }
         updateCut()
         content.addView(cut, LinearLayout.LayoutParams(-1, host.dp(48)))
         content.addView(action(host.tr("Split", "Разделить")) {

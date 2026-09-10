@@ -78,6 +78,8 @@ class AudioEditorExportInstrumentedTest {
     private fun verifyAudio(file: File, expectedMs: Long) {
         assertTrue("Export is empty", file.length() > 1000)
         assertTrue("Exported audio is silent", ExportAudioProbe.rms(file) > 10)
+        val waveform = AudioWaveformDecoder(context).decode(Uri.fromFile(file).toString(), expectedMs) { false }
+        assertTrue("Exported AAC waveform is empty", waveform.peaks.any { it > 0.001f })
         val extractor = MediaExtractor()
         try {
             extractor.setDataSource(file.absolutePath)

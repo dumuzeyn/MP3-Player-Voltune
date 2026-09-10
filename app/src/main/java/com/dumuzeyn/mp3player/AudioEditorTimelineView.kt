@@ -17,10 +17,29 @@ internal class AudioEditorTimelineView(
     private val bounds = LinkedHashMap<AudioEditClip, RectF>()
     private var touched: AudioEditClip? = null
     private val lanes = project.clips.map { it.lane }.distinct().sorted()
+    private val subscriptions = ArrayList<AutoCloseable>()
+    private val waves = HashMap<String, AudioWaveform>()
 
     init {
         contentDescription = host.tr("Audio timeline", "Монтажная шкала")
-        minimumHeight = host.dp(40 + lanes.size.coerceAtLeast(1) * 48)
+        minimumHeight = host.dp(40 + lanes.size.coerceAtLeast(1) * 64)
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        project.clips.distinctBy { it.uri }.forEach { clip ->
+            subscriptions.add(host.audioEditorController.waveforms.request(clip) { result ->
+                result.getOrNull()?.let { waves[clip.uri] = it }
+                invalidate()
+            })
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        subscriptions.forEach { it.close() }
+        subscriptions.clear()
+        waves.clear()
+        super.onDetachedFromWindow()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -32,12 +51,12 @@ internal class AudioEditorTimelineView(
         canvas.drawText(duration, width - paint.measureText(duration), host.dp(16).toFloat(), paint)
         val total = project.durationMs.coerceAtLeast(1).toFloat()
         lanes.forEachIndexed { index, lane ->
-            val top = host.dp(28 + index * 48).toFloat()
+            val top = host.dp(28 + index * 64).toFloat()
             paint.color = host.line
-            canvas.drawLine(0f, top + host.dp(40), width.toFloat(), top + host.dp(40), paint)
+            canvas.drawLine(0f, top + host.dp(56), width.toFloat(), top + host.dp(56), paint)
             project.clips.filter { it.lane == lane }.forEach { clip ->
                 val rect = RectF(width * clip.offsetMs / total, top,
-                    width * clip.finishMs / total, top + host.dp(36))
+                    width * clip.finishMs / total, top + host.dp(52))
                 bounds[clip] = rect
                 paint.color = if (index % 2 == 0) host.purple else host.yellowDark
                 canvas.drawRoundRect(rect, host.dp(4).toFloat(), host.dp(4).toFloat(), paint)
@@ -46,7 +65,20 @@ internal class AudioEditorTimelineView(
                 paint.color = android.graphics.Color.WHITE
                 val label = TextUtils.ellipsize(clip.title, paint,
                     (rect.width() - host.dp(10)).coerceAtLeast(0f), TextUtils.TruncateAt.END)
-                canvas.drawText(label.toString(), rect.left + host.dp(5), top + host.dp(23), paint)
+                canvas.drawText(label.toString(), rect.left + host.dp(5), top + host.dp(16), paint)
+                waves[clip.uri]?.let { wave ->
+                    val step = host.dp(2).toFloat().coerceAtLeast(2f)
+                    paint.strokeWidth = host.dp(1).toFloat()
+                    var x = rect.left
+                    while (x < rect.right && rect.width() > 0) {
+                        val start = clip.startMs + ((x - rect.left) / rect.width() * clip.durationMs).toLong()
+                        val end = clip.startMs + ((x + step - rect.left) / rect.width() * clip.durationMs).toLong()
+                        val amplitude = wave.peakBetween(start * 1000, minOf(end, clip.endMs) * 1000) *
+                            clip.gain * host.dp(14)
+                        canvas.drawLine(x, top + host.dp(35) - amplitude, x, top + host.dp(35) + amplitude, paint)
+                        x += step
+                    }
+                }
                 canvas.restore()
             }
         }

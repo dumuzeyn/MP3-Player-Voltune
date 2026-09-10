@@ -130,6 +130,70 @@ class AudioEditorUiInstrumentedTest {
         }
     }
 
+    @Test fun waveformHandlesUpdateTrimWithoutSwitchingTabs() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-waveform-ui.wav", 6)
+        val track = Track(Uri.fromFile(wave).toString(), "Звуковая волна", "Voltune", "Test", "Test", 6000)
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+        instrumentation.runOnMainSync {
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            host.audioEditorController.add(track, 0)
+            AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single())
+        }
+        awaitLayout(host)
+        val waveform = descendants(host.overlayHost).filterIsInstance<AudioEditorWaveformView>().single()
+        InstrumentedTestSupport.waitFor("Waveform did not decode", 15000) {
+            var ready = false
+            instrumentation.runOnMainSync { ready = waveform.waveform != null }
+            ready
+        }
+        instrumentation.runOnMainSync {
+            val scroll = descendants(host.overlayHost).filterIsInstance<android.widget.ScrollView>().single()
+            assertTrue("Waveform clipped by short viewport", waveform.height <= scroll.height)
+            val margin = host.dp(16).toFloat()
+            val span = waveform.width - 2 * margin
+            fun drag(from: Float, to: Float) {
+                val time = android.os.SystemClock.uptimeMillis()
+                for ((index, action) in intArrayOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE,
+                        MotionEvent.ACTION_UP).withIndex()) {
+                    val event = MotionEvent.obtain(time, time + index * 20L, action,
+                        if (index == 0) from else to, waveform.height / 2f, 0)
+                    waveform.dispatchTouchEvent(event)
+                    event.recycle()
+                }
+            }
+            drag(margin, margin + span / 6)
+            drag(waveform.width - margin, margin + span * 5 / 6)
+            drag(margin + span / 2, margin + span / 2)
+            assertEquals(3000, waveform.cursorMs)
+            assertEquals(LibraryTabs.EDITOR, host.navigationState.tabIndex)
+            val fields = descendants(host.overlayHost).filterIsInstance<android.widget.EditText>()
+            assertEquals("1.000", fields.first { it.contentDescription == "Начало, с" }.text.toString())
+            assertEquals("5.000", fields.first { it.contentDescription == "Конец, с" }.text.toString())
+        }
+        capture("audio-editor-waveform.png")
+        instrumentation.runOnMainSync {
+            val scroll = descendants(host.overlayHost).filterIsInstance<android.widget.ScrollView>().single()
+            val time = android.os.SystemClock.uptimeMillis()
+            val startY = minOf(waveform.height, scroll.height) * 0.8f
+            for (index in 0..4) {
+                val action = when (index) { 0 -> MotionEvent.ACTION_DOWN; 4 -> MotionEvent.ACTION_UP
+                    else -> MotionEvent.ACTION_MOVE }
+                val event = MotionEvent.obtain(time, time + index * 30L, action,
+                    scroll.width / 2f, startY * (1f - index * 0.23f), 0)
+                scroll.dispatchTouchEvent(event)
+                event.recycle()
+            }
+            assertTrue("Waveform prevents vertical scrolling", scroll.scrollY > 0)
+            descendants(host.overlayHost).filterIsInstance<TextView>()
+                .first { it.text.toString() == "Применить обрезку и настройки" }.performClick()
+            val clip = host.audioEditorController.project.clips.single()
+            assertEquals(1000, clip.startMs)
+            assertEquals(5000, clip.endMs)
+        }
+    }
+
     private fun launch(): MainActivityCore {
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         context.startActivity(Intent(context, MainActivity::class.java)

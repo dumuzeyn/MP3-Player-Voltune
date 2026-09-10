@@ -11,6 +11,8 @@ import java.util.concurrent.Executors
 internal class AudioEditorController(private val host: MainActivityCore) : AutoCloseable {
     private val store by lazy { AudioEditStore(host) }
     private val exporter by lazy { AudioEditExporter(host) }
+    private val waveformRepository = lazy { AudioWaveformRepository(host) }
+    val waveforms get() = waveformRepository.value
     private val files = Executors.newSingleThreadExecutor()
     private val undo = ArrayDeque<AudioEditProject>()
     private val redo = ArrayDeque<AudioEditProject>()
@@ -177,6 +179,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         onProgress = null
         exporter.close()
         files.shutdown()
+        if (waveformRepository.isInitialized()) waveforms.close()
     }
 
     companion object { private const val SAVE_AUDIO = 6201 }

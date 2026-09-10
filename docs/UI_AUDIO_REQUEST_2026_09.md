@@ -87,12 +87,41 @@ It is not a release-completion declaration.
   viewport. Russian dialog clipping also passed at 320dp with 1.3x test text.
 - Screenshots are generated under `app/build/reports/audio-editor*.png`.
 
+## Implemented in the fourth stage
+
+- Real decoded waveforms now appear on the clip timeline and in the trim dialog.
+  The envelope uses 2048 timestamp-indexed peak buckets, retaining silence and
+  transients without storing the full PCM track or inventing waveform samples.
+- Start/end handles update the millisecond fields; tapping the waveform sets the
+  split cursor, synchronized with the existing split slider. Numeric fields remain
+  available for precise and accessible editing.
+- Horizontal drags edit selection; vertical drags scroll the dialog. The waveform
+  fits the visible scroll area even in a short landscape viewport.
+- One background decoder is shared by active views, with a 16-source session cache.
+  Unsubscribing the last view cancels its request; closing the editor controller
+  cancels pending work. Failed decoding displays an unavailable state, not a fake
+  waveform. Decoding is capped at 120 seconds, with a 10-second no-output timeout.
+- AAC packets with negative priming timestamps are preserved instead of mistaken
+  for EOF. Export tests decode the resulting M4A back into a non-empty waveform.
+- `qualityCheck --no-problems-report`: passed, including 143 JVM tests and lint.
+  All production source files remain within the existing 500-line limit.
+- API 35 headless emulator: 14 Android tests passed, covering real WAV amplitude
+  and silence, decoder cancellation/retry, shared cache/lifecycle, AAC exports,
+  source integrity, selection/scroll gestures, undo/redo, draft restore, document
+  saving/reimport, and Russian text clipping. Waveform interaction was also
+  checked at 320dp width and in a 640x320dp landscape viewport.
+- Screenshots: `app/build/reports/audio-editor-waveform*.png`.
+- No production-phone installation or release was performed in this stage.
+
 ## Remaining work from the full request
 
-- Further editor work: waveform-based selection and in-editor audition.
+- In-editor audition using the existing playback service, with ordinary queue,
+  position and session persistence preserved. No second playback engine was added.
 - Real stem separation, vocal removal, speech cleanup, BPM and key detection.
   Do not substitute frequency filtering for source separation, or upload users'
   audio to cloud services without explicit consent.
+- Audit negative AAC priming timestamps in the separate AudioFeatureExtractor
+  before extending its BPM/key analysis; its old input loop still checks time < 0.
 - Verify supported playback/import/export formats before adding new decoders.
 - Full device matrix, version/release artifacts and production-phone installation.
 
