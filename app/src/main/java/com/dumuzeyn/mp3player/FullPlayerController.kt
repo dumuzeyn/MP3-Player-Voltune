@@ -55,7 +55,13 @@ internal class FullPlayerController(
     }
 
     fun refresh() {
-        pager?.refresh()
+        if (playbackState.currentTrack() == null) closeExpiredSession() else pager?.refresh()
+    }
+
+    fun closeExpiredSession() {
+        host.navigationState.fullPlayerOpening = false
+        currentSheet?.animate()?.cancel()
+        close(currentSheet, false)
     }
 
     fun onHostVisibilityChanged(visible: Boolean) {

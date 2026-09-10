@@ -31,5 +31,7 @@ internal class PlayerUiController(
 
     fun closeFullPlayerIfTop(top: View): Boolean = fullPlayerController.closeIfTop(top)
 
+    fun closeExpiredSession() = fullPlayerController.closeExpiredSession()
+
     fun onHostDestroyed() = fullPlayerController.onHostDestroyed()
 }

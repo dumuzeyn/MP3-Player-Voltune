@@ -292,7 +292,7 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
         host.getSharedPreferences("player_tool_session", 0).edit().remove("collection").apply()
         host.playbackUiState.queue.clear()
         host.updatePlaybackSnapshot(PlaybackSnapshot.empty())
-        host.playerUiController.updateMini()
+        host.playerUiController.closeExpiredSession()
     }
 
     private fun synchronizeUi(controller: MediaController, refreshRows: Boolean) {

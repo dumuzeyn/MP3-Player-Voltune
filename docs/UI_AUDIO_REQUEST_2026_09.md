@@ -177,6 +177,18 @@ It is not a release-completion declaration.
   separation is not yet exposed or claimed complete.
 - RNNoise: https://github.com/xiph/rnnoise/tree/v0.1
 
+## Playback retention follow-up
+
+- Expiring the remembered session also closes the full player immediately and
+  releases its pager. An empty playback projection cannot leave stale song/queue
+  pages behind. The previous library screen remains in place.
+- A valid paused session retains its page, second queue item and exact position;
+  active playback is not expired by the inactivity policy.
+- `qualityCheck` passed. Twelve Android scenarios passed: full-player/song and
+  queue expiry after a stop/resume lifecycle, valid pause, active playback, old
+  service-session expiry, background repeat, reconnect and activity destruction.
+  The 8-hour gap is simulated in persisted timestamps, not a real 8-hour wait.
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
@@ -185,8 +197,6 @@ It is not a release-completion declaration.
   Do not substitute frequency filtering for source separation, or upload users'
   audio to cloud services without explicit consent.
 - Verify supported playback/import/export formats before adding new decoders.
-- Close the full player when the retained playback session expires while the
-  screen is off; keep it open for a still-valid paused session or active playback.
 - Full device matrix, version/release artifacts and production-phone installation.
 
 ## Editor research references
