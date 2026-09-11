@@ -33,7 +33,11 @@ internal class AudioEditExporter(private val context: Context) : AutoCloseable {
     fun export(project: AudioEditProject, progress: (Int) -> Unit, done: (Result<File>) -> Unit) {
         check(transformer == null && pending == null)
         require(project.clips.isNotEmpty())
-        start(project, progress, done, false)
+        if (project.clips.any { it.startMs > 0 || it.endMs < it.sourceDurationMs }) {
+            prepareSources(project, progress, done, false) { input, files ->
+                AudioEditFlacSource.prepare(context, input, files)
+            }
+        } else start(project, progress, done, false)
     }
 
     private fun start(project: AudioEditProject, progress: (Int) -> Unit, done: (Result<File>) -> Unit,
@@ -100,17 +104,25 @@ internal class AudioEditExporter(private val context: Context) : AutoCloseable {
         transformer = null
         output?.delete()
         output = null
+        prepareSources(project, progress, done, true) { input, files ->
+            AudioEditSeekableSource.prepare(context, input, files)
+        }
+    }
+
+    private fun prepareSources(project: AudioEditProject, progress: (Int) -> Unit,
+        done: (Result<File>) -> Unit, indexed: Boolean,
+        prepare: (AudioEditProject, MutableList<File>) -> AudioEditProject) {
         val token = ++generation
         progress(-1)
         pending = preparation.submit {
             val files = ArrayList<File>()
-            val result = runCatching { AudioEditSeekableSource.prepare(context, project, files) }
+            val result = runCatching { prepare(project, files) }
             completionHandler.post {
                 if (token != generation) files.forEach { it.delete() }
                 else {
                     pending = null
                     preparedFiles.addAll(files)
-                    result.onSuccess { start(it, progress, done, true) }.onFailure {
+                    result.onSuccess { start(it, progress, done, indexed) }.onFailure {
                         clearPreparedFiles()
                         done(Result.failure(it))
                     }

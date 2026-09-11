@@ -253,6 +253,19 @@ It is not a release-completion declaration.
 - The remote matrix still needs a clean rerun; Android 10 exposed a separate FLAC
   trim-duration issue. Optimized-build runtime verification and release are pending.
 
+## Exact FLAC selections
+
+- Trimmed FLAC clips are decoded to disk-backed WAV selections before composition.
+  PCM bytes, bit depth, channels and sample rate are preserved; no intermediate
+  lossy encoding is added. Offsets, gain and clip IDs stay intact.
+- Handles both compressed FLAC extractors and Android extractors that expose
+  already-decoded PCM, identified by the FLAC signature. Preparation is cancellable,
+  bounded in memory and removes temporary outputs on failure/cancellation.
+- API 35: eight format/export/selection tests passed. The new selection test checks
+  exact 998 ms sample count and byte-identical selected PCM, timeline properties,
+  unchanged source bytes and pre-cancellation without temporary files.
+- `qualityCheck` passed. Android 10 confirmation remains part of the next CI matrix.
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
