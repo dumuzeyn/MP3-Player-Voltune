@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.ScrollView
 import java.util.Locale
 
 internal class ParticleSettingsController(private val host: MainActivityCore) {
@@ -17,29 +18,32 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
             host.uiFactory.dialogTitle(host.tr("Particle settings", "Настройка частиц")),
             host.uiFactory.dialogTitleParams(),
         )
+        val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
+        val scroll = ScrollView(host).apply { addView(content) }
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
         addSlider(
-            panel,
+            content,
             host.tr("Frequency", "Частота"),
             10,
             100,
             host.appearanceState.particleFrequency,
         ) { host.appearanceState.particleFrequency = it }
         addSlider(
-            panel,
+            content,
             host.tr("Size", "Размер"),
             60,
             150,
             host.appearanceState.particleSize,
         ) { host.appearanceState.particleSize = it }
         addSlider(
-            panel,
+            content,
             host.tr("Lifetime", "Время существования"),
             50,
             180,
             host.appearanceState.particleLifetime,
         ) { host.appearanceState.particleLifetime = it }
-        addColorButton(panel, true)
-        addColorButton(panel, false)
+        addColorButton(content, true)
+        addColorButton(content, false)
 
         val reset = host.uiFactory.button(host.tr("Restore defaults", "По умолчанию"))
         host.uiFactory.applySecondaryButtonStyle(reset)
@@ -57,7 +61,7 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
         val resetParams = LinearLayout.LayoutParams(-1, host.dp(46)).apply {
             setMargins(0, host.dp(8), 0, 0)
         }
-        panel.addView(reset, resetParams)
+        content.addView(reset, resetParams)
 
         val close = host.uiFactory.button(host.tr("Done", "Готово"))
         host.uiFactory.applyPrimaryButtonStyle(close)

@@ -421,7 +421,7 @@ open class MainActivityCore : Activity() {
     )
 
     fun centerParams(width: Int, height: Int): FrameLayout.LayoutParams =
-        responsiveLayoutController.centeredPanelParams(width, height)
+        responsiveLayoutController.centeredPanelParams(width, height, overlayHost.height)
 
     fun bottomParams(): FrameLayout.LayoutParams = responsiveLayoutController.bottomPanelParams()
 

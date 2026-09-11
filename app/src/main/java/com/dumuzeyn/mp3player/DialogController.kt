@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player
 
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 
 class DialogController(private val host: MainActivityCore) {
     fun showConfirmation(title: String, message: String, yesAction: Runnable) {
@@ -40,7 +41,10 @@ class DialogController(private val host: MainActivityCore) {
         val messageView = host.uiFactory.text(message, 16, false)
         messageView.setTextColor(host.muted)
         messageView.setPadding(0, host.dp(4), 0, host.dp(14))
-        panel.addView(messageView, LinearLayout.LayoutParams(-1, -2))
+        val messageScroll = ScrollView(host).apply {
+            addView(messageView, FrameLayout.LayoutParams(-1, -2))
+        }
+        panel.addView(messageScroll, LinearLayout.LayoutParams(-1, -2, 1f))
 
         val actions = host.uiFactory.row()
         val no = host.uiFactory.button(negativeLabel)

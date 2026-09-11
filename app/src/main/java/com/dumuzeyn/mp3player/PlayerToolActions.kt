@@ -86,10 +86,12 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
         val panel = host.uiFactory.panelCard()
         panel.addView(host.uiFactory.dialogTitle(host.tr("Playback speed", "Скорость воспроизведения")),
             host.uiFactory.dialogTitleParams())
+        val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
+        panel.addView(ScrollView(host).apply { addView(content) }, LinearLayout.LayoutParams(-1, -2, 1f))
         var selected = PlaybackSpeedPolicy.constrain(preferences.getFloat("speed", 1.25f))
         val label = host.uiFactory.text(String.format(Locale.ROOT, "%.2f×", selected), 22, true)
         label.gravity = android.view.Gravity.CENTER
-        panel.addView(label, LinearLayout.LayoutParams(-1, host.dp(44)))
+        content.addView(label, LinearLayout.LayoutParams(-1, host.dp(44)))
         val slider = SeekBar(host).apply {
             contentDescription = host.tr("Speed multiplier", "Коэффициент скорости")
             max = PlaybackSpeedPolicy.STEPS
@@ -105,13 +107,13 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
             override fun onStartTrackingTouch(bar: SeekBar) = Unit
             override fun onStopTrackingTouch(bar: SeekBar) = Unit
         })
-        panel.addView(slider, LinearLayout.LayoutParams(-1, host.dp(48)))
+        content.addView(slider, LinearLayout.LayoutParams(-1, host.dp(48)))
         val limits = host.uiFactory.row()
         limits.addView(host.uiFactory.text("0.25×", 13, false), LinearLayout.LayoutParams(0, -2, 1f))
         limits.addView(host.uiFactory.text("4.00×", 13, false).apply {
             gravity = android.view.Gravity.END
         }, LinearLayout.LayoutParams(0, -2, 1f))
-        panel.addView(limits)
+        content.addView(limits)
         panel.addView(host.uiFactory.button(host.tr("Apply", "Применить")).apply {
             host.uiFactory.applyPrimaryButtonStyle(this)
             setOnClickListener {

@@ -61,14 +61,12 @@ class ResponsiveLayoutController(private val activity: Activity) {
         ).apply { setMargins(0, 0, 0, dp(18)) }
     }
 
-    fun centeredPanelParams(requestedWidth: Int, requestedHeight: Int): FrameLayout.LayoutParams {
+    fun centeredPanelParams(requestedWidth: Int, requestedHeight: Int, availableHeight: Int = screenHeight()): FrameLayout.LayoutParams {
         var width = boundedPanelWidth(requestedWidth, screenWidth(), dp(28))
-        var height = requestedHeight
+        val height = boundedPanelHeight(requestedHeight,
+            if (availableHeight > 0) availableHeight else screenHeight(), dp(28))
         if (isTablet()) {
             width = boundedPanelWidth(requestedWidth.coerceAtLeast(dp(440)), screenWidth(), dp(48))
-            if (requestedHeight > 0) {
-                height = requestedHeight.coerceAtMost((screenHeight() - dp(64)).coerceAtLeast(dp(240)))
-            }
         }
         return FrameLayout.LayoutParams(width, height, Gravity.CENTER).apply {
             setMargins(dp(14), dp(14), dp(14), dp(14))
@@ -115,5 +113,10 @@ class ResponsiveLayoutController(private val activity: Activity) {
         @JvmStatic
         fun boundedPanelWidth(requestedWidth: Int, screenWidth: Int, totalMargin: Int): Int =
             minOf(requestedWidth, (screenWidth - totalMargin).coerceAtLeast(1))
+
+        @JvmStatic
+        fun boundedPanelHeight(requestedHeight: Int, availableHeight: Int, totalMargin: Int): Int =
+            if (requestedHeight > 0) minOf(requestedHeight, (availableHeight - totalMargin).coerceAtLeast(1))
+            else requestedHeight
     }
 }

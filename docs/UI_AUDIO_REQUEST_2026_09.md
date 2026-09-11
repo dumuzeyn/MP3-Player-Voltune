@@ -278,7 +278,22 @@ It is not a release-completion declaration.
 - API 35 optimized smoke passed: FFT, silence, speech cleanup, export, four finite
   distinct stems and cancellation. Production-signed APK still needs final smoke.
 
-## Remaining work from the full request
+## Short-screen dialog verification
+
+- Confirmation text, particle controls, sleep timer, leveling, fade and playback
+  speed use scrolling content while persistent confirmation buttons stay outside
+  the scroll area. Fixed-height panels are capped to the actual overlay viewport.
+- Dialog checks now assert panel bounds as well as text layout at 1.3x Russian
+  text size. The 640x320dp landscape checks pass, including player tap/hold tools.
+- All ten editor UI/text cases also pass at 320dp portrait width (41.373 seconds).
+- Local API 35: all 99 instrumented tests passed together (301.320 seconds).
+  The quality gate passed with 151 JVM tests, lint and architecture/icon checks.
+- Remote run 34605673522 passed all 99 cases on APIs 29, 30, 31, 33, 34, 35 and 36,
+  plus the API 35 tablet checks. Android 10 FLAC trimming is confirmed.
+- Android 8/9 are being retested separately after correcting legacy test storage
+  and the test-only foreground readiness condition. These results are still pending.
+
+## Remaining release work
 
 - Final requested order: complete the remaining stages, then rename the app to
   `Voltune — аудио плеер и редактор`, then publish a tested signed release.

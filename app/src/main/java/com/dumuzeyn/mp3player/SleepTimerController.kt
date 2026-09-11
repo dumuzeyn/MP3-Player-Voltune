@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player
 
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import com.dumuzeyn.mp3player.playback.service.PlaybackSleepTimer
 import kotlin.math.max
 
@@ -45,7 +46,8 @@ internal class SleepTimerController(private val host: MainActivityCore) {
             actions.addView(cancel, actionParams(0))
         }
 
-        panel.addView(actions)
+        val scroll = ScrollView(host).apply { addView(actions) }
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, -2, 1f))
         shade.addView(panel, host.centerParams(host.dp(330), -2))
         host.overlayHost.addView(shade)
         host.playerUiController.updateMini()

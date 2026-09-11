@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player
 import android.content.SharedPreferences
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 
 internal class VolumeLevelingController(private val host: MainActivityCore) {
@@ -46,6 +47,8 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
         val panel = host.uiFactory.panelCard()
         panel.addView(host.uiFactory.dialogTitle(host.tr("Leveling mode", "Режим громкости")),
             host.uiFactory.dialogTitleParams())
+        val choices = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
+        panel.addView(ScrollView(host).apply { addView(choices) }, LinearLayout.LayoutParams(-1, -2, 1f))
         LoudnessLevelingMode.entries.forEach { value ->
             val option = dialogButton(modeLabel(value)).apply {
                 isSelected = value == mode()
@@ -56,7 +59,7 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
                     host.overlayHost.removeView(shade)
                 }
             }
-            panel.addView(option, LinearLayout.LayoutParams(-1, host.dp(60)))
+            choices.addView(option, LinearLayout.LayoutParams(-1, host.dp(60)))
         }
         shade.addView(panel, host.centerParams(host.dp(350), -2))
         host.overlayHost.addView(shade)
@@ -71,15 +74,17 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
             host.uiFactory.dialogTitle(host.tr("Volume leveling", "Единая громкость")),
             host.uiFactory.dialogTitleParams(),
         )
+        val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
+        panel.addView(ScrollView(host).apply { addView(content) }, LinearLayout.LayoutParams(-1, -2, 1f))
 
         val enabledButton = dialogButton(settingLabel())
         enabledButton.setOnClickListener {
             toggle()
             enabledButton.text = settingLabel()
         }
-        panel.addView(enabledButton, rowParams())
+        content.addView(enabledButton, rowParams())
 
-        panel.addView(dialogButton(modeLabel(mode())).apply {
+        content.addView(dialogButton(modeLabel(mode())).apply {
             setOnClickListener {
                 host.overlayHost.removeView(shade)
                 openModeDialog()
@@ -89,7 +94,7 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
         val status = host.uiFactory.text(statusText(normalizer), 14, false).apply {
             minHeight = host.dp(50)
         }
-        panel.addView(status, LinearLayout.LayoutParams(-1, -2))
+        content.addView(status, LinearLayout.LayoutParams(-1, -2))
 
         val analyze = dialogButton(host.tr("Analyze library", "Анализировать медиатеку"))
         analyze.setOnClickListener {
@@ -98,14 +103,14 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
                 progressListener(normalizer, status),
             )
         }
-        panel.addView(analyze, rowParams())
+        content.addView(analyze, rowParams())
 
         val cancel = dialogButton(host.tr("Cancel analysis", "Отменить анализ"))
         cancel.setOnClickListener {
             normalizer.cancelAnalysis()
             status.text = host.tr("Cancelling analysis...", "Анализ отменяется...")
         }
-        panel.addView(cancel, rowParams())
+        content.addView(cancel, rowParams())
 
         val retry = dialogButton(host.tr("Retry errors", "Повторить ошибки"))
         retry.setOnClickListener {
@@ -116,7 +121,7 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
             }
             normalizer.analyzeLibrary(retryTracks, progressListener(normalizer, status))
         }
-        panel.addView(retry, rowParams())
+        content.addView(retry, rowParams())
 
         val clear = dialogButton(
             host.tr("Clear analysis cache", "Очистить результаты анализа"),
@@ -126,7 +131,7 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
             status.text = statusText(normalizer)
             dispatchSettings()
         }
-        panel.addView(clear, rowParams())
+        content.addView(clear, rowParams())
 
         val done = host.uiFactory.button(host.tr("Done", "Готово"))
         host.uiFactory.applyPrimaryButtonStyle(done)

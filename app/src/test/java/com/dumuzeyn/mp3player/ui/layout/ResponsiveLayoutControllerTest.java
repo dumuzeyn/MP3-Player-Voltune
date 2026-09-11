@@ -19,4 +19,12 @@ public class ResponsiveLayoutControllerTest {
         assertEquals(292, ResponsiveLayoutController.boundedPanelWidth(350, 320, 28));
         assertEquals(280, ResponsiveLayoutController.boundedPanelWidth(280, 320, 28));
     }
+
+    @Test
+    public void centeredPanelFitsShortViewportWithoutChangingWrapContent() {
+        assertEquals(212, ResponsiveLayoutController.boundedPanelHeight(420, 240, 28));
+        assertEquals(180, ResponsiveLayoutController.boundedPanelHeight(180, 240, 28));
+        assertEquals(-2, ResponsiveLayoutController.boundedPanelHeight(-2, 240, 28));
+        assertEquals(1, ResponsiveLayoutController.boundedPanelHeight(420, 20, 28));
+    }
 }

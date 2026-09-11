@@ -158,6 +158,16 @@ public class TextClippingInstrumentedTest {
         });
         InstrumentedTestSupport.waitFor(name + " did not finish layout", 5000L,
                 () -> !host.overlayHost.isLayoutRequested());
+        instrumentation.runOnMainSync(() -> {
+            ViewGroup shade = (ViewGroup) host.overlayHost.getChildAt(0);
+            for (int index = 0; index < shade.getChildCount(); index++) {
+                View panel = shade.getChildAt(index);
+                assertTrue(name + " extends outside its viewport",
+                        panel.getLeft() >= 0 && panel.getTop() >= 0
+                                && panel.getRight() <= shade.getWidth()
+                                && panel.getBottom() <= shade.getHeight());
+            }
+        });
         assertNoClipping(name, host.overlayHost);
         Log.i("VoltuneClippingTest", "Finished " + name);
     }
