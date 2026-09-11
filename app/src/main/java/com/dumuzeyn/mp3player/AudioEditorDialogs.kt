@@ -171,6 +171,17 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
                 if (controller.processing.cleanSpeech(selected)) host.overlayHost.removeView(shade)
             }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
         })
+        for (instrumental in listOf(false, true)) {
+            content.addView(action(if (instrumental) host.tr("Remove vocals", "Удалить вокал")
+                else host.tr("Separate into four stems", "Разделить на четыре дорожки")) {
+                runCatching {
+                    clip.copy(startMs = millis(from), endMs = millis(to), offsetMs = millis(offset),
+                        lane = lane.selectedItemPosition, gain = gain.progress / 100f)
+                }.onSuccess { selected ->
+                    if (controller.processing.separate(selected, instrumental)) host.overlayHost.removeView(shade)
+                }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
+            })
+        }
         panel.addView(action(host.tr("Apply trim and settings", "Применить обрезку и настройки")) {
             if (controller.change { it.replace(clip.copy(startMs = millis(from), endMs = millis(to),
                     offsetMs = millis(offset), lane = lane.selectedItemPosition, gain = gain.progress / 100f)) }) {

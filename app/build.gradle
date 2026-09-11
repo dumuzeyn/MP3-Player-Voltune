@@ -3,6 +3,8 @@ plugins {
     id "org.jetbrains.kotlin.android"
 }
 
+apply from: "native-audio.gradle"
+
 def releaseKeystorePath = System.getenv("MP3_RELEASE_KEYSTORE")
 def releaseKeyAlias = System.getenv("MP3_RELEASE_KEY_ALIAS")
 def releaseStorePass = System.getenv("MP3_RELEASE_STORE_PASS")
@@ -93,6 +95,8 @@ android {
 
 def audioLicenses = tasks.register("prepareAudioLicenses", Sync) {
     from(rootProject.file("third_party/rnnoise/COPYING")) { rename { "RNNoise.txt" } }
+    from(rootProject.file("third_party/demucs/LICENSE")) { rename { "demucs.cpp.txt" } }
+    from(rootProject.file("third_party/demucs/vendor/eigen")) { include "COPYING.*"; into "Eigen" }
     into(layout.buildDirectory.dir("generated/audioLicenses/licenses"))
 }
 android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir("generated/audioLicenses"))

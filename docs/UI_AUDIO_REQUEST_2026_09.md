@@ -189,13 +189,36 @@ It is not a release-completion declaration.
   service-session expiry, background repeat, reconnect and activity destruction.
   The 8-hour gap is simulated in persisted timestamps, not a real 8-hour wait.
 
+## Implemented in the eighth stage
+
+- Offline HTDemucs separates a selected clip into drums, bass, other and vocals;
+  vocal removal mixes the three instrumental stems. Originals remain unchanged,
+  and results participate in the existing draft and undo/redo flow.
+- Pinned FP16 model (83,994,361 bytes) is verified with SHA-256 during the build
+  and extraction. Model, Demucs and Eigen license notices are bundled in the APK.
+  No runtime network access or upload is involved.
+- One inference job uses disk-backed PCM, bounded windows, context and overlap
+  blending. Cancellation, insufficient memory/storage and occupied lanes leave
+  the draft intact and remove incomplete outputs.
+- Generated upstream copies use tiled full-key attention and tiled convolution
+  instead of materializing large attention/im2col matrices. Dense-reference
+  comparisons pass at 1e-5 tolerance. Two independent tile/head workers avoid
+  repeatedly parallelizing small matrix products.
+- API 35 headless x86_64 with 2.5 GB guest RAM: real-model inference for a 2-second
+  test input (internally padded by Demucs) improved from 203,356 to 31,790 ms.
+  Sampled native allocations during inference were 480-515 MB, not a measured
+  whole-process peak. This is offline processing, not real-time separation;
+  physical ARM-device performance and musical separation quality vary.
+- `qualityCheck` passed with 148 JVM tests and lint. Fifteen unique Android cases
+  passed: two native/model/window tests and thirteen editor, text and RNNoise
+  regressions. Tests include moved-lane allocation, occupied-lane rejection,
+  cancellation/retry, source integrity, exact overlap duration and undo/redo.
+- Screenshot inspected: `app/build/reports/audio-editor-stems.png`.
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
   `Voltune — аудио плеер и редактор`, then publish a tested signed release.
-- Real stem separation and vocal removal.
-  Do not substitute frequency filtering for source separation, or upload users'
-  audio to cloud services without explicit consent.
 - Verify supported playback/import/export formats before adding new decoders.
 - Full device matrix, version/release artifacts and production-phone installation.
 

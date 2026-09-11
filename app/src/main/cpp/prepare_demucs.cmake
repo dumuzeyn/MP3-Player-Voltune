@@ -1,0 +1,41 @@
+# Patch only the generated copy; the pinned upstream submodule stays unchanged.
+set(GENERATED_DEMUCS "${CMAKE_CURRENT_BINARY_DIR}/demucs")
+file(MAKE_DIRECTORY "${GENERATED_DEMUCS}")
+file(GLOB UPSTREAM_FILES "${DEMUCS}/src/*.cpp" "${DEMUCS}/src/*.hpp")
+set(DEMUCS_SOURCES "")
+foreach(SOURCE IN LISTS UPSTREAM_FILES)
+    get_filename_component(NAME "${SOURCE}" NAME)
+    configure_file("${SOURCE}" "${GENERATED_DEMUCS}/${NAME}" COPYONLY)
+    if(NAME MATCHES "\\.cpp$")
+        list(APPEND DEMUCS_SOURCES "${GENERATED_DEMUCS}/${NAME}")
+    endif()
+endforeach()
+file(READ "${DEMUCS}/src/layers.cpp" LAYERS)
+set(START "    int head_split = C / num_heads;")
+set(END "    // Copy q into q_2d (Map q to 2D matrix)")
+string(FIND "${LAYERS}" "${START}" FIRST)
+string(FIND "${LAYERS}" "${END}" LAST)
+if(FIRST LESS 0 OR LAST LESS FIRST)
+    message(FATAL_ERROR "Pinned Demucs attention block changed; review the memory patch")
+endif()
+string(SUBSTRING "${LAYERS}" 0 ${FIRST} PREFIX)
+string(SUBSTRING "${LAYERS}" ${LAST} -1 SUFFIX)
+file(WRITE "${GENERATED_DEMUCS}/layers.cpp"
+    "#include \"tiled_attention.hpp\"\n${PREFIX}"
+    "    Eigen::MatrixXf cross_attn_out = voltune_attention(Q, K, V, num_heads);\n\n${SUFFIX}")
+file(READ "${DEMUCS}/src/conv.hpp" CONV)
+string(REPLACE "\r\n" "\n" CONV "${CONV}")
+string(REGEX REPLACE "Eigen::MatrixXf im2col_matrix =[ \n]+im2col_transposed<[^;]+;"
+    "constexpr bool voltune_transposed = true;" CONV "${CONV}")
+string(REGEX REPLACE "Eigen::MatrixXf im2col_matrix =[ \n]+im2col<[^;]+;"
+    "constexpr bool voltune_transposed = false;" CONV "${CONV}")
+set(PRODUCT "Eigen::MatrixXf result = im2col_matrix * reshaped_weights.transpose();")
+string(REPLACE "${PRODUCT}"
+    "Eigen::MatrixXf result = voltune_conv_product<kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width, dilation_height, dilation_width, voltune_transposed>(x, reshaped_weights);"
+    CONV "${CONV}")
+string(REGEX MATCHALL "constexpr bool voltune_transposed" PATCHED "${CONV}")
+list(LENGTH PATCHED PATCH_COUNT)
+if(NOT PATCH_COUNT EQUAL 4)
+    message(FATAL_ERROR "Pinned Demucs convolution blocks changed; review the memory patch")
+endif()
+file(WRITE "${GENERATED_DEMUCS}/conv.hpp" "#include \"tiled_convolution.hpp\"\n${CONV}")

@@ -310,6 +310,81 @@ class AudioEditorUiInstrumentedTest {
         File(Uri.parse(processed!!.uri).path!!).delete()
     }
 
+    @Test fun stemButtonsCreateFourLanesAndUndoRestoresOriginal() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        wave = File(context.cacheDir, "editor-stems-ui.wav")
+        PcmWaveWriter(wave!!, 44100, 2).use { writer ->
+            repeat(88200) { frame ->
+                val value = (.2 * kotlin.math.sin(2 * Math.PI * 110 * frame / 44100)).toFloat()
+                writer.sample(value)
+                writer.sample(-value)
+            }
+        }
+        val track = Track(Uri.fromFile(wave).toString(), "Разделение тест", "Voltune", "Test", "Test", 2000)
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+        instrumentation.runOnMainSync {
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            host.audioEditorController.add(track, 0)
+            AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single())
+        }
+        awaitLayout(host)
+        instrumentation.runOnMainSync {
+            descendants(host.overlayHost).filterIsInstance<android.widget.Spinner>().single().setSelection(2)
+            descendants(host.overlayHost).filterIsInstance<TextView>()
+                .first { it.text.toString() == "Разделить на четыре дорожки" }.performClick()
+            assertTrue(host.audioEditorController.processing.status, host.audioEditorController.busy)
+        }
+        InstrumentedTestSupport.waitFor("Stem processing did not finish", 45000) {
+            var done = false
+            instrumentation.runOnMainSync { done = !host.audioEditorController.processing.active }
+            done
+        }
+        val outputs = ArrayList<File>()
+        try {
+            instrumentation.runOnMainSync {
+                val editor = host.audioEditorController
+                assertEquals(editor.processing.status, 4, editor.project.clips.size)
+                assertEquals(listOf(2, 0, 1, 3), editor.project.clips.map { it.lane })
+                editor.project.clips.forEach { clip ->
+                    assertEquals(2000L, clip.durationMs)
+                    outputs.add(File(Uri.parse(clip.uri).path!!))
+                }
+                editor.undo()
+                assertEquals(track.uri, editor.project.clips.single().uri)
+                editor.redo()
+                assertEquals(4, editor.project.clips.size)
+                assertTrue(outputs.all { it.isFile })
+            }
+            awaitLayout(host)
+            capture("audio-editor-stems.png")
+        } finally { outputs.forEach { it.delete() } }
+    }
+
+    @Test fun separationRejectsOccupiedLanesAndCancellationKeepsDraft() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-stems-cancel.wav", 6)
+        val track = Track(Uri.fromFile(wave).toString(), "Stem cancellation", "Voltune", "Test", "Test", 6000)
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+        instrumentation.runOnMainSync {
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            val editor = host.audioEditorController
+            repeat(6) { editor.add(track, it) }
+            val occupied = editor.project
+            assertFalse(editor.processing.separate(occupied.clips.first(), false))
+            assertFalse(editor.busy)
+            assertEquals(occupied, editor.project)
+            repeat(5) { editor.undo() }
+            val original = editor.project
+            assertEquals(1, original.clips.size)
+            assertTrue(editor.processing.status, editor.processing.separate(original.clips.single(), true))
+            editor.processing.cancel()
+            assertFalse(editor.busy)
+            assertEquals(original, editor.project)
+        }
+    }
+
     private fun launch(): MainActivityCore {
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         context.startActivity(Intent(context, MainActivity::class.java)

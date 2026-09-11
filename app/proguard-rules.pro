@@ -1,5 +1,8 @@
 -keep class com.dumuzeyn.mp3player.Track { *; }
 -keep class com.dumuzeyn.mp3player.SpeechDenoiser { native <methods>; }
+-keep class com.dumuzeyn.mp3player.DemucsSeparator { native <methods>; }
+-keep interface com.dumuzeyn.mp3player.DemucsSeparator$Progress { *; }
+-keepclassmembers class * implements com.dumuzeyn.mp3player.DemucsSeparator$Progress { public boolean update(float); }
 -keep class com.dumuzeyn.mp3player.PlayerService { *; }
 -keep class com.dumuzeyn.mp3player.MainActivity { *; }
 -keep class com.dumuzeyn.mp3player.DarkMainActivity { *; }

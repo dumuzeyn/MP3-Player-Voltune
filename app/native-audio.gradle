@@ -1,0 +1,53 @@
+import java.security.MessageDigest
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+def modelHash = "72b17c42d308982ddb5069bc3bf48b81a5aac4cb6516e4366c0fa7cef6df0064"
+def modelUrl = "https://huggingface.co/datasets/Retrobear/demucs.cpp/resolve/8f58ac0491bbea657275bcd3e38af1ab3a27bfc9/ggml-model-htdemucs-4s-f16.bin"
+def modelFile = layout.buildDirectory.file("generated/separationAssets/htdemucs-4s-f16.bin")
+def sha256 = { File source ->
+    def digest = MessageDigest.getInstance("SHA-256")
+    source.withInputStream { input ->
+        byte[] buffer = new byte[65536]
+        int count
+        while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
+    }
+    digest.digest().encodeHex().toString()
+}
+def prepare = tasks.register("prepareSeparationModel") {
+    inputs.property("sha256", modelHash)
+    outputs.file(modelFile)
+    outputs.upToDateWhen { modelFile.get().asFile.isFile() && sha256(modelFile.get().asFile) == modelHash }
+    doLast {
+        File destination = modelFile.get().asFile
+        destination.parentFile.mkdirs()
+        File temporary = new File(destination.parentFile, destination.name + ".part")
+        try {
+            File cache = layout.buildDirectory.file("native-models/htdemucs-4s-f16.bin").get().asFile
+            if (cache.isFile() && sha256(cache) == modelHash) {
+                Files.copy(cache.toPath(), temporary.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } else {
+                logger.lifecycle("Downloading the pinned offline Demucs model (84 MB)")
+                def connection = new URI(modelUrl).toURL().openConnection()
+                connection.connectTimeout = 30000
+                connection.readTimeout = 120000
+                connection.inputStream.withCloseable { input ->
+                    temporary.withOutputStream { output ->
+                        byte[] buffer = new byte[65536]
+                        long total = 0
+                        int count
+                        while ((count = input.read(buffer)) != -1) {
+                            total += count
+                            if (total > 83994361L) throw new GradleException("Oversized separation model")
+                            output.write(buffer, 0, count)
+                        }
+                    }
+                }
+            }
+            if (sha256(temporary) != modelHash) throw new GradleException("Separation model SHA-256 mismatch")
+            Files.move(temporary.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        } finally { temporary.delete() }
+    }
+}
+project.extensions.getByName("android").sourceSets.main.assets.srcDir(layout.buildDirectory.dir("generated/separationAssets"))
+tasks.named("preBuild").configure { dependsOn prepare }
