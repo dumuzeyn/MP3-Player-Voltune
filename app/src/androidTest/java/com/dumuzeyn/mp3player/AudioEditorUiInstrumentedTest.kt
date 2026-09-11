@@ -29,7 +29,10 @@ class AudioEditorUiInstrumentedTest {
         activity?.let { InstrumentedTestSupport.finishActivity(instrumentation, it) }
         context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
         wave?.delete()
-        savedUri?.let { context.contentResolver.delete(it, null, null) }
+        savedUri?.let {
+            if (it.scheme == "file") File(checkNotNull(it.path)).delete()
+            else context.contentResolver.delete(it, null, null)
+        }
     }
 
     @Test fun exportedAudioIsSavedAndImportedBackIntoLibrary() {
@@ -41,7 +44,11 @@ class AudioEditorUiInstrumentedTest {
             put(android.provider.MediaStore.Audio.Media.DISPLAY_NAME, "voltune-editor-test-${System.nanoTime()}.m4a")
             put(android.provider.MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
         }
-        val uri = checkNotNull(context.contentResolver.insert(
+        // Legacy storage has no scoped MediaStore insert. A private destination keeps
+        // this picker-result test independent of broad external-write permissions.
+        val uri = if (android.os.Build.VERSION.SDK_INT < 29) {
+            Uri.fromFile(File.createTempFile("editor-saved-", ".m4a", context.cacheDir))
+        } else checkNotNull(context.contentResolver.insert(
             android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values))
         savedUri = uri
         val host = launch()

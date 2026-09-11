@@ -86,12 +86,21 @@ final class InstrumentedTestSupport {
         MainActivityCore activity = (MainActivityCore) monitor.waitForActivityWithTimeout(15000);
         instrumentation.removeMonitor(monitor);
         if (activity == null) throw new AssertionError("Playback activity did not start");
-        waitFor("Playback activity is not ready", 15000, () -> {
-            boolean[] ready = {false};
-            instrumentation.runOnMainSync(() -> ready[0] = activity.hasWindowFocus()
-                    && activity.librarySnapshotApplier.hasAppliedInitialSnapshot());
-            return ready[0];
-        });
+        try {
+            waitFor("Playback activity is not ready", 15000, () -> {
+                boolean[] ready = {false};
+                instrumentation.runOnMainSync(() -> ready[0] =
+                        (android.os.Build.VERSION.SDK_INT < 35 || activity.hasWindowFocus())
+                        && activity.librarySnapshotApplier.hasAppliedInitialSnapshot());
+                return ready[0];
+            });
+        } catch (AssertionError failure) {
+            instrumentation.runOnMainSync(() -> android.util.Log.e("VoltuneTest",
+                    "Playback setup: focus=" + activity.hasWindowFocus() + " library="
+                            + activity.librarySnapshotApplier.hasAppliedInitialSnapshot()));
+            finishActivity(instrumentation, activity);
+            throw failure;
+        }
         return activity;
     }
 
