@@ -1,4 +1,7 @@
 -keep class com.dumuzeyn.mp3player.Track { *; }
+# JTransforms uses bounded 8192-element Java arrays. JLargeArrays' off-heap
+# multi-gigabyte allocation path references the desktop-only Cleaner API.
+-dontwarn sun.misc.Cleaner
 -keep class com.dumuzeyn.mp3player.SpeechDenoiser { native <methods>; }
 -keep class com.dumuzeyn.mp3player.DemucsSeparator { native <methods>; }
 -keep interface com.dumuzeyn.mp3player.DemucsSeparator$Progress { *; }

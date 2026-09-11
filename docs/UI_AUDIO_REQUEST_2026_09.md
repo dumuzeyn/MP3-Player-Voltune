@@ -266,6 +266,18 @@ It is not a release-completion declaration.
   unchanged source bytes and pre-cancellation without temporary files.
 - `qualityCheck` passed. Android 10 confirmation remains part of the next CI matrix.
 
+## Optimized audio verification
+
+- R8 release configuration suppresses only the desktop-only sun.misc.Cleaner
+  reference in JLargeArrays' unused multi-gigabyte off-heap allocation path.
+  The application uses bounded 8192-element FFT arrays.
+- A benchmark-only in-process activity exercises the optimized FFT/key detector,
+  silent selection, RNNoise, AAC export and real Demucs inference/cancellation.
+  No test-only keep rules weaken production shrinking. The activity is absent
+  from production and debug APKs. Run `tools/check-optimized-audio.ps1` to repeat.
+- API 35 optimized smoke passed: FFT, silence, speech cleanup, export, four finite
+  distinct stems and cancellation. Production-signed APK still needs final smoke.
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
