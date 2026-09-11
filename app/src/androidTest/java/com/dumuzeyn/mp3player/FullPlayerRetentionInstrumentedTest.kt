@@ -53,12 +53,15 @@ class FullPlayerRetentionInstrumentedTest {
         prepareQueue(host, false)
         openPage(host, FullPlayerPageOrder.QUEUE)
         val before = host.playbackSnapshot().currentMediaId
+        var pausedPosition = 0L
+        instrumentation.runOnMainSync { pausedPosition = host.playbackController.currentPosition() }
+        assertTrue("Initial seek did not reach the requested position", pausedPosition in 1134L..1334L)
         cycleLifecycle(host, 60 * 60 * 1000L)
         instrumentation.runOnMainSync {
             assertTrue(descendants(host.overlayHost).any { it is FullPlayerSheet })
             assertEquals(FullPlayerPageOrder.QUEUE, descendants(host.overlayHost).filterIsInstance<ViewPager2>().single().currentItem)
             assertEquals(before, host.playbackSnapshot().currentMediaId)
-            assertEquals(1234L, host.playbackController.currentPosition())
+            assertEquals(pausedPosition, host.playbackController.currentPosition())
             assertEquals(2, host.playbackUiState.queue.size)
         }
     }

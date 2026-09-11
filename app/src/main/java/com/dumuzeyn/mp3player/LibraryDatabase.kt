@@ -6,13 +6,13 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-/** SQLite source of truth for tracks, collections, statistics, and library migrations. */
+/** Explicit AutoCloseable keeps Kotlin use() compatible with older SQLiteOpenHelper versions. */
 class LibraryDatabase(context: Context) : SQLiteOpenHelper(
     context.applicationContext ?: context,
     DB_NAME,
     null,
     DB_VERSION,
-) {
+), AutoCloseable {
     override fun onCreate(db: SQLiteDatabase) = LibraryDatabaseSchema.createLatest(db)
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) =

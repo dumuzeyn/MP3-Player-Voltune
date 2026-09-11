@@ -14,7 +14,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  separation-model:
+    name: Prepare verified offline model
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Download and verify pinned model once
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:prepareSeparationModel --no-problems-report --max-workers=2
+      - uses: actions/upload-artifact@v6
+        with:
+          name: verified-separation-model
+          path: app/build/generated/separationAssets/htdemucs-4s-f16.bin
+          if-no-files-found: error
+          retention-days: 1
+
   instrumentation:
+    needs: separation-model
     name: Android ${{ matrix.android }} (API ${{ matrix.api }})
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -37,6 +60,11 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: verified-separation-model
+          path: app/build/native-models
 
       - name: Grant script permissions
         run: chmod +x ./gradlew ./.github/scripts/run-instrumentation-tests.sh
@@ -76,6 +104,7 @@ jobs:
             build/reports/emulator/**
 
   tablet:
+    needs: separation-model
     name: Tablet layout (Pixel C, API 35)
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -94,6 +123,11 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: verified-separation-model
+          path: app/build/native-models
 
       - name: Grant script permissions
         run: chmod +x ./gradlew ./.github/scripts/run-instrumentation-tests.sh

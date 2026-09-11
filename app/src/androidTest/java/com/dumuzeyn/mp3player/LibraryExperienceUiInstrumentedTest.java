@@ -182,7 +182,8 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(queueTile);
         instrumentation.runOnMainSync(queueTile::performClick);
         InstrumentedTestSupport.waitFor("Queue tile did not open the queue", 5000L,
-                () -> pager.getCurrentItem() == FullPlayerPageOrder.QUEUE);
+                () -> pager.getCurrentItem() == FullPlayerPageOrder.QUEUE
+                        && pager.getScrollState() == ViewPager2.SCROLL_STATE_IDLE);
         RecyclerView queueList = findQueueList(host.overlayHost);
         assertNotNull(queueList);
         InstrumentedTestSupport.waitFor("Queue row did not render", 5000L,

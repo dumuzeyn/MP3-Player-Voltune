@@ -13,6 +13,7 @@ import java.util.concurrent.CancellationException
 /** Adds an MP4 sample index to raw AAC without decoding or recompressing it. */
 internal object AudioEditSeekableSource {
     fun prepare(context: Context, project: AudioEditProject, files: MutableList<File>): AudioEditProject {
+        if (Thread.currentThread().isInterrupted) throw CancellationException()
         val replacements = HashMap<String, String>()
         return project.copy(clips = project.clips.map { clip ->
             if (clip.startMs == 0L) clip else clip.copy(uri = replacements.getOrPut(clip.uri) {

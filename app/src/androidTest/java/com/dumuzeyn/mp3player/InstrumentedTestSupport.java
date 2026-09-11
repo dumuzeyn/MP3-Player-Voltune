@@ -68,6 +68,33 @@ final class InstrumentedTestSupport {
         finishActivity(instrumentation, activity, false);
     }
 
+    static MainActivityCore launchForPlayback(Instrumentation instrumentation, Context context)
+            throws Exception {
+        String permission = android.os.Build.VERSION.SDK_INT >= 33
+                ? "android.permission.READ_MEDIA_AUDIO" : "android.permission.READ_EXTERNAL_STORAGE";
+        runShellCommand(instrumentation, "pm grant " + context.getPackageName() + " " + permission);
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            runShellCommand(instrumentation, "pm grant " + context.getPackageName()
+                    + " android.permission.POST_NOTIFICATIONS");
+        }
+        Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(
+                MainActivity.class.getName(), null, false);
+        context.startActivity(new android.content.Intent(context, MainActivity.class)
+                .putExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 2)
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                        | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK));
+        MainActivityCore activity = (MainActivityCore) monitor.waitForActivityWithTimeout(15000);
+        instrumentation.removeMonitor(monitor);
+        if (activity == null) throw new AssertionError("Playback activity did not start");
+        waitFor("Playback activity is not ready", 15000, () -> {
+            boolean[] ready = {false};
+            instrumentation.runOnMainSync(() -> ready[0] = activity.hasWindowFocus()
+                    && activity.librarySnapshotApplier.hasAppliedInitialSnapshot());
+            return ready[0];
+        });
+        return activity;
+    }
+
     static void finishAndRemoveTask(Instrumentation instrumentation, Activity activity) {
         finishActivity(instrumentation, activity, true);
     }

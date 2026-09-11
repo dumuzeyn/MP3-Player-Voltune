@@ -28,19 +28,34 @@ def prepare = tasks.register("prepareSeparationModel") {
                 Files.copy(cache.toPath(), temporary.toPath(), StandardCopyOption.REPLACE_EXISTING)
             } else {
                 logger.lifecycle("Downloading the pinned offline Demucs model (84 MB)")
-                def connection = new URI(modelUrl).toURL().openConnection()
-                connection.connectTimeout = 30000
-                connection.readTimeout = 120000
-                connection.inputStream.withCloseable { input ->
-                    temporary.withOutputStream { output ->
-                        byte[] buffer = new byte[65536]
-                        long total = 0
-                        int count
-                        while ((count = input.read(buffer)) != -1) {
-                            total += count
-                            if (total > 83994361L) throw new GradleException("Oversized separation model")
-                            output.write(buffer, 0, count)
+                for (int attempt = 0; attempt < 4; attempt++) {
+                    def connection = new URI(modelUrl).toURL().openConnection()
+                    connection.connectTimeout = 30000
+                    connection.readTimeout = 120000
+                    try {
+                        connection.inputStream.withCloseable { input ->
+                            temporary.withOutputStream { output ->
+                                byte[] buffer = new byte[65536]
+                                long total = 0
+                                int count
+                                while ((count = input.read(buffer)) != -1) {
+                                    total += count
+                                    if (total > 83994361L) throw new GradleException("Oversized separation model")
+                                    output.write(buffer, 0, count)
+                                }
+                            }
                         }
+                        break
+                    } catch (IOException error) {
+                        int status = connection instanceof HttpURLConnection ? connection.responseCode : -1
+                        boolean transientFailure = status == -1 || status == 408 || status == 429 || status >= 500
+                        if (!transientFailure || attempt == 3) throw error
+                        temporary.delete()
+                        long delayMs = 15000L * (1L << attempt)
+                        logger.lifecycle("Model download interrupted (HTTP ${status}); retrying in ${delayMs / 1000}s")
+                        Thread.sleep(delayMs)
+                    } finally {
+                        if (connection instanceof HttpURLConnection) connection.disconnect()
                     }
                 }
             }

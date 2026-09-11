@@ -71,7 +71,8 @@ public class CrashReportStoreInstrumentedTest {
             File report = new File(directory, "crash-old-" + index + ".txt");
             Files.write(report.toPath(), ("exception=old-" + index)
                     .getBytes(StandardCharsets.UTF_8));
-            assertTrue(report.setLastModified(1_000L + index));
+            // Older Android filesystems round modification times to whole seconds.
+            assertTrue(report.setLastModified(1_000L + index * 2_000L));
         }
 
         assertNotNull(CrashReportStore.record(context, Thread.currentThread(),

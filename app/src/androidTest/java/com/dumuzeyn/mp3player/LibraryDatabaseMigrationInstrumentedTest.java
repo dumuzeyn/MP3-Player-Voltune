@@ -35,6 +35,16 @@ public class LibraryDatabaseMigrationInstrumentedTest {
     }
 
     @Test
+    public void helperExplicitlySupportsAutoCloseableOnOlderAndroid() throws Exception {
+        assertTrue(java.util.Arrays.asList(LibraryDatabase.class.getInterfaces())
+                .contains(AutoCloseable.class));
+        LibraryDatabase helper = new LibraryDatabase(context);
+        SQLiteDatabase database = helper.getWritableDatabase();
+        ((AutoCloseable) helper).close();
+        assertFalse(database.isOpen());
+    }
+
+    @Test
     public void versionOneMigrationPreservesTracksFavoritesAndPlaylists() {
         String uri = "content://migration/song-0.mp3";
         String lastUri = "content://migration/song-164.mp3";

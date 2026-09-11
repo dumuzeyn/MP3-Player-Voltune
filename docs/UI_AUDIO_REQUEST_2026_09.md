@@ -236,6 +236,23 @@ It is not a release-completion declaration.
   https://developer.android.com/media/media3/exoplayer/supported-formats
   https://developer.android.com/media/platform/supported-formats
 
+## Compatibility hardening
+
+- The first API 26-36 matrix found a real Android 8/9 crash: older platform
+  SQLiteOpenHelper does not implement AutoCloseable. LibraryDatabase now declares
+  the interface explicitly, with a direct-interface and resource-close regression.
+- AAC indexing checks cancellation before platform extractor initialization.
+- Playback tests cancel inherited sleep timers and start with a foreground
+  activity; Android 15 correctly rejects audio focus from an inactive test app.
+  Queue swipe tests wait for page settling, retention compares actual paused
+  positions, and report pruning uses timestamps distinguishable on older filesystems.
+- Offline model preparation is shared once per CI workflow, still SHA-256 checked
+  by every consumer. Bounded retries handle transient HTTP/network failures.
+- Local API 35: all 97 instrumented tests passed together (243.714 seconds).
+  `qualityCheck` passed with 150 JVM tests, lint and architecture/icon checks.
+- The remote matrix still needs a clean rerun; Android 10 exposed a separate FLAC
+  trim-duration issue. Optimized-build runtime verification and release are pending.
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to

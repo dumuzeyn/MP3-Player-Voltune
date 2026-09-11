@@ -33,9 +33,13 @@ class EditorPreviewInstrumentedTest {
     private lateinit var source: File
     private lateinit var preview: File
     private lateinit var tracks: List<Track>
+    private var activity: MainActivityCore? = null
 
     @Before fun setup() {
+        activity = InstrumentedTestSupport.launchForPlayback(instrumentation, context)
         controller = connect()
+        main { controller.sendCustomCommand(Media3Commands.TIMER_CANCEL_COMMAND, Bundle.EMPTY) }
+            .get(5, TimeUnit.SECONDS)
         main { controller.stop(); controller.clearMediaItems() }
         source = InstrumentedTestSupport.createTestWave(context, "preview-source.wav", 6)
         tracks = listOf(Track(Uri.fromFile(source).toString(), "Original one", "Tests", "Tests", "Tests", 6000),
@@ -63,11 +67,14 @@ class EditorPreviewInstrumentedTest {
 
     @After fun cleanup() {
         if (::controller.isInitialized) {
+            main { controller.sendCustomCommand(Media3Commands.TIMER_CANCEL_COMMAND, Bundle.EMPTY) }
+                .get(5, TimeUnit.SECONDS)
             command("stop")
             main { controller.stop(); controller.clearMediaItems(); controller.release() }
         }
         if (::preview.isInitialized) preview.delete()
         if (::source.isInitialized) source.delete()
+        InstrumentedTestSupport.finishActivity(instrumentation, activity)
     }
 
     @Test fun stopRestoresQueuePositionModesAndDoesNotPersistPreview() {

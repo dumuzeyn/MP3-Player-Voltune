@@ -28,16 +28,19 @@ class AudioFormatsInstrumentedTest {
     private val files = ArrayList<File>()
     private var controller: MediaController? = null
     private var exporter: AudioEditExporter? = null
+    private var activity: MainActivityCore? = null
 
     @After fun cleanup() {
         instrumentation.runOnMainSync {
             exporter?.close()
             controller?.apply { stop(); clearMediaItems(); release() }
         }
+        InstrumentedTestSupport.finishActivity(instrumentation, activity)
         files.forEach { it.delete() }
     }
 
     @Test fun supportedFormatsPlayDecodeAndExportToAac() {
+        activity = InstrumentedTestSupport.launchForPlayback(instrumentation, context)
         val player = MediaController.Builder(context, SessionToken(context,
             ComponentName(context, Media3PlayerService::class.java)))
             .setApplicationLooper(Looper.getMainLooper()).buildAsync().get(15, TimeUnit.SECONDS)
