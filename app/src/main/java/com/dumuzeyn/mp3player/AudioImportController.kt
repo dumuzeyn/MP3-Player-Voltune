@@ -446,11 +446,6 @@ internal class AudioImportController(private val host: MainActivityCore) {
         }
     }
 
-    private fun hasAudioExtension(displayName: String?): Boolean {
-        val lower = displayName?.lowercase(Locale.ROOT) ?: return false
-        return AUDIO_EXTENSIONS.any(lower::endsWith)
-    }
-
     private fun queryDisplayName(uri: Uri): String? {
         var cursor: Cursor? = null
         return try {
@@ -488,7 +483,12 @@ internal class AudioImportController(private val host: MainActivityCore) {
         private const val PICK_AUDIO_FOLDER = 2002
         private const val MAX_FOLDER_IMPORT = 3_000
         private const val MAX_AUDIO_BYTES = 220L * 1024L * 1024L
-        private val AUDIO_EXTENSIONS = arrayOf(".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac")
+        private val AUDIO_EXTENSIONS = arrayOf(".mp3", ".m4a", ".aac", ".wav", ".ogg", ".oga", ".opus", ".flac")
+
+        internal fun hasAudioExtension(displayName: String?): Boolean {
+            val lower = displayName?.lowercase(Locale.ROOT) ?: return false
+            return AUDIO_EXTENSIONS.any(lower::endsWith)
+        }
 
         private fun indexOfTrackId(tracks: List<Track>, trackId: String): Int =
             tracks.indexOfFirst { it.trackId == trackId }

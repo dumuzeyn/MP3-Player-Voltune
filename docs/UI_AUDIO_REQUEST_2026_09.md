@@ -215,11 +215,31 @@ It is not a release-completion declaration.
   cancellation/retry, source integrity, exact overlap duration and undo/redo.
 - Screenshot inspected: `app/build/reports/audio-editor-stems.png`.
 
+## Implemented in the ninth stage
+
+- Import recognizes `.opus` and `.oga` when a document provider omits audio MIME
+  metadata. Existing MP3, M4A, AAC, WAV, Ogg and FLAC handling is preserved.
+- Real synthetic fixtures for all eight extensions are checked through service
+  playback, PCM waveform decoding and non-zero-start trim/export to AAC/M4A.
+  Fixtures can be regenerated with `tools/generate-audio-format-fixtures.ps1`.
+- Raw ADTS AAC exposed an unseekable-clipping failure. Export now retries by
+  indexing AAC into a temporary MP4 container on a cancellable worker. Compressed
+  frames remain byte-identical; only the requested final export is encoded.
+  Original files and draft URIs remain unchanged. Temporary indexed sources are
+  cleaned after success, failure or cancellation.
+- `qualityCheck` passed with 150 JVM tests and lint. Thirteen Android cases passed:
+  eight-format end-to-end coverage, lossless AAC indexing/cancel and eleven editor
+  export/UI regressions. Exported trim durations and original bytes are checked.
+- Formats still depend on platform decoders. These are API 35 runtime results,
+  not a promise that every codec/profile works on every Android device.
+- Primary format references:
+  https://developer.android.com/media/media3/exoplayer/supported-formats
+  https://developer.android.com/media/platform/supported-formats
+
 ## Remaining work from the full request
 
 - Final requested order: complete the remaining stages, then rename the app to
   `Voltune — аудио плеер и редактор`, then publish a tested signed release.
-- Verify supported playback/import/export formats before adding new decoders.
 - Full device matrix, version/release artifacts and production-phone installation.
 
 ## Editor research references
