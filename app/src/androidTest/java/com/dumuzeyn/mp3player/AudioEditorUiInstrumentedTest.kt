@@ -29,10 +29,7 @@ class AudioEditorUiInstrumentedTest {
         activity?.let { InstrumentedTestSupport.finishActivity(instrumentation, it) }
         context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
         wave?.delete()
-        savedUri?.let {
-            if (it.scheme == "file") File(checkNotNull(it.path)).delete()
-            else context.contentResolver.delete(it, null, null)
-        }
+        savedUri?.let { context.contentResolver.delete(it, null, null) }
     }
 
     @Test fun exportedAudioIsSavedAndImportedBackIntoLibrary() {
@@ -40,16 +37,12 @@ class AudioEditorUiInstrumentedTest {
         wave = InstrumentedTestSupport.createTestWave(context, "editor-save.wav", 6)
         val track = Track(Uri.fromFile(wave).toString(), "Export save test", "Voltune", "Test", "Test", 6000)
         TrackStore.save(context, listOf(track))
-        val values = android.content.ContentValues().apply {
-            put(android.provider.MediaStore.Audio.Media.DISPLAY_NAME, "voltune-editor-test-${System.nanoTime()}.m4a")
-            put(android.provider.MediaStore.Audio.Media.MIME_TYPE, "audio/mp4")
-        }
-        // Legacy storage has no scoped MediaStore insert. A private destination keeps
-        // this picker-result test independent of broad external-write permissions.
-        val uri = if (android.os.Build.VERSION.SDK_INT < 29) {
-            Uri.fromFile(File.createTempFile("editor-saved-", ".m4a", context.cacheDir))
-        } else checkNotNull(context.contentResolver.insert(
-            android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values))
+        // Exercise the document picker's content URI on every API, without broad
+        // storage permissions or file URIs rejected by the production importer.
+        val directory = File(context.cacheDir, "editor-test-exports").apply { mkdirs() }
+        val destination = File.createTempFile("editor-saved-", ".m4a", directory)
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context, "${context.packageName}.testexports", destination)
         savedUri = uri
         val host = launch()
         val filter = android.content.IntentFilter(Intent.ACTION_CREATE_DOCUMENT).apply {
@@ -58,7 +51,8 @@ class AudioEditorUiInstrumentedTest {
         }
         val monitor = instrumentation.addMonitor(filter,
             android.app.Instrumentation.ActivityResult(android.app.Activity.RESULT_OK,
-                Intent().setData(uri).setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)), true)
+                Intent().setData(uri).setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)), true)
         try {
             instrumentation.runOnMainSync {
                 host.switchTabAnimated(LibraryTabs.EDITOR, 1)
