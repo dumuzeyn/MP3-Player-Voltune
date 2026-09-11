@@ -46,7 +46,7 @@ Voltune превращает папку с музыкой в удобную ли
 
 Песни, избранное, плейлисты, похожие треки, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
 
-Вкладка «Похожие» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
+Вкладка «Тематические альбомы» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
 
 <p align="center">
   <img src="docs/screenshots/ru/library.png" width="36%" alt="Библиотека песен Voltune">
@@ -72,10 +72,27 @@ Voltune предлагает эквалайзер с готовыми профи
   <img src="docs/screenshots/ru/settings.png" width="36%" alt="Настройки Voltune">
 </p>
 
+## Аудиоредактор
+
+Раздел «Редактор» после папок позволяет обрезать, делить и соединять фрагменты,
+располагать до восьми звуковых дорожек, менять их громкость и слушать монтаж.
+Звуковая волна показывает реальный сигнал; для выделения определяются BPM и тональность.
+Черновик сохраняется, изменения можно отменять. Экспорт выполняется в AAC/M4A,
+исходные аудиофайлы не перезаписываются.
+
+Локальные модели очищают речь и разделяют музыку на вокал, ударные, бас и остальное.
+Удаление вокала создаёт инструментальную дорожку. Обработка требует свободной памяти
+и места; на слабых устройствах разделение может занимать значительно больше времени,
+чем длится песня. Точность зависит от записи, полная изоляция инструментов не гарантируется.
+Модель включена в APK, скачивать её внутри приложения не нужно.
+
 ## Возможности
 
 - Стартовая «Главная» с продолжением прослушивания, историей, новыми и часто слушаемыми треками.
-- Локальная вкладка «Похожие» с устойчивыми адаптивными группами по реальному аудиосигналу без облака.
+- Локальная вкладка «Тематические альбомы» с адаптивными группами по реальному аудиосигналу без облака.
+- Монтаж, предпрослушивание, разделение источников, очистка речи и экспорт AAC/M4A.
+- Скорость 0,25–4x, три режима выравнивания громкости и затихание в конце трека.
+- Короткое нажатие на инструменты большого плеера переключает режим, удержание открывает настройки.
 - Умные плейлисты, глобальный поиск по пяти категориям и просмотр библиотеки по папкам.
 - Очередь Media3 с перетаскиванием, свайпом, «играть следующим» и сохранением в плейлист.
 - Локальные `.lrc`, обычные и встроенные ID3-тексты без сетевых запросов.
@@ -142,11 +159,16 @@ flowchart LR
 Требуются JDK 17 и Android SDK:
 
 ```bash
+git submodule update --init --recursive
 ./gradlew qualityCheck
 ```
 
 Команда проверяет лимит 500 строк, архитектурные инварианты, иконку, unit-тесты,
 Android lint, debug APK и компиляцию instrumentation-тестов.
+
+Также используются NDK 27.2.12479018 и CMake 3.22.1. Первая сборка скачивает
+закреплённую модель HTDemucs (84 МБ) и проверяет SHA-256. Для работы самого приложения
+интернет не требуется. Лицензии сторонних библиотек и модели включены в APK.
 
 Официальная release-сборка подписывается закрытым ключом через GitHub Actions. Готовый APK публикуется только в [GitHub Releases](../../releases/latest).
 
@@ -212,7 +234,7 @@ Voltune turns a folder of downloaded music into a focused personal library. It f
 
 Songs, Favorites, Playlists, Similar tracks, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltune creates only the rows that are actually visible.
 
-The Similar tab analyzes sound locally and adaptively groups nearby tracks by energy, dynamics, spectrum, and timbre. BPM does not affect group distance, membership, or names. Audio and profiles never leave the device.
+The Thematic albums tab analyzes sound locally and adaptively groups nearby tracks by energy, dynamics, spectrum, and timbre. BPM does not affect group distance, membership, or names. Audio and profiles never leave the device.
 
 <p align="center">
   <img src="docs/screenshots/en/library.png" width="36%" alt="Voltune music library">
@@ -238,10 +260,26 @@ Light, Dark, and Custom themes support two accent colors plus independent text a
   <img src="docs/screenshots/en/settings.png" width="36%" alt="Voltune settings">
 </p>
 
+## Audio editor
+
+Editor follows Folders and supports trimming, splitting, joining, up to eight mixed
+lanes, clip volume, draft restoration, undo/redo and preview. A decoded waveform
+provides range selection, with BPM and musical-key estimates. Export produces
+AAC/M4A without overwriting original audio files.
+
+Offline models clean speech and separate drums, bass, other instruments and vocals.
+Vocal removal creates an instrumental stem. Separation needs free memory and storage
+and can take substantially longer than the song on slower devices. Results depend
+on the recording; perfect source isolation is not guaranteed. The APK includes the
+model, with no in-app download or upload.
+
 ## Features
 
 - Home starts with listening continuity, history, recent additions, favorites, and quick access.
-- The local Similar tab builds adaptive groups from real audio features without cloud processing.
+- The local Thematic albums tab builds adaptive groups from real audio features without cloud processing.
+- Audio editing, preview, source separation, speech cleanup and AAC/M4A export.
+- Playback speed from 0.25x to 4x, three loudness modes and optional end-of-track fade.
+- Tap full-player tools to toggle; hold to configure their settings.
 - Smart playlists, five-category global search, and safe folder-based browsing.
 - A Media3-owned queue with drag, swipe, play-next, append, clear, and save-to-playlist actions.
 - Offline sidecar LRC, synchronized lyrics, plain text, and bounded embedded ID3 lyrics.
@@ -308,11 +346,16 @@ Primary extension points:
 JDK 17 and the Android SDK are required:
 
 ```bash
+git submodule update --init --recursive
 ./gradlew qualityCheck
 ```
 
 This gate checks the 500-line limit, architecture invariants, launcher assets, unit tests,
 Android lint, the debug APK, and instrumentation-test compilation.
+
+NDK 27.2.12479018 and CMake 3.22.1 are also required. The first build downloads a
+pinned HTDemucs model (84 MB) and verifies its SHA-256. The app itself needs no
+internet connection. Third-party library and model licenses are bundled in the APK.
 
 Official release builds are signed with a private key through GitHub Actions. Installable APK files are published only through [GitHub Releases](../../releases/latest).
 

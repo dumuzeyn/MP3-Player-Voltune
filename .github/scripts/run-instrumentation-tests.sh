@@ -26,7 +26,8 @@ adb shell settings put global window_animation_scale 0
 adb shell settings put global transition_animation_scale 0
 adb shell settings put global animator_duration_scale 0
 
-GRADLE_ARGUMENTS=(:app:connectedDebugAndroidTest --stacktrace)
+GRADLE_ARGUMENTS=(:app:connectedDebugAndroidTest --stacktrace --max-workers=2
+  "-Pandroid.testInstrumentationRunnerArguments.timeout_msec=600000")
 if [[ "${REQUIRE_TABLET:-false}" == "true" ]]; then
   GRADLE_ARGUMENTS+=("-Pandroid.testInstrumentationRunnerArguments.requireTablet=true")
   GRADLE_ARGUMENTS+=("-Pandroid.testInstrumentationRunnerArguments.class=com.dumuzeyn.mp3player.CompatibilityInstrumentedTest")

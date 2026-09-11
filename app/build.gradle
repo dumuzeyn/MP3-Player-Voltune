@@ -97,6 +97,11 @@ def audioLicenses = tasks.register("prepareAudioLicenses", Sync) {
     from(rootProject.file("third_party/rnnoise/COPYING")) { rename { "RNNoise.txt" } }
     from(rootProject.file("third_party/demucs/LICENSE")) { rename { "demucs.cpp.txt" } }
     from(rootProject.file("third_party/demucs/vendor/eigen")) { include "COPYING.*"; into "Eigen" }
+    from({ configurations.debugRuntimeClasspath.findAll { it.name.startsWith("commons-math3-") }
+            .collect { zipTree(it) } }) {
+        include "META-INF/LICENSE.txt", "META-INF/NOTICE.txt"
+        into "CommonsMath"
+    }
     into(layout.buildDirectory.dir("generated/audioLicenses/licenses"))
 }
 android.sourceSets.main.assets.srcDir(layout.buildDirectory.dir("generated/audioLicenses"))

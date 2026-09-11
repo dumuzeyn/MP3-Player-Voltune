@@ -386,6 +386,7 @@ class AudioEditorUiInstrumentedTest {
     }
 
     private fun launch(): MainActivityCore {
+        context.getSharedPreferences("mp3_player_ui", 0).edit().putString("language", "ru").commit()
         val monitor = instrumentation.addMonitor(MainActivity::class.java.name, null, false)
         context.startActivity(Intent(context, MainActivity::class.java)
             .putExtra(BenchmarkLibrarySeeder.EXTRA_TRACK_COUNT, 1)
