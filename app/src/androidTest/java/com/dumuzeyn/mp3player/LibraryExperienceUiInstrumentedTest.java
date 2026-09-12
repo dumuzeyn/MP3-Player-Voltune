@@ -184,6 +184,39 @@ public class LibraryExperienceUiInstrumentedTest {
                 MotionEvent.ACTION_UP, 20, 20, 0));
     }
 
+    @Test
+    public void tabSwipeCancelsPendingSongProperties() {
+        MainActivityCore host = launchWithLibrary();
+        openTabByClick(host, LibraryTabs.SONGS);
+        View song = findDescription(host.songsView,
+                "Открыть или включить песню UI song 0");
+        assertNotNull(song);
+        instrumentation.runOnMainSync(host.overlayHost::removeAllViews);
+
+        int[] location = new int[2];
+        instrumentation.runOnMainSync(() -> song.getLocationInWindow(location));
+        float startX = location[0] + song.getWidth() * 0.35f;
+        float y = location[1] + song.getHeight() * 0.5f;
+        float endX = startX + host.dp(84);
+        long down = SystemClock.uptimeMillis();
+        dispatchActivityTouch(host, MotionEvent.obtain(
+                down, down, MotionEvent.ACTION_DOWN, startX, y, 0));
+        dispatchActivityTouch(host, MotionEvent.obtain(
+                down, down + 40L, MotionEvent.ACTION_MOVE, endX, y, 0));
+
+        SystemClock.sleep(SafeLongPress.HOLD_MS + 150L);
+        assertEquals("A tab swipe must cancel pending song properties",
+                0, host.overlayHost.getChildCount());
+
+        dispatchActivityTouch(host, MotionEvent.obtain(
+                down, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, endX, y, 0));
+        InstrumentedTestSupport.waitFor("Swipe did not return to Home", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.HOME
+                        && !host.navigationState.tabAnimating);
+        assertEquals("Song properties appeared after the tab transition",
+                0, host.overlayHost.getChildCount());
+    }
+
     private void assertFullPlayerPages(MainActivityCore host, Track track) {
         instrumentation.runOnMainSync(() -> {
             host.overlayHost.removeAllViews();
@@ -328,6 +361,11 @@ public class LibraryExperienceUiInstrumentedTest {
 
     private void dispatchTouch(View target, MotionEvent event) {
         instrumentation.runOnMainSync(() -> target.dispatchTouchEvent(event));
+        event.recycle();
+    }
+
+    private void dispatchActivityTouch(MainActivityCore host, MotionEvent event) {
+        instrumentation.runOnMainSync(() -> host.dispatchTouchEvent(event));
         event.recycle();
     }
 

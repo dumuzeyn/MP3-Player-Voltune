@@ -97,6 +97,7 @@ internal class SwipeController(private val host: MainActivityCore) {
         val deltaY = event.y - startY
         if (!consuming && abs(deltaX) > host.dp(SWIPE_START_DP) && abs(deltaX) > abs(deltaY)) {
             consuming = true
+            host.cancelActiveContentTouch(event)
             host.root?.parent?.requestDisallowInterceptTouchEvent(true)
             if (host.appearanceState.animations) {
                 prepareAdjacentTransition(if (deltaX < 0f) 1 else -1)

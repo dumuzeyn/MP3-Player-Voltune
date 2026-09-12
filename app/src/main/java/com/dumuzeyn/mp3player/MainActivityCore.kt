@@ -180,6 +180,16 @@ open class MainActivityCore : Activity() {
         return super.dispatchTouchEvent(event)
     }
 
+    fun cancelActiveContentTouch(source: MotionEvent) {
+        val cancel = MotionEvent.obtain(source)
+        cancel.action = MotionEvent.ACTION_CANCEL
+        try {
+            super.dispatchTouchEvent(cancel)
+        } finally {
+            cancel.recycle()
+        }
+    }
+
     override fun onStop() {
         activityCoordinator.onStop()
         super.onStop()
