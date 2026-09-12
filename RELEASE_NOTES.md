@@ -1,46 +1,54 @@
-# Voltune 3.4.0
+# Voltune 4.0.0
 
 ## Русский
 
-Версия 3.4.0 возвращает точную адаптивную группировку похожих треков и делает переход
-на главный экран плавным даже во время воспроизведения.
+Новое название приложения: **Voltune — аудио плеер и редактор**.
 
-- В «Похожие» восстановлен проверенный адаптивный алгоритм: естественные большие группы
-  разрешены, а искусственного выравнивания и фиксированного количества кластеров нет.
-- BPM и уверенность темпа полностью исключены из расстояния, нормализации, выбора групп,
-  ближайшей группы и названий подборок.
-- Короткие названия снова описывают главное отличие звучания без технических конструкций.
-- Готовые профили автоматически перегруппируются без повторного чтения MP3. В «Похожие»
-  появилась команда «Пересобрать группы».
-- В настройках доступен отдельный полный повторный анализ библиотеки с подтверждением,
-  прогрессом N/N и автоматической группировкой после завершения.
-- Статическая часть Home больше не зависит от текущего трека. Playback-секция, видимые
-  обложки и waveform обновляются отдельно и не перегружают кадр перехода.
-- Из карточек плейлистов удалены бегущая строка, таймер и автоматическая смена обложек;
-  старая сохранённая настройка скорости безопасно игнорируется.
+- После раздела «Папки» появился многодорожечный редактор: обрезка, разделение,
+  удаление фрагмента, соединение и смешивание до восьми дорожек с настройкой громкости.
+- Звуковая волна, точные границы выделения, предварительное прослушивание,
+  отмена и повтор изменений, сохранение черновика и экспорт в AAC/M4A.
+  Исходные песни не изменяются; готовый файл можно сохранить и добавить в медиатеку.
+- Локальное разделение на вокал, ударные, бас и остальные инструменты,
+  создание инструментальной версии, очистка речи, определение BPM и тональности.
+- Большой плеер получил скорость 0,25–4× и короткое/долгое нажатие для таймера,
+  добавления в плейлист, повтора, эквалайзера, скорости и выравнивания громкости.
+- Три режима громкости и настраиваемое плавное затихание в конце трека.
+- После истечения памяти воспроизведения закрывается и большой плеер:
+  устаревшие песня и очередь больше не остаются на экране. Активная музыка не прерывается.
+- «Похожие» переименованы в «Тематические альбомы», готовность анализа обозначается
+  фразой «Все треки проанализированы». Убрана верхняя панель с повторным названием.
+- Улучшена подготовка обложек, убраны белые поля и запасной логотип. Свойства песни
+  открываются удержанием; кнопки воспроизведения больше не имеют отдельной подложки.
+- Алфавитная навигация в песнях, стилизованные полосы прокрутки, градиентный фон
+  без частиц по умолчанию. Сохранённые пользовательские темы не сбрасываются.
+- Исправлены окна на узких и горизонтальных экранах, запуск базы на Android 8/9,
+  импорт Opus/OGA и экспорт выделенных фрагментов AAC/FLAC.
 
-Анализ полностью выполняется на устройстве и не использует интернет, облачные модели,
-аккаунты или внешние сервисы. Аудиофайлы и рассчитанные признаки не покидают устройство.
+Обработка выполняется на устройстве, без загрузки аудио в облако. Модель разделения
+включена в APK, поэтому файл установки стал больше. Разделение не работает в реальном
+времени: скорость и качество зависят от телефона и записи, возможны остатки инструментов.
+Поддержка конкретных кодеков и профилей зависит от версии Android и устройства.
 
 ## English
 
-Version 3.4.0 restores accurate adaptive Similar grouping and keeps Home transitions
-smooth while music is playing.
+Voltune now includes a local multitrack audio editor.
 
-- Similar uses the proven adaptive algorithm again. Natural large groups are allowed;
-  cluster counts and sizes are not artificially fixed or balanced.
-- BPM and tempo confidence are excluded from distance, normalization, group selection,
-  nearest-group matching, and collection names.
-- Short collection names describe the group's strongest audible distinction without
-  technical compound labels.
-- Saved profiles are regrouped without decoding MP3 files. Similar now includes a
-  Rebuild groups command.
-- Settings provides a separate full library re-analysis with confirmation, N/N progress,
-  and automatic clustering after completion.
-- Static Home content no longer depends on the current track. Playback content, visible
-  artwork, and waveforms update independently outside the transition's heavy path.
-- Playlist tickers, timed callbacks, and automatic cover cycling are removed. The old
-  saved speed preference is safely ignored.
+- Trim, split, remove selections, concatenate and mix up to eight lanes with individual
+  gain, waveform selection, preview, undo/redo, saved drafts and AAC/M4A export.
+  Original songs remain unchanged; exported files can be saved and imported into the library.
+- Offline vocal/drum/bass/other separation, instrumental versions, speech cleanup,
+  BPM and musical key detection.
+- Playback speed from 0.25x to 4x; tap/hold actions for the timer, playlist target,
+  repeat, equalizer, speed and three loudness-leveling modes; optional end-of-track fade.
+- Expired playback memory now closes the full player instead of leaving stale track
+  and queue state visible. Active playback does not expire.
+- Thematic albums naming, clearer analysis completion, no redundant top title,
+  prefetched covers, long-press song properties and simpler play/pause buttons.
+- Alphabet navigation, themed scrollbars, gradient defaults without particles,
+  and dialogs that fit narrow and short screens. Existing custom themes are preserved.
+- Android 8/9 database compatibility, Opus/OGA import and accurate AAC/FLAC selections.
 
-Analysis stays entirely on the device and uses no internet connection, cloud model,
-account, or external service. Audio files and derived features never leave the device.
+Audio processing stays on the device. The bundled separation model increases APK size.
+Separation is not real-time; performance and quality vary by device and recording,
+and residual instruments may remain. Codec/profile support depends on Android and hardware.

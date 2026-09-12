@@ -4,19 +4,19 @@
   <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Иконка Voltune">
 </p>
 
-<h1 align="center">Voltune</h1>
+<h1 align="center">Voltune — аудио плеер и редактор</h1>
 
 <p align="center">
   <strong>Ваша музыка. Ваши правила. Никаких аккаунтов и подписок.</strong>
 </p>
 
 <p align="center">
-  Красивый и быстрый локальный музыкальный плеер для Android, созданный для коллекции, которая уже хранится на телефоне.
+  Локальный музыкальный плеер и многодорожечный аудиоредактор для Android. Музыка и обработка остаются на телефоне.
 </p>
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_3.4.0-9b4dff?style=for-the-badge" alt="Скачать Voltune">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.0.0-9b4dff?style=for-the-badge" alt="Скачать Voltune">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -44,7 +44,7 @@ Voltune превращает папку с музыкой в удобную ли
 
 ## Большая библиотека остаётся удобной
 
-Песни, избранное, плейлисты, похожие треки, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
+Песни, избранное, плейлисты, тематические альбомы, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
 
 Вкладка «Тематические альбомы» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
 
@@ -192,7 +192,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
   <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Voltune icon">
 </p>
 
-<h1 align="center">Voltune</h1>
+<h1 align="center">Voltune — audio player and editor</h1>
 
 <p align="center">
   <strong>Your music. Your rules. No accounts or subscriptions.</strong>
@@ -204,7 +204,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_3.4.0-9b4dff?style=for-the-badge" alt="Download Voltune">
+    <img src="https://img.shields.io/badge/Download_APK-Version_4.0.0-9b4dff?style=for-the-badge" alt="Download Voltune">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">

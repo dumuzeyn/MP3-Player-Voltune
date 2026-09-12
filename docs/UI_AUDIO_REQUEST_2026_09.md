@@ -290,14 +290,41 @@ It is not a release-completion declaration.
   The quality gate passed with 151 JVM tests, lint and architecture/icon checks.
 - Remote run 34605673522 passed all 99 cases on APIs 29, 30, 31, 33, 34, 35 and 36,
   plus the API 35 tablet checks. Android 10 FLAC trimming is confirmed.
-- Android 8/9 are being retested separately after correcting legacy test storage
-  and the test-only foreground readiness condition. These results are still pending.
+- Remote run 34638132740 passed all 99 cases on both Android 8 and Android 9.
+  The compatibility matrix is green from API 26 through API 36.
+
+## Pre-release 4.0.0 hardening
+
+- Song properties require a stationary 1.1-second hold. Crossing the platform
+  touch slop, swiping a list or leaving the row cancels the pending action, so a
+  navigation gesture cannot open properties on the destination screen.
+- The Songs alphabet rail fills the available side, uses the active purple-to-gold
+  palette and marks the current letter. Its selection follows ordinary list
+  scrolling as well as direct rail dragging.
+- Artwork thumbnails moved from disposable cache storage to the application's
+  persistent private files. Existing cache entries migrate automatically, disk
+  hits render before the row appears, and recurring UI loads no longer crossfade.
+- Thematic cards scan the whole group for the first embedded cover instead of
+  depending on its first track. Album, artist, genre and thematic representatives
+  are prefetched when the library snapshot is applied.
+- Equalizer tap now explicitly toggles the audio effect; hold opens only preset
+  and band settings. The duplicate enable/disable control was removed.
+- The two-line Thematic albums tab has a dedicated optical correction and was
+  screenshot-checked inside the unchanged 48dp indicator.
+- Loudness modes no longer share a peak limiter that changed all three in the
+  same direction. Reduce never adds gain, Boost never subtracts gain, and Balanced
+  may do either while still reserving equalizer headroom.
+- `qualityCheck` passed with 151 JVM tests, lint and structural checks. All 102
+  API 35 instrumented tests passed together in 189.644 seconds. Persistent artwork
+  is also verified with a real group whose first track has no cover and second
+  track contains one.
 
 ## Remaining release work
 
 - Final requested order: complete the remaining stages, then rename the app to
   `Voltune — аудио плеер и редактор`, then publish a tested signed release.
-- Full device matrix, version/release artifacts and production-phone installation.
+- The editor follow-up requested by the user, final device matrix, signed release
+  artifacts and production-phone installation remain before publication.
 
 ## Editor research references
 
