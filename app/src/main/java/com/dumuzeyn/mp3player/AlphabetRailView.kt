@@ -8,9 +8,9 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.view.MotionEvent
 import android.view.View
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 internal class AlphabetRailView(context: Context) : View(context) {
     private val density = resources.displayMetrics.density
@@ -24,8 +24,11 @@ internal class AlphabetRailView(context: Context) : View(context) {
     private val gradientStart = context.getColor(R.color.voltune_scrollbar_start)
     private val gradientEnd = context.getColor(R.color.voltune_scrollbar_end)
     private var entries: List<AlphabetIndex.Entry> = emptyList()
+    private var trackCount = 0
     private var selected = -1
-    private var listener: ((Int) -> Unit)? = null
+    private var scrollProgress = 0f
+    private var dragging = false
+    private var listener: ((Float) -> Unit)? = null
 
     init {
         contentDescription = "Alphabet fast scroll"
@@ -34,37 +37,39 @@ internal class AlphabetRailView(context: Context) : View(context) {
         setPadding(dp(3), dp(5), dp(3), dp(5))
     }
 
-    fun configure(values: List<AlphabetIndex.Entry>, foreground: Int, onSelect: (Int) -> Unit) {
+    fun configure(
+        values: List<AlphabetIndex.Entry>,
+        totalTracks: Int,
+        foreground: Int,
+        onScroll: (Float) -> Unit,
+    ) {
         entries = values
-        listener = onSelect
+        trackCount = totalTracks
+        listener = onScroll
         selectedPaint.color = gradientEnd
         textPaint.color = foreground
         selectedTextPaint.color = android.graphics.Color.BLACK
         visibility = if (values.size > 1) VISIBLE else GONE
         selected = -1
-        if (values.isNotEmpty()) selectIndex(0, false)
+        scrollProgress = 0f
+        if (values.isNotEmpty()) selectTrackPosition(0)
         invalidate()
     }
 
-    fun syncToTrackPosition(position: Int) {
-        if (entries.isEmpty()) return
-        var index = 0
-        for (candidate in entries.indices) {
-            if (entries[candidate].position > position) break
-            index = candidate
-        }
-        selectIndex(index, false)
+    fun syncToList(progress: Float, trackPosition: Int) {
+        if (entries.isEmpty() || dragging) return
+        scrollProgress = progress.coerceIn(0f, 1f)
+        selectTrackPosition(trackPosition)
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         if (entries.isEmpty()) return
         val available = (height - paddingTop - paddingBottom).toFloat()
         val cell = available / entries.size
-        val centerY = paddingTop + cell * (selected.coerceAtLeast(0) + 0.5f)
         val thumbHeight = min(available, min(dp(42f), max(dp(24f), cell * 0.9f)))
-        val thumbTop = (centerY - thumbHeight / 2f).coerceIn(
-            paddingTop.toFloat(), height - paddingBottom - thumbHeight,
-        )
+        val thumbTravel = max(0f, available - thumbHeight)
+        val thumbTop = paddingTop + thumbTravel * scrollProgress
         val thumbBottom = thumbTop + thumbHeight
         val halfThumb = dp(1.5f)
         val thumbCenterX = width - dp(2.5f)
@@ -79,10 +84,10 @@ internal class AlphabetRailView(context: Context) : View(context) {
         textPaint.textSize = min(dp(11f), max(dp(7f), cell * 0.72f))
         entries.forEachIndexed { index, entry ->
             val labelCenterY = paddingTop + cell * (index + 0.5f)
-            if (index == selected) canvas.drawCircle(
-                labelCenterX, labelCenterY,
-                min(dp(7f), max(dp(5f), cell * 0.46f)), selectedPaint,
-            )
+            if (index == selected) {
+                val radius = min(dp(7f), max(dp(5f), cell * 0.46f))
+                canvas.drawCircle(labelCenterX, labelCenterY, radius, selectedPaint)
+            }
             selectedTextPaint.textSize = textPaint.textSize
             val paint = if (index == selected) selectedTextPaint else textPaint
             val baseline = labelCenterY - (paint.ascent() + paint.descent()) / 2f
@@ -94,17 +99,22 @@ internal class AlphabetRailView(context: Context) : View(context) {
         if (entries.isEmpty()) return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                dragging = true
                 parent?.requestDisallowInterceptTouchEvent(true)
-                select(event.y)
+                scrollTo(event.y)
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                select(event.y)
+                scrollTo(event.y)
+                dragging = false
                 parent?.requestDisallowInterceptTouchEvent(false)
                 performClick()
                 return true
             }
-            MotionEvent.ACTION_CANCEL -> parent?.requestDisallowInterceptTouchEvent(false)
+            MotionEvent.ACTION_CANCEL -> {
+                dragging = false
+                parent?.requestDisallowInterceptTouchEvent(false)
+            }
         }
         return true
     }
@@ -114,19 +124,27 @@ internal class AlphabetRailView(context: Context) : View(context) {
         return true
     }
 
-    private fun select(y: Float) {
-        val available = (height - paddingTop - paddingBottom).coerceAtLeast(1)
-        val index = floor((y - paddingTop) / available * entries.size).toInt()
-            .coerceIn(0, entries.lastIndex)
-        selectIndex(index, true)
+    private fun scrollTo(y: Float) {
+        val available = (height - paddingTop - paddingBottom).coerceAtLeast(1).toFloat()
+        val cell = available / entries.size
+        val thumbHeight = min(available, min(dp(42f), max(dp(24f), cell * 0.9f)))
+        val travel = max(1f, available - thumbHeight)
+        scrollProgress = ((y - paddingTop - thumbHeight / 2f) / travel).coerceIn(0f, 1f)
+        val position = (scrollProgress * (trackCount - 1).coerceAtLeast(0)).roundToInt()
+        selectTrackPosition(position)
+        listener?.invoke(scrollProgress)
+        invalidate()
     }
 
-    private fun selectIndex(index: Int, notify: Boolean) {
+    private fun selectTrackPosition(position: Int) {
+        var index = 0
+        for (candidate in entries.indices) {
+            if (entries[candidate].position > position) break
+            index = candidate
+        }
         if (selected == index) return
         selected = index
         contentDescription = "${entries[index].label}, alphabet fast scroll"
-        if (notify) listener?.invoke(entries[index].position)
-        invalidate()
     }
 
     private fun dp(value: Int): Int = (value * density).toInt().coerceAtLeast(1)

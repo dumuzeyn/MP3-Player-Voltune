@@ -8,6 +8,7 @@ import android.view.Gravity
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlin.math.roundToInt
 
 /** Persistent, recyclable surface for the main Songs tab. */
 internal class SongsView(private val host: MainActivityCore) : FrameLayout(host), AutoCloseable {
@@ -43,7 +44,7 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
-        recyclerView.setPadding(0, 0, host.dp(24), host.dp(88))
+        recyclerView.setPadding(0, 0, host.dp(44), host.dp(88))
         recyclerView.itemAnimator = null
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
@@ -55,8 +56,8 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             .build()
         recyclerView.adapter = ConcatAdapter(config, headerAdapter, songAdapter, emptyAdapter)
         addView(recyclerView, LayoutParams(-1, -1))
-        addView(alphabetRail, LayoutParams(host.dp(28), -1, Gravity.END).apply {
-            marginEnd = host.dp(1)
+        addView(alphabetRail, LayoutParams(host.dp(30), -1, Gravity.END).apply {
+            marginEnd = host.dp(4)
         })
         visibility = View.GONE
     }
@@ -133,21 +134,44 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         val entries = AlphabetIndex.build(tracks.map(Track::title))
         alphabetRail.configure(
             entries,
+            tracks.size,
             host.primaryText,
-        ) { position ->
+        ) { progress ->
             recyclerView.stopScroll()
-            recyclerView.post {
-                (recyclerView.layoutManager as? LinearLayoutManager)
-                    ?.scrollToPositionWithOffset(position + headerAdapter.itemCount, 0)
-            }
+            scrollToProgress(progress)
         }
         syncAlphabetToList()
     }
 
     private fun syncAlphabetToList() {
-        val first = (recyclerView.layoutManager as? LinearLayoutManager)
-            ?.findFirstVisibleItemPosition() ?: return
-        alphabetRail.syncToTrackPosition((first - headerAdapter.itemCount).coerceAtLeast(0))
+        val count = songAdapter.itemCount
+        if (count == 0) return
+        val maximum = (recyclerView.computeVerticalScrollRange() -
+            recyclerView.computeVerticalScrollExtent()).coerceAtLeast(0)
+        val offset = recyclerView.computeVerticalScrollOffset().coerceIn(0, maximum)
+        val progress = if (maximum == 0) 0f else offset.toFloat() / maximum
+        val position = (progress * (count - 1)).roundToInt().coerceIn(0, count - 1)
+        alphabetRail.syncToList(progress, position)
+    }
+
+    private fun scrollToProgress(progress: Float) {
+        val count = songAdapter.itemCount
+        if (count == 0) return
+        val manager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+        when {
+            progress <= 0f -> manager.scrollToPositionWithOffset(0, 0)
+            progress >= 1f -> manager.scrollToPositionWithOffset(
+                headerAdapter.itemCount + count - 1,
+                recyclerView.height - recyclerView.paddingBottom - host.dp(66),
+            )
+            else -> {
+                val maximum = (recyclerView.computeVerticalScrollRange() -
+                    recyclerView.computeVerticalScrollExtent()).coerceAtLeast(0)
+                val target = (progress * maximum).roundToInt()
+                recyclerView.scrollBy(0, target - recyclerView.computeVerticalScrollOffset())
+            }
+        }
+        recyclerView.post(::syncAlphabetToList)
     }
 
     private fun updateProgressTicker() {

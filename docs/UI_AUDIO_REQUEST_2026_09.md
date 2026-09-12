@@ -300,8 +300,9 @@ It is not a release-completion declaration.
   touch slop, swiping a list or leaving the row cancels the pending action, so a
   navigation gesture cannot open properties on the destination screen.
 - The Songs alphabet rail fills the available side, marks the current letter and
-  moves a short blue-to-gold thumb matching the Home scrollbar. Its selection
-  follows ordinary list scrolling as well as direct rail dragging.
+  moves a short blue-to-gold thumb continuously like the Home scrollbar. Letters
+  follow the free thumb position without snapping it, stay clear of song cards,
+  and the bottom endpoint always exposes the final song in the filtered list.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

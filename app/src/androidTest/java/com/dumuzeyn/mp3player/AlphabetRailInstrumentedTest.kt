@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -30,7 +31,7 @@ class AlphabetRailInstrumentedTest {
         activity?.let { InstrumentedTestSupport.finishActivity(instrumentation, it) }
     }
 
-    @Test fun mixedAlphabetRailJumpsWithoutCoveringSongText() {
+    @Test fun alphabetRailMovesFreelyWithoutCoveringCardsAndReachesLastSong() {
         val titles = buildList {
             repeat(54) { add(if (it % 2 == 0) "Alpha $it" else "beta $it") }
             add("Блюз")
@@ -61,28 +62,56 @@ class AlphabetRailInstrumentedTest {
         val rail = find(host.songsView!!, AlphabetRailView::class.java)
         assertNotNull(rail)
         assertEquals(View.VISIBLE, rail!!.visibility)
-        assertTrue(rail.width <= host.dp(28))
+        assertTrue(rail.width <= host.dp(30))
         assertTrue(rail.height >= host.songsView!!.height - host.dp(2))
         val initialThumbCenter = thumbCenter(host, rail)
+        touchRail(rail, 0.20f)
+        val firstFreePosition = thumbCenter(host, rail)
+        touchRail(rail, 0.30f)
+        val secondFreePosition = thumbCenter(host, rail)
+        assertTrue(rail.contentDescription.toString().startsWith("A"))
+        assertTrue(firstFreePosition > initialThumbCenter)
+        assertTrue(secondFreePosition > firstFreePosition + rail.height / 20)
+
+        val firstCard = host.songsView!!.findViewById<View>(R.id.song_card)
+        assertNotNull(firstCard)
+        val railLocation = IntArray(2)
+        val cardLocation = IntArray(2)
+        instrumentation.runOnMainSync {
+            rail.getLocationInWindow(railLocation)
+            firstCard.getLocationInWindow(cardLocation)
+        }
+        assertTrue(railLocation[0] - (cardLocation[0] + firstCard.width) >= host.dp(8))
+        capture(host, "alphabet-rail.png")
+
+        touchRail(rail, 1f)
+        assertTrue(rail.contentDescription.toString().startsWith("#"))
+        val manager = host.songsView!!.recyclerView().layoutManager as LinearLayoutManager
+        InstrumentedTestSupport.waitFor("Alphabet rail did not expose the last song", 5000) {
+            var lastVisible = 0
+            instrumentation.runOnMainSync {
+                lastVisible = manager.findLastVisibleItemPosition()
+            }
+            lastVisible == host.songsView!!.recyclerView().adapter!!.itemCount - 1
+        }
+
+        instrumentation.runOnMainSync {
+            manager.scrollToPositionWithOffset(0, 0)
+        }
+        InstrumentedTestSupport.waitFor("Rail selection did not follow list scrolling", 5000) {
+            rail.contentDescription.toString().startsWith("A")
+        }
+    }
+
+    private fun touchRail(rail: AlphabetRailView, progress: Float) {
         instrumentation.runOnMainSync {
             val time = android.os.SystemClock.uptimeMillis()
-            val targetY = rail.height * 0.70f
+            val targetY = rail.paddingTop +
+                (rail.height - rail.paddingTop - rail.paddingBottom) * progress
             rail.dispatchTouchEvent(MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN,
                 rail.width / 2f, targetY, 0))
             rail.dispatchTouchEvent(MotionEvent.obtain(time, time + 20, MotionEvent.ACTION_UP,
                 rail.width / 2f, targetY, 0))
-        }
-        assertTrue(rail.contentDescription.toString().startsWith("Я"))
-        assertTrue(thumbCenter(host, rail) > initialThumbCenter + rail.height / 3)
-        val manager = host.songsView!!.recyclerView().layoutManager as LinearLayoutManager
-        InstrumentedTestSupport.waitFor("Alphabet rail did not move the list", 5000) {
-            var position = 0
-            instrumentation.runOnMainSync { position = manager.findFirstVisibleItemPosition() }
-            position > 1
-        }
-        instrumentation.runOnMainSync { manager.scrollToPositionWithOffset(1, 0) }
-        InstrumentedTestSupport.waitFor("Rail selection did not follow list scrolling", 5000) {
-            rail.contentDescription.toString().startsWith("A")
         }
     }
 
@@ -100,6 +129,15 @@ class AlphabetRailInstrumentedTest {
         assertTrue(colors.any { Color.red(it) > Color.blue(it) + 80 })
         bitmap.recycle()
         return (rows.first() + rows.last()) / 2
+    }
+
+    private fun capture(host: MainActivityCore, name: String) {
+        val bitmap = Bitmap.createBitmap(host.root.width, host.root.height, Bitmap.Config.ARGB_8888)
+        instrumentation.runOnMainSync { host.root.draw(Canvas(bitmap)) }
+        File(context.getExternalFilesDir(null), name).outputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+        bitmap.recycle()
     }
 
     private fun <T : View> find(view: View, type: Class<T>): T? {
