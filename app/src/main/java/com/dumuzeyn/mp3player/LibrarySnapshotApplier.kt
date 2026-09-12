@@ -27,6 +27,7 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
 
     private fun finishApply(snapshot: LibraryLoader.Snapshot, covers: List<Track>) {
         host.artworkUi.prefetch(covers)
+        host.artworkUi.prefetchGroupCovers(groupArtworkSources(snapshot.tracks))
         host.playbackController.restorePersistedUiState()
         host.playbackController.connect()
         host.render()
@@ -126,4 +127,10 @@ internal class LibrarySnapshotApplier(private val host: MainActivityCore) {
         }
         addAll(snapshot.tracks.take(32))
     }.distinctBy { it.trackId }
+
+    private fun groupArtworkSources(tracks: List<Track>): List<List<Track>> = buildList {
+        addAll(tracks.groupBy(Track::album).values)
+        addAll(tracks.groupBy(Track::artist).values)
+        addAll(tracks.groupBy(Track::genre).values)
+    }
 }

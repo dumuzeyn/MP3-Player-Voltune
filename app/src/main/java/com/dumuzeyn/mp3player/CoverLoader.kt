@@ -15,7 +15,6 @@ import android.widget.ImageView
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
-import java.util.Collections
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -26,7 +25,7 @@ internal class CoverLoader(
 ) {
     private val cache: LruCache<String, Bitmap>
     private val pendingTargets = LinkedHashMap<String, ArrayList<PendingTarget>>()
-    private val missingKeys = Collections.synchronizedSet(LinkedHashSet<String>())
+    private val missingKeys = LinkedHashMap<String, Long>()
     private val executor = Executors.newFixedThreadPool(2)
 
     @Volatile
@@ -64,6 +63,10 @@ internal class CoverLoader(
         val key = key(track, maxSize)
         view.tag = key
         var cached = cache.get(key)
+        if (cached == null || cached.isRecycled) {
+            cached = diskCache().read(key)
+            if (cached != null && !cached.isRecycled) cache.put(key, cached)
+        }
         if (cached == null && maxSize != THUMB_SIZE) cached = cache.get(key(track, THUMB_SIZE))
         if (cached != null && !cached.isRecycled) {
             view.setImageBitmap(cached)
@@ -75,7 +78,7 @@ internal class CoverLoader(
     fun prefetch(tracks: List<Track>, maxSize: Int = THUMB_SIZE) {
         tracks.asSequence().distinctBy { it.trackId }.take(PREFETCH_LIMIT).forEach { track ->
             val key = key(track, maxSize)
-            if (cache.get(key) != null || key in missingKeys) return@forEach
+            if (cache.get(key) != null || recentlyMissing(key)) return@forEach
             synchronized(pendingTargets) {
                 if (pendingTargets.containsKey(key)) return@forEach
                 pendingTargets[key] = arrayListOf()
@@ -91,7 +94,7 @@ internal class CoverLoader(
                 source.forEach { track ->
                     if (closed) return@execute
                     val key = key(track, THUMB_SIZE)
-                    if (cache.get(key) != null || key in missingKeys) return@forEach
+                    if (cache.get(key) != null || recentlyMissing(key)) return@forEach
                     val persistentCache = diskCache()
                     val bitmap = persistentCache.read(key) ?: read(track, THUMB_SIZE)?.also {
                         persistentCache.write(key, it)
@@ -107,6 +110,51 @@ internal class CoverLoader(
 
     fun load(view: ImageView, track: Track, fallbackColor: Int, maxSize: Int) {
         load(view, track, fallbackColor, maxSize, false, 0)
+    }
+
+    fun loadBest(view: ImageView, tracks: List<Track>, fallbackColor: Int, maxSize: Int) {
+        if (tracks.isEmpty()) {
+            applyFallback(view, fallbackColor, false, 0)
+            return
+        }
+        cachedCandidate(tracks, maxSize)?.let {
+            load(view, it, fallbackColor, maxSize)
+            return
+        }
+        val groupKey = "group|" + tracks.joinToString("|") { it.trackId }
+        view.tag = groupKey
+        applyFallback(view, fallbackColor, false, 0)
+        prefetchGroupCovers(listOf(tracks)) {
+            if (view.tag != groupKey) return@prefetchGroupCovers
+            cachedCandidate(tracks, maxSize)?.let { load(view, it, fallbackColor, maxSize) }
+        }
+    }
+
+    fun prefetchGroupCovers(groups: List<List<Track>>, onComplete: () -> Unit = {}) {
+        try {
+            executor.execute {
+                groups.forEach { tracks ->
+                    for (track in tracks) {
+                        if (closed) return@execute
+                        val key = key(track, THUMB_SIZE)
+                        var bitmap = cache.get(key)
+                        if (bitmap == null || bitmap.isRecycled) {
+                            bitmap = diskCache().read(key) ?: read(track, THUMB_SIZE)?.also {
+                                diskCache().write(key, it)
+                            }
+                        }
+                        if (bitmap != null && !bitmap.isRecycled) {
+                            cache.put(key, bitmap)
+                            synchronized(missingKeys) { missingKeys.remove(key) }
+                            break
+                        }
+                    }
+                }
+                mainHandler.post { if (!closed) onComplete() }
+            }
+        } catch (_: RejectedExecutionException) {
+            mainHandler.post(onComplete)
+        }
     }
 
     fun seedFromView(view: ImageView?, track: Track?) {
@@ -156,7 +204,11 @@ internal class CoverLoader(
         if (closed) return
         val key = key(track, maxSize)
         view.tag = key
-        val cached = cache.get(key)
+        var cached = cache.get(key)
+        if (cached == null || cached.isRecycled) {
+            cached = diskCache().read(key)
+            if (cached != null && !cached.isRecycled) cache.put(key, cached)
+        }
         if (cached != null && !cached.isRecycled) {
             applyBitmap(view, cached, fallbackColor, smooth, transitionDuration)
             return
@@ -164,7 +216,7 @@ internal class CoverLoader(
         val thumbnail = if (maxSize == THUMB_SIZE) null else cache.get(key(track, THUMB_SIZE))
         if (thumbnail != null && !thumbnail.isRecycled) {
             applyBitmap(view, thumbnail, fallbackColor, smooth, transitionDuration)
-        } else if (key in missingKeys) {
+        } else if (recentlyMissing(key)) {
             applyFallback(view, fallbackColor, smooth, transitionDuration)
             return
         } else if (!smooth || view.drawable == null) {
@@ -195,6 +247,7 @@ internal class CoverLoader(
                 if (closed) return@execute
                 if (bitmap != null) {
                     cache.put(key, bitmap)
+                    synchronized(missingKeys) { missingKeys.remove(key) }
                     if (maxSize != THUMB_SIZE) cacheThumbnail(track, bitmap)
                 } else {
                     rememberMissing(key)
@@ -232,11 +285,31 @@ internal class CoverLoader(
 
     private fun rememberMissing(key: String) {
         synchronized(missingKeys) {
-            missingKeys += key
+            missingKeys[key] = System.currentTimeMillis()
             while (missingKeys.size > MISSING_LIMIT) {
-                missingKeys.remove(missingKeys.firstOrNull() ?: break)
+                missingKeys.remove(missingKeys.keys.firstOrNull() ?: break)
             }
         }
+    }
+
+    private fun recentlyMissing(key: String): Boolean = synchronized(missingKeys) {
+        val time = missingKeys[key] ?: return@synchronized false
+        if (System.currentTimeMillis() - time <= MISSING_RETRY_MS) return@synchronized true
+        missingKeys.remove(key)
+        false
+    }
+
+    private fun cachedCandidate(tracks: List<Track>, maxSize: Int): Track? {
+        for (track in tracks) {
+            val key = key(track, maxSize)
+            var bitmap = cache.get(key)
+            if (bitmap == null || bitmap.isRecycled) bitmap = diskCache().read(key)
+            if (bitmap != null && !bitmap.isRecycled) {
+                cache.put(key, bitmap)
+                return track
+            }
+        }
+        return null
     }
 
     private fun cacheThumbnail(track: Track, fullCover: Bitmap?) {
@@ -377,6 +450,7 @@ internal class CoverLoader(
         private const val PREFETCH_LIMIT = 32
         private const val VISIBLE_PREFETCH_LIMIT = 10
         private const val MISSING_LIMIT = 512
+        private const val MISSING_RETRY_MS = 30_000L
         private const val MAX_COVER_BYTES = 8 * 1024 * 1024
     }
 }

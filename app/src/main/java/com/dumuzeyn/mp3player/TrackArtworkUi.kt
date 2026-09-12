@@ -28,6 +28,7 @@ internal class TrackArtworkUi(
 
     private val coverLoader = CoverLoader(context, mainHandler)
     private val promoteVisible = Runnable(::promoteVisibleArtwork)
+    private var groupPrefetchSignature = Long.MIN_VALUE
 
     fun loadCover(view: ImageView, track: Track, fallbackColor: Int) {
         loadCover(view, track, fallbackColor, CoverLoader.THUMB_SIZE)
@@ -47,19 +48,27 @@ internal class TrackArtworkUi(
         if (dependencies.renderingPreview()) {
             coverLoader.loadCachedOnly(view, track, fallbackColor, CoverLoader.THUMB_SIZE)
         } else {
-            coverLoader.loadSmooth(
-                view,
-                track,
-                fallbackColor,
-                CoverLoader.THUMB_SIZE,
-                if (dependencies.animationsEnabled()) 320 else 0,
-            )
+            coverLoader.load(view, track, fallbackColor, CoverLoader.THUMB_SIZE)
         }
     }
 
     fun loadUnregisteredCover(view: ImageView, track: Track, fallbackColor: Int, maxSize: Int) {
         if (view is RotatingCoverImageView) view.bindTrack(track)
         coverLoader.load(view, track, fallbackColor, maxSize)
+    }
+
+    fun loadGroupCover(view: ImageView, tracks: List<Track>, fallbackColor: Int) {
+        coverLoader.loadBest(view, tracks, fallbackColor, CoverLoader.THUMB_SIZE)
+    }
+
+    fun prefetchGroupCovers(groups: List<List<Track>>) {
+        var signature = 1125899906842597L
+        groups.forEach { tracks ->
+            tracks.forEach { track -> signature = signature * 31L + track.trackId.hashCode() }
+        }
+        if (signature == groupPrefetchSignature) return
+        groupPrefetchSignature = signature
+        coverLoader.prefetchGroupCovers(groups)
     }
 
     fun prefetch(tracks: List<Track>) {
@@ -83,12 +92,8 @@ internal class TrackArtworkUi(
                     return@forEachCover
                 }
                 dependencies.findTrack(uri)?.let { track ->
-                    coverLoader.loadSmooth(
-                        cover,
-                        track,
-                        dependencies.inactiveColor(),
-                        CoverLoader.THUMB_SIZE,
-                        if (dependencies.animationsEnabled()) 180 else 0,
+                    coverLoader.load(
+                        cover, track, dependencies.inactiveColor(), CoverLoader.THUMB_SIZE,
                     )
                 }
             }

@@ -11,20 +11,25 @@ import kotlin.math.max
 
 /** Small private disk cache containing only decoded artwork thumbnails. */
 internal class ArtworkDiskCache(context: Context) {
-    private val directory = File(context.cacheDir, "artwork-v1")
+    private val directory = File(context.filesDir, "artwork-v2")
+    private val legacyDirectory = File(context.cacheDir, "artwork-v1")
 
+    @Synchronized
     fun read(key: String): Bitmap? {
         val file = fileFor(key)
-        if (!file.isFile) return null
-        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+        val source = if (file.isFile) file else File(legacyDirectory, file.name)
+        if (!source.isFile) return null
+        val bitmap = BitmapFactory.decodeFile(source.absolutePath)
         if (bitmap == null) {
-            file.delete()
+            source.delete()
             return null
         }
-        file.setLastModified(System.currentTimeMillis())
+        source.setLastModified(System.currentTimeMillis())
+        if (source !== file) write(key, bitmap)
         return bitmap
     }
 
+    @Synchronized
     fun write(key: String, bitmap: Bitmap?) {
         if (bitmap == null || bitmap.isRecycled) return
         if (!directory.exists() && !directory.mkdirs()) return

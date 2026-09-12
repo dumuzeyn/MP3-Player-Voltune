@@ -31,6 +31,7 @@ internal class SoundMenuRenderer(host: MainActivityCore) : TrackGroupMenuRendere
                 addRebuildButton()
             }
             else -> {
+                host.artworkUi.prefetchGroupCovers(groupedTracks().values.toList())
                 super.render()
                 addRebuildButton()
             }

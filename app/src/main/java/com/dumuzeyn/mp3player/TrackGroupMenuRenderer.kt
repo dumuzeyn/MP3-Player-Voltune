@@ -43,7 +43,7 @@ internal abstract class TrackGroupMenuRenderer(
         if (tracks.isEmpty()) {
             cover.setBackgroundColor(fallbackColor)
         } else {
-            host.artworkUi.loadCover(cover, tracks[0], fallbackColor)
+            host.artworkUi.loadGroupCover(cover, tracks, fallbackColor)
             if (cover is RotatingCoverImageView) cover.bindTracks(tracks)
         }
         row.addView(cover, host.uiFactory.square(52))
