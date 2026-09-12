@@ -47,6 +47,9 @@ class PlayerAudioToolsTest {
         assertTrue(LoudnessLevelingMode.BALANCED.gainDb(-12f, -2f, -18f) < 0f)
         assertEquals(0f, LoudnessLevelingMode.BOOST.gainDb(Float.NaN, -8f, -14f), 0f)
         assertEquals(0f, LoudnessLevelingMode.BALANCED.gainDb(-22f, -8f, Float.NaN), 0f)
+        assertEquals(0f, LoudnessLevelingMode.BOOST.reserveEqualizerHeadroom(3f, 6), 0f)
+        assertEquals(-9f, LoudnessLevelingMode.REDUCE.reserveEqualizerHeadroom(-3f, 6), 0f)
+        assertEquals(-3f, LoudnessLevelingMode.BALANCED.reserveEqualizerHeadroom(3f, 6), 0f)
     }
 
     @Test fun legacyModeIsPreservedUntilExplicitSelection() {

@@ -18,6 +18,15 @@ internal enum class LoudnessLevelingMode(val fallbackTarget: Float) {
         }.coerceIn(-24f, -10f)
     }
 
+    fun reserveEqualizerHeadroom(gainDb: Float, maximumBandBoostDb: Int): Float {
+        val adjusted = LoudnessGainPolicy.accountForEqualizer(gainDb, maximumBandBoostDb)
+        return when (this) {
+            REDUCE -> adjusted.coerceAtMost(0f)
+            BOOST -> adjusted.coerceAtLeast(0f)
+            BALANCED -> adjusted
+        }
+    }
+
     companion object {
         const val PREFERENCE = "leveling_mode"
 

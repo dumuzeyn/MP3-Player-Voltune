@@ -65,8 +65,18 @@ class PlayerAudioToolsInstrumentedTest {
             slider.onKeyDown(KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT))
             findText(dialog, "Применить")!!.performClick()
             assertEquals(4f, context.getSharedPreferences("player_tool_session", 0).getFloat("speed", 0f), 0f)
-            val level = descendants(tools).first { it.contentDescription == "Единая громкость" }
             val prefs = context.getSharedPreferences(EqualizerController.PREFS, 0)
+            val equalizer = descendants(tools).first { it.contentDescription == "Эквалайзер" }
+            prefs.edit().putBoolean(EqualizerController.ENABLED, false).commit()
+            equalizer.performClick()
+            assertTrue("Equalizer tap must enable it", prefs.getBoolean(EqualizerController.ENABLED, false))
+            equalizer.performClick()
+            assertFalse("Second equalizer tap must disable it", prefs.getBoolean(EqualizerController.ENABLED, true))
+            assertTrue(equalizer.performLongClick())
+            assertNull(findText(activity.overlayHost, "Включён"))
+            assertNull(findText(activity.overlayHost, "Выключен"))
+            activity.overlayHost.removeViewAt(activity.overlayHost.childCount - 1)
+            val level = descendants(tools).first { it.contentDescription == "Единая громкость" }
             prefs.edit().putBoolean(VolumeLevelingController.ENABLED, false).commit()
             level.performClick()
             assertTrue(prefs.getBoolean(VolumeLevelingController.ENABLED, false))
@@ -79,6 +89,15 @@ class PlayerAudioToolsInstrumentedTest {
             findText(activity.overlayHost, "Тихие до уровня громких")!!.performClick()
             assertEquals("BOOST", prefs.getString(LoudnessLevelingMode.PREFERENCE, null))
             assertFalse("Choosing a mode must not turn leveling on", prefs.getBoolean(VolumeLevelingController.ENABLED, true))
+            prefs.edit()
+                .putBoolean(VolumeLevelingController.ENABLED, true)
+                .putBoolean(EqualizerController.ENABLED, true)
+                .putInt(EqualizerController.BAND_PREFIX + 0, 6)
+                .commit()
+            val effects = AudioEffectsManager(context)
+            assertEquals("Boost mode must never reduce loud tracks", 0f,
+                effects.adjustedNormalizationGainDb(3f), 0f)
+            effects.release()
         }
         waitSpeed(activity, 4f)
         onMain {

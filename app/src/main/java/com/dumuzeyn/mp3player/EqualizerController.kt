@@ -13,7 +13,10 @@ internal class EqualizerController(private val host: MainActivityCore) {
             setSingleLine(false)
             maxLines = 2
             textSize = 14f
-            setOnClickListener { setEnabled(!enabled()) }
+            contentDescription = host.tr("Equalizer", "Эквалайзер")
+            setOnClickListener {
+                this@EqualizerController.setEnabled(!this@EqualizerController.enabled())
+            }
             setOnLongClickListener { openDialog(); true }
         }
         playerButton = button
@@ -29,15 +32,6 @@ internal class EqualizerController(private val host: MainActivityCore) {
             host.uiFactory.dialogTitle(host.tr("Equalizer", "Эквалайзер")),
             host.uiFactory.dialogTitleParams(),
         )
-
-        val enabled = host.uiFactory.button(enabledText())
-        styleToggle(enabled)
-        enabled.setOnClickListener {
-            setEnabled(!enabled())
-            enabled.text = enabledText()
-            styleToggle(enabled)
-        }
-        panel.addView(enabled, LinearLayout.LayoutParams(-1, host.dp(48)))
 
         val preset = host.uiFactory.button(
             host.tr("Profile: ", "Профиль: ") + presetName(activePreset()),
@@ -192,12 +186,6 @@ internal class EqualizerController(private val host: MainActivityCore) {
 
     private fun enabled(): Boolean = prefs().getBoolean(ENABLED, false)
 
-    private fun enabledText(): String = if (enabled()) {
-        host.tr("Enabled", "Включён")
-    } else {
-        host.tr("Disabled", "Выключен")
-    }
-
     private fun setEnabled(value: Boolean) {
         prefs().edit().putBoolean(ENABLED, value).apply()
         dispatchSettings()
@@ -206,14 +194,6 @@ internal class EqualizerController(private val host: MainActivityCore) {
 
     private fun refreshButton() {
         playerButton?.let { host.uiFactory.applyPlayerToolStyle(it, enabled()) }
-    }
-
-    private fun styleToggle(button: Button) {
-        if (enabled()) {
-            host.uiFactory.applyPrimaryButtonStyle(button)
-        } else {
-            host.uiFactory.applySecondaryButtonStyle(button)
-        }
     }
 
     private fun prefs(): SharedPreferences = host.getSharedPreferences(PREFS, 0)
