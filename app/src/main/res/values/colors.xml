@@ -21,6 +21,8 @@
     <color name="voltune_secondary_strong">#E7B900</color>
     <color name="voltune_secondary_soft_light">#FFF5BE</color>
     <color name="voltune_secondary_soft_dark">#483E21</color>
+    <color name="voltune_scrollbar_start">#3164F4</color>
+    <color name="voltune_scrollbar_end">#FFD166</color>
     <color name="launcher_icon_blue_light_bg">#F3F8FF</color>
     <color name="launcher_icon_blue_dark_bg">#071426</color>
     <color name="launcher_icon_red_light_bg">#FFF4F5</color>

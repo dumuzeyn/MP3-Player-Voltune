@@ -54,9 +54,10 @@ It is not a release-completion declaration.
   normalization, follows playback-speed changes, and resets on track transitions.
 - Fresh palette defaults use blue, purple, gold and white while explicit saved
   custom themes remain unchanged.
-- Songs has a compact alphabet rail with present English letters first, followed
-  by present Russian letters and `#`. The rail does not duplicate English for an
-  English-only library. App scrollbars now use a themed blue-to-gold thumb.
+- Songs has an alphabet rail with present English letters first, followed by
+  present Russian letters and `#`. The rail does not duplicate English for an
+  English-only library. Its moving thumb uses the same blue-to-gold palette and
+  short rounded shape as the Home scrollbar.
 - Added unit coverage for fade boundaries, short tracks and speed changes, plus
   alphabet ordering and normalization. Headless UI coverage verifies rail jumps
   and checks the fade dialog for clipped Russian text.
@@ -298,9 +299,9 @@ It is not a release-completion declaration.
 - Song properties require a stationary 1.1-second hold. Crossing the platform
   touch slop, swiping a list or leaving the row cancels the pending action, so a
   navigation gesture cannot open properties on the destination screen.
-- The Songs alphabet rail fills the available side, uses the active purple-to-gold
-  palette and marks the current letter. Its selection follows ordinary list
-  scrolling as well as direct rail dragging.
+- The Songs alphabet rail fills the available side, marks the current letter and
+  moves a short blue-to-gold thumb matching the Home scrollbar. Its selection
+  follows ordinary list scrolling as well as direct rail dragging.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

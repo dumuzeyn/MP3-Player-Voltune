@@ -2,6 +2,9 @@ package com.dumuzeyn.mp3player
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.net.Uri
 import android.view.MotionEvent
 import android.view.View
@@ -60,6 +63,7 @@ class AlphabetRailInstrumentedTest {
         assertEquals(View.VISIBLE, rail!!.visibility)
         assertTrue(rail.width <= host.dp(28))
         assertTrue(rail.height >= host.songsView!!.height - host.dp(2))
+        val initialThumbCenter = thumbCenter(host, rail)
         instrumentation.runOnMainSync {
             val time = android.os.SystemClock.uptimeMillis()
             val targetY = rail.height * 0.70f
@@ -69,6 +73,7 @@ class AlphabetRailInstrumentedTest {
                 rail.width / 2f, targetY, 0))
         }
         assertTrue(rail.contentDescription.toString().startsWith("Я"))
+        assertTrue(thumbCenter(host, rail) > initialThumbCenter + rail.height / 3)
         val manager = host.songsView!!.recyclerView().layoutManager as LinearLayoutManager
         InstrumentedTestSupport.waitFor("Alphabet rail did not move the list", 5000) {
             var position = 0
@@ -79,6 +84,22 @@ class AlphabetRailInstrumentedTest {
         InstrumentedTestSupport.waitFor("Rail selection did not follow list scrolling", 5000) {
             rail.contentDescription.toString().startsWith("A")
         }
+    }
+
+    private fun thumbCenter(host: MainActivityCore, rail: AlphabetRailView): Int {
+        lateinit var bitmap: Bitmap
+        instrumentation.runOnMainSync {
+            bitmap = Bitmap.createBitmap(rail.width, rail.height, Bitmap.Config.ARGB_8888)
+            rail.draw(Canvas(bitmap))
+        }
+        val x = rail.width - host.dp(3)
+        val rows = (0 until rail.height).filter { Color.alpha(bitmap.getPixel(x, it)) > 128 }
+        assertTrue(rows.size in host.dp(20)..host.dp(44))
+        val colors = rows.map { bitmap.getPixel(x, it) }
+        assertTrue(colors.any { Color.blue(it) > Color.red(it) + 80 })
+        assertTrue(colors.any { Color.red(it) > Color.blue(it) + 80 })
+        bitmap.recycle()
+        return (rows.first() + rows.last()) / 2
     }
 
     private fun <T : View> find(view: View, type: Class<T>): T? {

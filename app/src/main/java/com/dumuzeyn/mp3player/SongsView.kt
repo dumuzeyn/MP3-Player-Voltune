@@ -134,8 +134,6 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         alphabetRail.configure(
             entries,
             host.primaryText,
-            host.purple,
-            host.yellow,
         ) { position ->
             recyclerView.stopScroll()
             recyclerView.post {
