@@ -45,14 +45,17 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         recyclerView.clipToPadding = false
         recyclerView.setPadding(0, 0, host.dp(24), host.dp(88))
         recyclerView.itemAnimator = null
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
+                syncAlphabetToList()
+            }
+        })
         val config = ConcatAdapter.Config.Builder()
             .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
             .build()
         recyclerView.adapter = ConcatAdapter(config, headerAdapter, songAdapter, emptyAdapter)
         addView(recyclerView, LayoutParams(-1, -1))
-        addView(alphabetRail, LayoutParams(host.dp(24), -1, Gravity.END).apply {
-            topMargin = host.dp(58)
-            bottomMargin = host.dp(96)
+        addView(alphabetRail, LayoutParams(host.dp(28), -1, Gravity.END).apply {
             marginEnd = host.dp(1)
         })
         visibility = View.GONE
@@ -131,7 +134,7 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         alphabetRail.configure(
             entries,
             host.primaryText,
-            host.cardSurfaceColor(host.card, host.appearanceState.cardOpacity.coerceAtLeast(82)),
+            host.purple,
             host.yellow,
         ) { position ->
             recyclerView.stopScroll()
@@ -140,6 +143,13 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
                     ?.scrollToPositionWithOffset(position + headerAdapter.itemCount, 0)
             }
         }
+        syncAlphabetToList()
+    }
+
+    private fun syncAlphabetToList() {
+        val first = (recyclerView.layoutManager as? LinearLayoutManager)
+            ?.findFirstVisibleItemPosition() ?: return
+        alphabetRail.syncToTrackPosition((first - headerAdapter.itemCount).coerceAtLeast(0))
     }
 
     private fun updateProgressTicker() {

@@ -155,6 +155,35 @@ public class LibraryExperienceUiInstrumentedTest {
                 () -> host.navigationState.tabIndex == LibraryTabs.SETTINGS);
     }
 
+    @Test
+    public void songPropertiesRequireDeliberateStationaryHold() {
+        MainActivityCore host = launchWithLibrary();
+        openTabByClick(host, LibraryTabs.SONGS);
+        View song = findDescription(host.songsView,
+                "Открыть или включить песню UI song 0");
+        assertNotNull(song);
+        instrumentation.runOnMainSync(host.overlayHost::removeAllViews);
+
+        long down = SystemClock.uptimeMillis();
+        dispatchTouch(song, MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, 20, 20, 0));
+        SystemClock.sleep(650L);
+        assertEquals("A normal touch must not open properties", 0, host.overlayHost.getChildCount());
+        dispatchTouch(song, MotionEvent.obtain(down, down + 660L,
+                MotionEvent.ACTION_MOVE, 80, 20, 0));
+        SystemClock.sleep(600L);
+        assertEquals("A swipe must cancel property opening", 0, host.overlayHost.getChildCount());
+        dispatchTouch(song, MotionEvent.obtain(down, down + 1270L,
+                MotionEvent.ACTION_UP, 80, 20, 0));
+
+        down = SystemClock.uptimeMillis();
+        dispatchTouch(song, MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, 20, 20, 0));
+        SystemClock.sleep(SafeLongPress.HOLD_MS + 120L);
+        InstrumentedTestSupport.waitFor("A deliberate hold did not open properties", 3000L,
+                () -> host.overlayHost.getChildCount() > 0);
+        dispatchTouch(song, MotionEvent.obtain(down, SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_UP, 20, 20, 0));
+    }
+
     private void assertFullPlayerPages(MainActivityCore host, Track track) {
         instrumentation.runOnMainSync(() -> {
             host.overlayHost.removeAllViews();

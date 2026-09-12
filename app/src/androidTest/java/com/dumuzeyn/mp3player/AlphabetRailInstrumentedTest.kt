@@ -58,7 +58,8 @@ class AlphabetRailInstrumentedTest {
         val rail = find(host.songsView!!, AlphabetRailView::class.java)
         assertNotNull(rail)
         assertEquals(View.VISIBLE, rail!!.visibility)
-        assertTrue(rail.width <= host.dp(24))
+        assertTrue(rail.width <= host.dp(28))
+        assertTrue(rail.height >= host.songsView!!.height - host.dp(2))
         instrumentation.runOnMainSync {
             val time = android.os.SystemClock.uptimeMillis()
             val targetY = rail.height * 0.70f
@@ -73,6 +74,10 @@ class AlphabetRailInstrumentedTest {
             var position = 0
             instrumentation.runOnMainSync { position = manager.findFirstVisibleItemPosition() }
             position > 1
+        }
+        instrumentation.runOnMainSync { manager.scrollToPositionWithOffset(1, 0) }
+        InstrumentedTestSupport.waitFor("Rail selection did not follow list scrolling", 5000) {
+            rail.contentDescription.toString().startsWith("A")
         }
     }
 

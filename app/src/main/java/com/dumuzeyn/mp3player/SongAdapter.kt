@@ -157,12 +157,12 @@ internal class SongAdapter(private val host: MainActivityCore) :
             }
             card.setOnClickListener(openOrPlay)
             cover.setOnClickListener(openOrPlay)
-            val properties = View.OnLongClickListener {
+            val properties = {
                 boundTrack?.let(host.overlayController::openSongActions)
-                true
+                Unit
             }
-            card.setOnLongClickListener(properties)
-            cover.setOnLongClickListener(properties)
+            SafeLongPress.bind(card, properties)
+            SafeLongPress.bind(cover, properties)
             play.setOnClickListener {
                 val track = boundTrack ?: return@setOnClickListener
                 if (host.isCurrent(track)) {

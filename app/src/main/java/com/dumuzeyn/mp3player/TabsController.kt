@@ -198,7 +198,9 @@ internal class TabsController(private val host: MainActivityCore) {
             button, 10, 15, 1, android.util.TypedValue.COMPLEX_UNIT_SP,
         )
         button.gravity = Gravity.CENTER
+        button.includeFontPadding = false
         button.setPadding(host.dp(14), 0, host.dp(14), 0)
+        button.translationY = if (index == LibraryTabs.SOUND) -host.dp(7).toFloat() else 0f
         (button as? OutlinedButton)?.setTextOutline(false, Color.TRANSPARENT, 1f)
         button.setBackgroundColor(Color.TRANSPARENT)
         button.setTextColor(

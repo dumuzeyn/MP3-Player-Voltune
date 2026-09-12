@@ -69,12 +69,12 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         textColumn.addView(metaRow)
         row.addView(textColumn, LayoutParams(0, host.dp(62), 1f))
 
-        val properties = View.OnLongClickListener {
+        val properties = {
             boundTrack?.let(host.overlayController::openSongActions)
-            true
+            Unit
         }
-        row.setOnLongClickListener(properties)
-        cover.setOnLongClickListener(properties)
+        SafeLongPress.bind(row, properties)
+        SafeLongPress.bind(cover, properties)
         row.setOnClickListener { TrackTapController.handle(host, boundTrack, cover) }
 
         play = host.uiFactory.icon("").apply {
