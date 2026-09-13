@@ -94,6 +94,28 @@ class AudioEditorUiInstrumentedTest {
             val topInset = androidx.core.view.ViewCompat.getRootWindowInsets(host.root)
                 ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top ?: 0
             assertTrue("Tabs overlap status bar", location[1] >= topInset)
+            val workspace = host.list.findViewById<ViewGroup>(R.id.editor_workspace)
+            assertNotNull(workspace)
+            assertEquals(1, descendants(workspace).filterIsInstance<AudioEditorPreviewControls>().size)
+            assertEquals(1, descendants(workspace).filterIsInstance<AudioEditorTimelineView>().size)
+            val commands = descendants(host.list).filterIsInstance<Button>()
+                .map { it.text.toString() }.toSet()
+            assertTrue(commands.containsAll(setOf(
+                "BPM и тональность",
+                "Обрезка",
+                "Громкость",
+                "Разделить",
+                "Удалить отрезок",
+                "Очистить речь",
+                "Разделить дорожки",
+                "Удалить вокал",
+                "Удалить выбранный фрагмент",
+            )))
+            descendants(host.list).filterIsInstance<Button>()
+                .first { it.text.toString() == "Громкость" }.performClick()
+            assertNotNull(descendants(host.overlayHost).filterIsInstance<TextView>()
+                .firstOrNull { it.text.toString() == "Громкость фрагмента" })
+            host.overlayHost.removeAllViews()
         }
         assertEquals("Редактор", host.tabs[LibraryTabs.EDITOR])
         capture("audio-editor.png")
@@ -167,7 +189,11 @@ class AudioEditorUiInstrumentedTest {
             lock.performClick()
             assertTrue(host.audioEditorController.editingMode)
             assertEquals(View.VISIBLE, bounds.visibility)
+        }
+        awaitLayout(host)
+        capture("audio-editor-locked.png")
 
+        instrumentation.runOnMainSync {
             host.switchTabAnimated(LibraryTabs.SETTINGS, 1)
             host.swipeController.animateToTab(LibraryTabs.SETTINGS, 1, true, "")
             assertTrue(host.backNavigationController.handleBack())
@@ -182,7 +208,7 @@ class AudioEditorUiInstrumentedTest {
 
             host.root.findViewById<View>(R.id.editor_mode_lock).performClick()
             assertFalse(host.audioEditorController.editingMode)
-            assertEquals(View.GONE, bounds.visibility)
+            assertEquals(View.GONE, host.root.findViewById<View>(R.id.editor_mode_bounds).visibility)
             host.switchTabAnimated(LibraryTabs.SETTINGS, 1)
             assertEquals(LibraryTabs.SETTINGS, host.navigationState.tabIndex)
         }

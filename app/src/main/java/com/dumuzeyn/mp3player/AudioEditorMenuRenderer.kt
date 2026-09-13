@@ -3,6 +3,7 @@ package com.dumuzeyn.mp3player
 import android.os.Build
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -15,7 +16,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         val controller = host.audioEditorController
         controller.load()
         val dialogs = AudioEditorDialogs(host)
-        val toolbar = host.uiFactory.row()
+        val toolbar = host.uiFactory.row().apply { gravity = Gravity.CENTER }
         toolbar.addView(tool("+", host.tr("Add audio", "Добавить аудио"), !controller.busy) {
             dialogs.chooseTrack(0)
         })
@@ -29,12 +30,23 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         })
         toolbar.addView(editorModeTool(controller.editingMode) { controller.toggleEditingMode() })
         host.list.addView(toolbar)
-        if (controller.project.clips.isNotEmpty()) host.list.addView(AudioEditorPreviewControls(host, { controller.project }))
         if (controller.project.clips.isEmpty()) {
             host.list.addView(host.uiFactory.text(host.tr("No audio clips", "Нет аудиофрагментов"), 17, false))
         } else {
-            host.list.addView(AudioEditorTimelineView(host, controller.project, dialogs::edit),
-                LinearLayout.LayoutParams(-1, -2))
+            host.list.addView(
+                AudioEditorWorkspaceView(
+                    host,
+                    controller.project,
+                    controller.selectedClipId,
+                    controller::select,
+                ),
+                LinearLayout.LayoutParams(-1, -2).apply {
+                    setMargins(0, host.dp(4), 0, host.dp(8))
+                },
+            )
+            controller.selectedClip?.let { selected ->
+                renderClipTools(controller, dialogs, selected)
+            }
             controller.project.clips.groupBy { it.lane }.toSortedMap().forEach { (lane, clips) ->
                 val header = host.uiFactory.row()
                 header.addView(host.uiFactory.text("${host.tr("Lane", "Дорожка")} ${lane + 1}", 16, true),
@@ -51,9 +63,13 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                         minHeight = host.dp(62)
                         maxLines = 4
                         setPadding(host.dp(8), host.dp(8), host.dp(8), host.dp(8))
-                        host.uiFactory.applySecondaryButtonStyle(this)
-                        setOnClickListener { dialogs.edit(clip) }
-                        contentDescription = "${host.tr("Edit clip", "Изменить фрагмент")}: ${clip.title}"
+                        host.uiFactory.applyPlayerToolStyle(this, clip.id == controller.selectedClipId)
+                        setOnClickListener { controller.select(clip) }
+                        contentDescription = if (clip.id == controller.selectedClipId) {
+                            "${host.tr("Selected clip", "Выбранный фрагмент")}: ${clip.title}"
+                        } else {
+                            "${host.tr("Select clip", "Выбрать фрагмент")}: ${clip.title}"
+                        }
                     }
                     host.list.addView(host.uiFactory.spaced(row))
                 }
@@ -99,6 +115,62 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
             true, controller::saveExport))
     }
 
+    private fun renderClipTools(
+        controller: AudioEditorController,
+        dialogs: AudioEditorDialogs,
+        clip: AudioEditClip,
+    ) {
+        host.list.addView(host.uiFactory.text(
+            "${host.tr("Selected", "Выбрано")}: ${clip.title}",
+            16,
+            true,
+        ))
+        val enabled = !controller.busy
+        val actions = listOf(
+            EditorAction(host.tr("Analysis", "BPM и тональность"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.ANALYSIS)
+            },
+            EditorAction(host.tr("Trim", "Обрезка"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.TRIM)
+            },
+            EditorAction(host.tr("Volume", "Громкость"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.VOLUME)
+            },
+            EditorAction(host.tr("Split", "Разделить"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.SPLIT)
+            },
+            EditorAction(host.tr("Remove range", "Удалить отрезок"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.REMOVE_RANGE)
+            },
+            EditorAction(host.tr("Clean speech", "Очистить речь"), enabled) {
+                controller.processing.cleanSpeech(clip)
+            },
+            EditorAction(host.tr("Separate stems", "Разделить дорожки"), enabled) {
+                controller.processing.separate(clip, false)
+            },
+            EditorAction(host.tr("Remove vocals", "Удалить вокал"), enabled) {
+                controller.processing.separate(clip, true)
+            },
+        )
+        actions.chunked(2).forEach { pair ->
+            val row = host.uiFactory.row()
+            pair.forEach { action ->
+                row.addView(command(action.label, action.enabled, action.run),
+                    LinearLayout.LayoutParams(0, host.dp(48), 1f).apply {
+                        setMargins(host.dp(2), host.dp(2), host.dp(2), host.dp(2))
+                    })
+            }
+            host.list.addView(row, LinearLayout.LayoutParams(-1, host.dp(52)))
+        }
+        host.list.addView(command(host.tr("Remove selected clip", "Удалить выбранный фрагмент"), enabled) {
+            host.showConfirmPanel(
+                host.tr("Remove selected clip?", "Удалить выбранный фрагмент?"),
+                clip.title,
+                Runnable { controller.change { it.remove(clip.id) } },
+            )
+        })
+    }
+
     private fun tool(symbol: String, label: String, enabled: Boolean, run: () -> Unit): Button =
         host.uiFactory.icon(symbol).apply {
             contentDescription = label
@@ -132,8 +204,15 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
 
     private fun command(label: String, enabled: Boolean, run: () -> Unit) = host.uiFactory.button(label).apply {
         layoutParams = LinearLayout.LayoutParams(-1, host.dp(52))
+        host.uiFactory.applySecondaryButtonStyle(this)
         isEnabled = enabled
         alpha = if (enabled) 1f else 0.4f
         setOnClickListener { run() }
     }
+
+    private data class EditorAction(
+        val label: String,
+        val enabled: Boolean,
+        val run: () -> Unit,
+    )
 }

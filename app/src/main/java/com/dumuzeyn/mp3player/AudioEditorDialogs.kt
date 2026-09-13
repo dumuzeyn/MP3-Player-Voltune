@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 
 internal class AudioEditorDialogs(private val host: MainActivityCore) {
+    enum class Focus { FULL, ANALYSIS, TRIM, VOLUME, SPLIT, REMOVE_RANGE }
+
     private val controller get() = host.audioEditorController
 
     fun chooseTrack(lane: Int) {
@@ -72,14 +74,16 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         host.overlayHost.addView(shade)
     }
 
-    fun edit(clip: AudioEditClip) {
+    @JvmOverloads
+    fun edit(clip: AudioEditClip, focus: Focus = Focus.FULL) {
         if (controller.busy) return
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
-        panel.addView(host.uiFactory.dialogTitle(clip.title, 18))
+        panel.addView(host.uiFactory.centeredDialogTitle(focusTitle(focus), 18))
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(host).apply { addView(content) }
         panel.addView(scroll, LinearLayout.LayoutParams(-1, bodyHeight(340, 230)))
+        content.addView(host.uiFactory.text(clip.title, 15, true))
         val waveform = AudioEditorWaveformView(host, clip)
         content.addView(waveform, LinearLayout.LayoutParams(-1, minOf(host.dp(140), bodyHeight(340, 230))))
         val analysis = AudioEditorAnalysisView(host, clip)
@@ -191,6 +195,25 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         panel.addView(action(host.tr("Cancel", "Отмена")) { host.overlayHost.removeView(shade) })
         shade.addView(panel, host.centerParams(host.dp(360), -2))
         host.overlayHost.addView(shade)
+        if (focus != Focus.FULL) {
+            val target = when (focus) {
+                Focus.ANALYSIS -> analysis
+                Focus.TRIM, Focus.REMOVE_RANGE -> waveform
+                Focus.VOLUME -> gain
+                Focus.SPLIT -> cut
+                Focus.FULL -> waveform
+            }
+            scroll.post { scroll.smoothScrollTo(0, target.top.coerceAtLeast(0)) }
+        }
+    }
+
+    private fun focusTitle(focus: Focus): String = when (focus) {
+        Focus.FULL -> host.tr("Edit audio", "Редактирование аудио")
+        Focus.ANALYSIS -> host.tr("BPM and key", "BPM и тональность")
+        Focus.TRIM -> host.tr("Trim audio", "Обрезка аудио")
+        Focus.VOLUME -> host.tr("Clip volume", "Громкость фрагмента")
+        Focus.SPLIT -> host.tr("Split audio", "Разделение аудио")
+        Focus.REMOVE_RANGE -> host.tr("Remove a range", "Удаление отрезка")
     }
 
     private fun secondsField(parent: LinearLayout, label: String, value: Long): EditText {

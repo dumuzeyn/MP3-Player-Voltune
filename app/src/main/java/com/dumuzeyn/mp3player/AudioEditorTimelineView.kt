@@ -11,6 +11,7 @@ import android.view.View
 internal class AudioEditorTimelineView(
     private val host: MainActivityCore,
     private val project: AudioEditProject,
+    private val selectedClipId: String?,
     private val select: (AudioEditClip) -> Unit,
 ) : View(host) {
     private val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
@@ -58,8 +59,19 @@ internal class AudioEditorTimelineView(
                 val rect = RectF(width * clip.offsetMs / total, top,
                     width * clip.finishMs / total, top + host.dp(52))
                 bounds[clip] = rect
+                paint.style = Paint.Style.FILL
                 paint.color = if (index % 2 == 0) host.purple else host.yellowDark
                 canvas.drawRoundRect(rect, host.dp(4).toFloat(), host.dp(4).toFloat(), paint)
+                if (clip.id == selectedClipId) {
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = host.dp(3).toFloat()
+                    paint.color = host.yellow
+                    val outline = RectF(rect).apply {
+                        inset(host.dp(2).toFloat(), host.dp(2).toFloat())
+                    }
+                    canvas.drawRoundRect(outline, host.dp(4).toFloat(), host.dp(4).toFloat(), paint)
+                    paint.style = Paint.Style.FILL
+                }
                 canvas.save()
                 canvas.clipRect(rect)
                 paint.color = android.graphics.Color.WHITE
