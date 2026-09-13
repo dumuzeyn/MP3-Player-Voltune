@@ -309,6 +309,10 @@ It is not a release-completion declaration.
 - Playlist, thematic, genre, artist and album cards use a density-correct 1dp
   outline. Thematic groups and collection lists keep a 10dp gap below the tab
   wheel, including folders whose cards already use the standard outline.
+- Library content cards now share one 68dp visible height, a 72dp row slot and
+  one content width across Home, Songs, Favorites, playlists, genres, artists,
+  albums and folders. Animated tab previews retain the same scrollbar clearance,
+  so cards cannot widen after a tap or swipe transition.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

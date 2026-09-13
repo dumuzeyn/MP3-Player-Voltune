@@ -89,8 +89,8 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
             }
         }
         row.addView(play, host.uiFactory.square(44))
-        container.addView(row, FrameLayout.LayoutParams(-1, -2))
-        addView(host.uiFactory.spaced(container))
+        container.addView(row, FrameLayout.LayoutParams(-1, host.uiFactory.libraryCardHeight()))
+        addView(host.uiFactory.spacedLibraryCard(container))
         visibility = GONE
     }
 

@@ -26,6 +26,7 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
         val row = host.uiFactory.row().apply {
             id = R.id.folder_card
             setPadding(host.dp(10), host.dp(5), host.dp(6), host.dp(5))
+            minimumHeight = host.uiFactory.libraryCardHeight()
         }
         host.uiFactory.applyCardStyle(row, host.appearanceState.songCardOpacity)
         val labels = LinearLayout(host).apply {
@@ -37,7 +38,7 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
             addView(title)
             addView(host.uiFactory.text("${tracks.size} ${host.tr("songs", "песен")}", 13, false))
         }
-        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(62), 1.0f))
+        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(58), 1.0f))
 
         val add = host.uiFactory.icon("+").apply {
             contentDescription = host.tr("Add folder to queue", "Добавить папку в очередь")
@@ -55,6 +56,6 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
         }
         row.addView(play, host.uiFactory.square(44))
         row.setOnClickListener { host.overlayController.openGroup(name, tracks) }
-        return host.uiFactory.spaced(row)
+        return host.uiFactory.spacedLibraryCard(row)
     }
 }

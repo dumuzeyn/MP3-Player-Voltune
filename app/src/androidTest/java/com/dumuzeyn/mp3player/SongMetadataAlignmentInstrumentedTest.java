@@ -22,7 +22,8 @@ public class SongMetadataAlignmentInstrumentedTest {
         View item = LayoutInflater.from(context).inflate(R.layout.item_song,
                 new FrameLayout(context), false);
         int width = dp(context, 360);
-        int height = dp(context, 66);
+        int height = context.getResources().getDimensionPixelSize(
+                R.dimen.library_card_slot_height);
         item.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
         item.layout(0, 0, width, height);

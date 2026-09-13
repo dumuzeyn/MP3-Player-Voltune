@@ -85,7 +85,7 @@ internal class HomeMenuRenderer(private val host: MainActivityCore) : MenuRender
             }
             row.addView(
                 button,
-                LinearLayout.LayoutParams(0, host.dp(52), 1f).apply {
+                LinearLayout.LayoutParams(0, host.uiFactory.libraryCardHeight(), 1f).apply {
                     setMargins(host.dp(2), 0, host.dp(2), 0)
                 },
             )
@@ -118,7 +118,7 @@ internal class HomeMenuRenderer(private val host: MainActivityCore) : MenuRender
         }
         host.list.addView(
             button,
-            LinearLayout.LayoutParams(-1, host.dp(52)).apply {
+            LinearLayout.LayoutParams(-1, host.uiFactory.libraryCardHeight()).apply {
                 setMargins(0, host.dp(2), 0, host.dp(2))
             },
         )

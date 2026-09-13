@@ -121,6 +121,7 @@ internal class SongsRenderer(private val host: MainActivityCore) {
     ): View {
         val container = FrameLayout(host)
         val row = LinearLayout(host).apply {
+            id = R.id.song_card
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4))
@@ -225,9 +226,9 @@ internal class SongsRenderer(private val host: MainActivityCore) {
         }
         host.activeSongRows().registerPlayButton(track.uri, play)
         row.addView(play, host.uiFactory.square(44))
-        container.addView(row, FrameLayout.LayoutParams(-1, -2))
+        container.addView(row, FrameLayout.LayoutParams(-1, host.uiFactory.libraryCardHeight()))
         container.addView(marker, NowPlayingIndicator.layoutParams(host))
-        return host.uiFactory.spaced(container)
+        return host.uiFactory.spacedLibraryCard(container)
     }
 
     fun queueRow(track: Track, removeAction: Runnable, playAction: Runnable): View {
@@ -276,9 +277,9 @@ internal class SongsRenderer(private val host: MainActivityCore) {
         )
         play.setOnClickListener { playAction.run() }
         row.addView(play, host.uiFactory.square(44))
-        container.addView(row, FrameLayout.LayoutParams(-1, -2))
+        container.addView(row, FrameLayout.LayoutParams(-1, host.uiFactory.libraryCardHeight()))
         container.addView(marker, NowPlayingIndicator.layoutParams(host))
-        return host.uiFactory.spaced(container)
+        return host.uiFactory.spacedLibraryCard(container)
     }
 
     private fun initializeWindow(scrollY: Int): Boolean {
@@ -340,7 +341,10 @@ internal class SongsRenderer(private val host: MainActivityCore) {
         if (end >= tracks.size) host.addMiniSpacerIfNeeded()
     }
 
-    private fun estimatedRowHeight(): Int = max(1, host.dp(66))
+    private fun estimatedRowHeight(): Int = max(
+        1,
+        host.resources.getDimensionPixelSize(R.dimen.library_card_slot_height),
+    )
 
     class BatchState(
         @JvmField val pendingTracks: ArrayList<Track>?,

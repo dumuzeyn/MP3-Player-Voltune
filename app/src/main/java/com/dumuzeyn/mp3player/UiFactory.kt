@@ -131,6 +131,16 @@ internal class UiFactory(private val host: MainActivityCore) {
         return view
     }
 
+    fun spacedLibraryCard(view: View): View {
+        view.layoutParams = LinearLayout.LayoutParams(-1, libraryCardHeight()).apply {
+            setMargins(0, host.dp(2), 0, host.dp(2))
+        }
+        return view
+    }
+
+    fun libraryCardHeight(): Int =
+        host.resources.getDimensionPixelSize(R.dimen.library_card_height)
+
     fun setSurface(view: View, color: Int, outlined: Boolean) {
         setSurface(view, color, outlined, host.appearanceState.dialogCardOpacity)
     }

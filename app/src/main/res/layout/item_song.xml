@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="66dp">
+    android:layout_height="@dimen/library_card_slot_height">
 
     <RelativeLayout
         android:id="@+id/song_card"
         android:layout_width="match_parent"
-        android:layout_height="62dp"
+        android:layout_height="@dimen/library_card_height"
         android:layout_gravity="center_vertical"
         android:paddingStart="8dp"
         android:paddingEnd="8dp">

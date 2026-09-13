@@ -29,7 +29,7 @@ internal abstract class TrackGroupMenuRenderer(
             ) {
                 return@forEach
             }
-            host.list.addView(host.uiFactory.spaced(groupCard(name, tracks)))
+            host.list.addView(host.uiFactory.spacedLibraryCard(groupCard(name, tracks)))
         }
     }
 
@@ -37,6 +37,7 @@ internal abstract class TrackGroupMenuRenderer(
         val row = host.uiFactory.row().apply {
             id = R.id.group_card
             setPadding(host.dp(6), host.dp(4), host.dp(8), host.dp(4))
+            minimumHeight = host.uiFactory.libraryCardHeight()
         }
         host.uiFactory.setSurface(row, host.panel, true, cardOpacity())
         val cover = host.uiFactory.coverView()
@@ -58,7 +59,7 @@ internal abstract class TrackGroupMenuRenderer(
             })
             addView(host.uiFactory.text(groupSubtitle(name, tracks), 13, false))
         }
-        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(62), 1.0f))
+        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(60), 1.0f))
 
         val playing = host.playbackQueueController.isPlayingSource(tracks)
         val play = host.uiFactory.icon(if (playing) "Ⅱ" else "▶")

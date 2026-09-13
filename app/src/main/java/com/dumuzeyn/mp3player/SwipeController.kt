@@ -194,7 +194,15 @@ internal class SwipeController(private val host: MainActivityCore) {
                 return
             }
             previewUsesSongsSurface = false
-            val list = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
+            val list = LinearLayout(host).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(
+                    0,
+                    0,
+                    host.responsiveLayoutController.contentScrollbarClearance(),
+                    0,
+                )
+            }
             val scroll = ScrollView(host).apply {
                 addView(list, FrameLayout.LayoutParams(-1, -2))
                 translationX = direction * transitionDistance.toFloat()

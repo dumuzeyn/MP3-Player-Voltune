@@ -89,6 +89,11 @@ public class LibraryExperienceUiInstrumentedTest {
         assertEquals(host.dp(24), host.list.getPaddingRight());
         assertEquals(LibraryTabs.HOME, host.navigationState.tabIndex);
         Track track = host.libraryState.tracks.get(0);
+        View homeSongCard = host.list.findViewById(R.id.song_card);
+        assertNotNull(homeSongCard);
+        int libraryCardWidth = homeSongCard.getWidth();
+        int libraryCardHeight = host.uiFactory.libraryCardHeight();
+        assertLibraryCardSize(homeSongCard, libraryCardWidth, libraryCardHeight);
 
         assertOverlayOpens(host, host.overlayController::openSearch);
         assertOverlayOpens(host, host.overlayController::openQueue);
@@ -115,6 +120,8 @@ public class LibraryExperienceUiInstrumentedTest {
         });
         InstrumentedTestSupport.waitFor("Songs tab did not open", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.SONGS);
+        assertLibraryCardSize(host.songsView.findViewById(R.id.song_card),
+                libraryCardWidth, libraryCardHeight);
         assertTrue(host.libraryState.favorites.contains(track.uri));
         assertFalse(host.libraryState.playlists.isEmpty());
 
@@ -123,6 +130,8 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Favorite track did not render", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.FAVORITES
                         && findText(host.list, TextView.class, track.title) != null);
+        assertLibraryCardSize(host.list.findViewById(R.id.song_card),
+                libraryCardWidth, libraryCardHeight);
 
         instrumentation.runOnMainSync(() -> {
             host.switchTabAnimated(LibraryTabs.PLAYLISTS, 1);
@@ -139,8 +148,8 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(playlistCover);
         View playlistCard = host.list.findViewById(R.id.playlist_card);
         assertNotNull(playlistCard);
-        assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_card_height),
-                playlistCard.getHeight());
+        assertLibraryCardSize(playlistCard, libraryCardWidth, libraryCardHeight);
+        assertEquals(host.dp(24), host.list.getPaddingRight());
         assertVisibleOutline(playlistCard);
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
                 playlistCover.getHeight());
@@ -158,11 +167,9 @@ public class LibraryExperienceUiInstrumentedTest {
                 initialPlaylistArtwork[0], playlistCover.getDrawable()));
         capture(host, "playlist-cards.png");
 
-        instrumentation.runOnMainSync(() ->
-                host.switchTabAnimated(LibraryTabs.ALBUMS, 1));
-        InstrumentedTestSupport.waitFor("Album cards did not open", 5000L,
-                () -> host.navigationState.tabIndex == LibraryTabs.ALBUMS
-                        && host.list.findViewById(R.id.group_card) != null);
+        assertGroupCardSize(host, LibraryTabs.GENRES, libraryCardWidth, libraryCardHeight);
+        assertGroupCardSize(host, LibraryTabs.ARTISTS, libraryCardWidth, libraryCardHeight);
+        assertGroupCardSize(host, LibraryTabs.ALBUMS, libraryCardWidth, libraryCardHeight);
         View groupCard = host.list.findViewById(R.id.group_card);
         assertVisibleOutline(groupCard);
         int[] groupLocation = new int[2];
@@ -174,6 +181,15 @@ public class LibraryExperienceUiInstrumentedTest {
         assertTrue("Group card touches the tab wheel",
                 groupLocation[1] - contentLocation[1] >= host.dp(8));
         capture(host, "collection-cards.png");
+
+        instrumentation.runOnMainSync(() -> host.switchTabAnimated(LibraryTabs.FOLDERS, 1));
+        InstrumentedTestSupport.waitFor("Folder cards did not open", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.FOLDERS
+                        && host.list.findViewById(R.id.folder_card) != null
+                        && !host.navigationState.tabAnimating);
+        assertLibraryCardSize(host.list.findViewById(R.id.folder_card),
+                libraryCardWidth, libraryCardHeight);
+        assertEquals(host.dp(24), host.list.getPaddingRight());
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
@@ -410,6 +426,22 @@ public class LibraryExperienceUiInstrumentedTest {
         bitmap.recycle();
         background.setBounds(previous);
         assertTrue("Card outline is not visible", difference >= 12);
+    }
+
+    private void assertGroupCardSize(MainActivityCore host, int tab, int width, int height) {
+        instrumentation.runOnMainSync(() -> host.switchTabAnimated(tab, 1));
+        InstrumentedTestSupport.waitFor("Group cards did not open: " + tab, 5000L,
+                () -> host.navigationState.tabIndex == tab
+                        && host.list.findViewById(R.id.group_card) != null
+                        && !host.navigationState.tabAnimating);
+        assertLibraryCardSize(host.list.findViewById(R.id.group_card), width, height);
+        assertEquals(host.dp(24), host.list.getPaddingRight());
+    }
+
+    private static void assertLibraryCardSize(View card, int width, int height) {
+        assertNotNull(card);
+        assertEquals("Library cards must share one width", width, card.getWidth());
+        assertEquals("Library cards must share one height", height, card.getHeight());
     }
 
     private void capture(MainActivityCore host, String name) {

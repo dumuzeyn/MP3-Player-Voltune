@@ -21,7 +21,7 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
             host.list.addView(empty)
             return
         }
-        playlists.forEach { host.list.addView(host.uiFactory.spaced(playlistCard(it))) }
+        playlists.forEach { host.list.addView(host.uiFactory.spacedLibraryCard(playlistCard(it))) }
     }
 
     private fun playlistCard(playlist: Playlist): View {
@@ -88,7 +88,7 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
         card.addView(actions, LinearLayout.LayoutParams(actionSize * 4, actionSize))
         card.setOnClickListener { host.overlayController.openPlaylist(playlist) }
 
-        val cardHeight = host.resources.getDimensionPixelSize(R.dimen.playlist_card_height)
+        val cardHeight = host.uiFactory.libraryCardHeight()
         return FrameLayout(host).apply {
             addView(card, FrameLayout.LayoutParams(-1, cardHeight))
             val marker = NowPlayingIndicator.create(host)
