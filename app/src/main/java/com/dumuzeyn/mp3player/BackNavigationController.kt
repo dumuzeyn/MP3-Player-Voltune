@@ -23,9 +23,13 @@ internal class BackNavigationController(private val host: MainActivityCore) {
             }
             return true
         }
-        val previous = tabHistory.pollLast() ?: return false
-        host.restoreTabFromBack(previous.tabIndex, previous.search)
-        return true
+        while (tabHistory.isNotEmpty()) {
+            val previous = tabHistory.pollLast() ?: continue
+            if (!host.menuConfigurationController.isVisible(previous.tabIndex)) continue
+            host.restoreTabFromBack(previous.tabIndex, previous.search)
+            return true
+        }
+        return false
     }
 
     private data class TabState(val tabIndex: Int, val search: String)

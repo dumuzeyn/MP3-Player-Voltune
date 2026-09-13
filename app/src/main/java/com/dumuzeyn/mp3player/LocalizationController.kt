@@ -20,9 +20,9 @@ class LocalizationController(private val host: MainActivityCore) {
             text("Editor", "Редактор"),
             text("Settings", "Настройки"),
         )
-        if (host.navigationState.tabIndex >= host.tabs.size) {
-            host.navigationState.tabIndex = LibraryTabs.HOME
-        }
+        host.navigationState.tabIndex = host.menuConfigurationController.visibleOrFirst(
+            host.navigationState.tabIndex,
+        )
     }
 
     private fun isEnglish(): Boolean = host.appearanceState.language == "en"

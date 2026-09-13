@@ -12,4 +12,19 @@ object LibraryTabs {
     const val FOLDERS = 8
     const val EDITOR = 9
     const val SETTINGS = 10
+
+    @JvmField
+    val ALL: List<Int> = listOf(
+        HOME,
+        SONGS,
+        FAVORITES,
+        PLAYLISTS,
+        SOUND,
+        GENRES,
+        ARTISTS,
+        ALBUMS,
+        FOLDERS,
+        EDITOR,
+        SETTINGS,
+    )
 }

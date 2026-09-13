@@ -124,6 +124,8 @@ open class MainActivityCore : Activity() {
     @JvmField val playlistController = PlaylistController(this)
     @JvmField val mainRenderer = MainRenderer(this)
     @JvmField val uiPreferencesStore = UiPreferencesStore(this)
+    @JvmField val menuConfigurationController = MenuConfigurationController(this)
+    @JvmField val menuConfigurationDialog = MenuConfigurationDialog(this)
     @JvmField val libraryPersistenceController = LibraryPersistenceController(this)
     @JvmField val libraryLoader = LibraryLoader(this, uiHandler)
     @JvmField val soundAnalysisController = SoundAnalysisController(this)
@@ -279,8 +281,17 @@ open class MainActivityCore : Activity() {
 
     fun refreshTabs() = tabsController.refreshTabs()
 
+    fun refreshMenuConfiguration() = tabsController.rebuildTabs()
+
     fun switchTabAnimated(targetIndex: Int, direction: Int) {
-        if (!::tabs.isInitialized || targetIndex == navigationState.tabIndex || navigationState.tabAnimating) return
+        if (
+            !::tabs.isInitialized ||
+            !menuConfigurationController.isVisible(targetIndex) ||
+            targetIndex == navigationState.tabIndex ||
+            navigationState.tabAnimating
+        ) {
+            return
+        }
         navigationState.preferredTabDirection = direction
         swipeController.animateToTab(targetIndex, direction, true, "")
     }
@@ -376,6 +387,7 @@ open class MainActivityCore : Activity() {
 
     fun reloadUiPreferences() {
         uiPreferencesStore.load()
+        menuConfigurationController.load()
         rebuildUi()
     }
 

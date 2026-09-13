@@ -77,6 +77,11 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
                 host.settingsController.resumeWindowText(),
         ) { host.settingsController.openResumeWindowDialog() }
 
+        section(host.tr("Navigation", "Навигация"))
+        addButton(host.tr("Menu sections and order", "Разделы и порядок меню")) {
+            host.menuConfigurationDialog.open()
+        }
+
         section(host.tr("Playback", "Воспроизведение"))
         addButton(host.uninterruptedPlaybackController.settingLabel()) {
             host.uninterruptedPlaybackController.toggle()

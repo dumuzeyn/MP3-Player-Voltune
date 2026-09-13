@@ -84,6 +84,20 @@ internal class TabsController(private val host: MainActivityCore) {
         if (transitionFrom == null) positionIndicatorToActive()
     }
 
+    fun rebuildTabs() {
+        cancelScrollAnimation()
+        transitionFrom = null
+        transitionTo = null
+        host.tabRow.removeAllViews()
+        addTabButtons()
+        host.tabRow.requestLayout()
+        host.tabsScroll.post {
+            attachInfiniteScrollLoop()
+            scrollToActiveNow(false, host.navigationState.tabIndex)
+            positionIndicatorToActive()
+        }
+    }
+
     fun beginTransition(fromIndex: Int, targetIndex: Int, direction: Int) {
         transitionFrom = findNearestButton(fromIndex)
         transitionTo = findDirectionalButton(targetIndex, transitionFrom, direction)
@@ -124,11 +138,10 @@ internal class TabsController(private val host: MainActivityCore) {
     }
 
     fun directionTo(targetIndex: Int): Int {
-        val tabs = host.tabs
-        if (tabs == null || tabs.isEmpty() || targetIndex == host.navigationState.tabIndex) return 1
-        val forward = (targetIndex - host.navigationState.tabIndex + tabs.size) % tabs.size
-        val backward = (host.navigationState.tabIndex - targetIndex + tabs.size) % tabs.size
-        return if (forward <= backward) 1 else -1
+        return host.menuConfigurationController.direction(
+            host.navigationState.tabIndex,
+            targetIndex,
+        )
     }
 
     fun isInsideTabs(event: MotionEvent): Boolean {
@@ -152,14 +165,15 @@ internal class TabsController(private val host: MainActivityCore) {
     }
 
     private fun addTabButtons() {
+        val visibleTabs = host.menuConfigurationController.visibleTabs()
         for (cycle in 0 until MainActivityCore.TAB_CYCLES) {
-            for (index in host.tabs.indices) {
-                val button = host.uiFactory.button(host.tabs[index]).apply {
-                    tag = index
+            for (tabId in visibleTabs) {
+                val button = host.uiFactory.button(host.tabs[tabId]).apply {
+                    tag = tabId
                 }
-                styleTab(button, index)
+                styleTab(button, tabId)
                 button.setOnClickListener {
-                    host.switchTabAnimated(index, directionTo(index))
+                    host.switchTabAnimated(tabId, directionTo(tabId))
                 }
                 host.tabRow.addView(
                     button,
@@ -250,9 +264,9 @@ internal class TabsController(private val host: MainActivityCore) {
     }
 
     private fun scrollToActiveNow(smooth: Boolean, targetIndex: Int) {
-        val boundedIndex = targetIndex.coerceIn(0, host.tabs.size - 1)
-        var left = if (smooth) findSmoothTargetLeft(boundedIndex) else -1
-        if (left < 0) left = centeredCycleTargetLeft(boundedIndex)
+        val visibleTarget = host.menuConfigurationController.visibleOrFirst(targetIndex)
+        var left = if (smooth) findSmoothTargetLeft(visibleTarget) else -1
+        if (left < 0) left = centeredCycleTargetLeft(visibleTarget)
         if (left < 0) return
         if (smooth) animateScrollTo(left) else host.tabsScroll.scrollTo(left, 0)
     }
@@ -282,7 +296,10 @@ internal class TabsController(private val host: MainActivityCore) {
     }
 
     private fun centeredCycleTargetLeft(targetIndex: Int): Int {
-        val childIndex = host.tabs.size * (MainActivityCore.TAB_CYCLES / 2) + targetIndex
+        val visibleTabs = host.menuConfigurationController.visibleTabs()
+        val targetPosition = visibleTabs.indexOf(targetIndex)
+        if (targetPosition < 0) return -1
+        val childIndex = visibleTabs.size * (MainActivityCore.TAB_CYCLES / 2) + targetPosition
         if (childIndex >= host.tabRow.childCount) return -1
         val child = host.tabRow.getChildAt(childIndex)
         return child.left - max(0, (host.tabsScroll.width - child.width) / 2)

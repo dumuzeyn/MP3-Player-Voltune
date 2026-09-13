@@ -34,6 +34,7 @@ internal class MainActivityCoordinator(private val host: MainActivityCore) {
     fun onCreate(savedInstanceState: Bundle?) {
         SettingsDefaults.resetForVersion243(host)
         host.uiPreferencesStore.load()
+        host.menuConfigurationController.load()
         host.playbackUiState.sleepTimerEndsAt = PlaybackSleepTimer.readEndsAt(host)
         if (!DeviceAudioPermissionController.requestIfNeeded(host)) {
             NotificationPermissionController.requestIfNeeded(host)

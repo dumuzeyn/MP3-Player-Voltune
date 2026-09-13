@@ -37,7 +37,12 @@ internal class SwipeController(private val host: MainActivityCore) {
 
     fun handle(event: MotionEvent): Boolean {
         val tabs = host.tabs
-        if (tabs == null || tabs.isEmpty() || host.navigationState.tabAnimating && !consuming) {
+        if (
+            tabs == null ||
+            tabs.isEmpty() ||
+            host.menuConfigurationController.visibleCount() < 2 ||
+            host.navigationState.tabAnimating && !consuming
+        ) {
             return false
         }
         if ((host.overlayHost?.childCount ?: 0) > 0) return false
@@ -60,7 +65,13 @@ internal class SwipeController(private val host: MainActivityCore) {
 
     fun animateToTab(target: Int, requestedDirection: Int, saveHistory: Boolean, search: String?) {
         val tabs = host.tabs
-        if (tabs == null || target !in tabs.indices) return
+        if (
+            tabs == null ||
+            target !in tabs.indices ||
+            !host.menuConfigurationController.isVisible(target)
+        ) {
+            return
+        }
         if (target == host.navigationState.tabIndex) {
             host.navigationState.search = search.orEmpty()
             host.render()
@@ -378,12 +389,10 @@ internal class SwipeController(private val host: MainActivityCore) {
         value.coerceIn(-transitionDistance * 0.96f, transitionDistance * 0.96f)
 
     private fun adjacentIndex(requestedDirection: Int): Int {
-        val count = host.tabs.size
-        return if (requestedDirection > 0) {
-            (host.navigationState.tabIndex + 1) % count
-        } else {
-            (host.navigationState.tabIndex - 1 + count) % count
-        }
+        return host.menuConfigurationController.adjacent(
+            host.navigationState.tabIndex,
+            requestedDirection,
+        )
     }
 
     private companion object {
