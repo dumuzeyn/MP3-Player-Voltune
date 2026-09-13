@@ -37,7 +37,7 @@ public class VoltuneMacrobenchmark {
 
     @Test public void hotStartup() {
         Assume.assumeTrue("Hot startup tracing requires Android 14+ on vendor devices",
-                Build.VERSION.SDK_INT >= 34);
+                Build.VERSION.SDK_INT >= 34 && !isEmulator());
         startup(StartupMode.HOT);
     }
 
@@ -45,12 +45,12 @@ public class VoltuneMacrobenchmark {
         rule.measureRepeated(PACKAGE_NAME,
                 interactionMetrics(), compilationMode(), StartupMode.COLD, 5,
                 scope -> {
-                    scope.startActivityAndWait(benchmarkLibraryIntent());
+                    scope.startActivityAndWait(benchmarkIntent(1000));
                     scope.pressHome();
                     return Unit.INSTANCE;
                 },
                 scope -> {
-                    scope.startActivityAndWait();
+                    scope.startActivityAndWait(benchmarkIntent(1000));
                     scope.getDevice().swipe(500, 1600, 500, 400, 20);
                     clickText(scope, "Songs", "\u041f\u0435\u0441\u043d\u0438");
                     clickText(scope, "Benchmark song 00000", "Benchmark song 00000");
@@ -68,13 +68,13 @@ public class VoltuneMacrobenchmark {
         rule.measureRepeated(PACKAGE_NAME,
                 Arrays.asList(new FrameTimingMetric()), compilationMode(), StartupMode.WARM, 5,
                 scope -> {
-                    scope.startActivityAndWait(benchmarkLibraryIntent());
+                    scope.startActivityAndWait(benchmarkIntent(1000));
                     clickText(scope, "Songs", "\u041f\u0435\u0441\u043d\u0438");
                     scope.pressHome();
                     return Unit.INSTANCE;
                 },
                 scope -> {
-                    scope.startActivityAndWait();
+                    scope.startActivityAndWait(benchmarkIntent(1000));
                     clickText(scope, "Home", "\u0413\u043b\u0430\u0432\u043d\u0430\u044f");
                     clickText(scope, "Albums", "\u0410\u043b\u044c\u0431\u043e\u043c\u044b");
                     clickText(scope, "Home", "\u0413\u043b\u0430\u0432\u043d\u0430\u044f");
@@ -93,13 +93,12 @@ public class VoltuneMacrobenchmark {
                 || Build.PRODUCT.startsWith("sdk_gphone");
     }
 
-    private static Intent benchmarkLibraryIntent() {
+    private static Intent benchmarkIntent(int trackCount) {
         return new Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setComponent(new ComponentName(
                         PACKAGE_NAME,
-                        "com.dumuzeyn.mp3player.LauncherLight"))
-                .putExtra("voltuneBenchmarkTrackCount", 1000);
+                        "com.dumuzeyn.mp3player.BenchmarkLauncher"))
+                .putExtra("voltuneBenchmarkTrackCount", trackCount);
     }
 
     private void startup(StartupMode mode) {
@@ -107,11 +106,14 @@ public class VoltuneMacrobenchmark {
                 Arrays.asList(new StartupTimingMetric()),
                 compilationMode(), mode, 5,
                 scope -> {
+                    if (mode != StartupMode.COLD) {
+                        scope.startActivityAndWait(benchmarkIntent(0));
+                    }
                     scope.pressHome();
                     return Unit.INSTANCE;
                 },
                 scope -> {
-                    scope.startActivityAndWait();
+                    scope.startActivityAndWait(benchmarkIntent(0));
                     return Unit.INSTANCE;
                 });
     }

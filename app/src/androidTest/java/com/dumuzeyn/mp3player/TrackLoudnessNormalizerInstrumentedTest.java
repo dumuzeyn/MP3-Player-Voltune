@@ -50,7 +50,11 @@ public class TrackLoudnessNormalizerInstrumentedTest {
         assertEquals(0.0f, normalizer.cachedGainDb(track), 0.001f);
         assertFalse(cache.contains(resultKey));
         normalizer.clearCache();
-        assertTrue(cache.getAll().isEmpty());
+        // Reference track identities remain for the next analysis; measurements do not.
+        for (String key : cache.getAll().keySet()) {
+            assertFalse(key, key.startsWith("r128_result_") || key.startsWith("r128_error_"));
+        }
+        assertEquals(0.0f, normalizer.cachedGainDb(track), 0.001f);
     }
 
     @Test

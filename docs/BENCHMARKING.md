@@ -37,3 +37,19 @@ Device: realme GT Neo2 5G (`RMX3370`), Android 13 / API 33, 8 CPU cores, about 7
 The Android 13 firmware rejected the ART command used by `CompilationMode.Partial` and returned incomplete FrameTimeline data. The run therefore used `CompilationMode.Ignore`; hot-start tracing and Baseline Profile generation were skipped on this device and remain enabled for Android 14+. The 10,000-record value measures initial display while the scenario also performs a scroll and switches Songs/Favorites; it is not presented as an Android 13 frame-time result.
 
 Raw JSON and Perfetto traces are generated under `benchmark/build/outputs/connected_android_test_additional_output`. They are build artifacts and are intentionally not committed to Git.
+
+## Post-migration emulator verification
+
+Run date: 2026-09-09. Migration commit: `8cb32e1`.
+
+Device: headless `VoltuneTestApi35` AVD, Android 15 / API 35. The benchmark app was minified and non-debuggable. A benchmark-only launcher component was used so runtime theme alias changes cannot invalidate repeated startup measurements.
+
+| Scenario | Result |
+| --- | ---: |
+| Cold startup, time to initial display | 602.8 ms median, 573.9-1869.2 ms |
+| Warm startup, time to initial display | 1001.9 ms median, 462.7-2913.3 ms |
+| 1,000-track library, playback and section switches | CPU frame P50 37.4 ms, P90 62.0 ms |
+
+Baseline Profile collection, cold startup, warm startup, and the large-library interaction scenario passed. Hot startup and the dedicated repeated Home-transition frame test are intentionally skipped on emulators because their FrameTimeline/RenderThread data is not reliable there.
+
+These AVD values are a reproducible regression checkpoint, not a before/after device comparison. A new physical-device run with stable thermal state is still required before publishing post-migration performance claims or comparing against the recorded realme GT Neo2 result.
