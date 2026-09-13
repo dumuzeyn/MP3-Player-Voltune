@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player
 
 import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -148,7 +149,7 @@ internal class SongAdapter(private val host: MainActivityCore) :
             title.setTextColor(host.primaryText)
             title.ellipsize = TextUtils.TruncateAt.END
             duration.setTextColor(host.secondaryText)
-            NowPlayingIndicator.style(marker, host.yellow)
+            NowPlayingIndicator.style(marker, host.yellowDark)
             configureButton(play)
             host.uiFactory.applyPlainIconStyle(play, host.purple)
 
@@ -250,6 +251,9 @@ internal class SongAdapter(private val host: MainActivityCore) :
             button.elevation = 0f
             button.minWidth = 0
             button.minHeight = 0
+            button.gravity = Gravity.CENTER
+            button.setSingleLine(true)
+            button.textSize = 24f
             button.setPadding(0, 0, 0, 0)
         }
     }

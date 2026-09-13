@@ -33,7 +33,7 @@ public class SongMetadataAlignmentInstrumentedTest {
         View duration = item.findViewById(R.id.song_duration);
         assertEquals(waveform.getTop(), duration.getTop());
         assertEquals(waveform.getBottom(), duration.getBottom());
-        assertEquals(dp(context, 4), card.getHeight() - waveform.getBottom());
+        assertEquals(dp(context, 6), card.getHeight() - waveform.getBottom());
         assertTrue(waveform.getTop() >= item.findViewById(R.id.song_title).getBottom());
 
         View marker = item.findViewById(R.id.song_current_marker);

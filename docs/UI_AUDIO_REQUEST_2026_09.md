@@ -319,6 +319,9 @@ It is not a release-completion declaration.
 - Folder grouping resolves MediaStore relative paths in one indexed query instead
   of displaying the URI authority segment. Adding a folder now compares against
   the real queue, so it also works before playback has started.
+- Playback markers use the stronger opaque gold accent across Home, Favorites and
+  folders. The recyclable Songs row keeps the shared 24sp play/pause symbol and
+  raises waveform metadata by 2dp to preserve its pre-resize alignment.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

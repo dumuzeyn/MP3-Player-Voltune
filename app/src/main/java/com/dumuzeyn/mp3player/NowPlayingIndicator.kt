@@ -9,7 +9,7 @@ import android.widget.FrameLayout
 /** Creates the shared current-track marker used by every library surface. */
 object NowPlayingIndicator {
     @JvmStatic
-    fun create(host: MainActivityCore): View = View(host).also { style(it, host.yellow) }
+    fun create(host: MainActivityCore): View = View(host).also { style(it, host.yellowDark) }
 
     @JvmStatic
     fun style(indicator: View, color: Int) {
