@@ -22,6 +22,7 @@ class LibraryLoader(
     }
 
     class Snapshot(
+        context: Context,
         tracks: ArrayList<Track>,
         favorites: HashSet<String>,
         playlists: ArrayList<Playlist>,
@@ -31,7 +32,7 @@ class LibraryLoader(
         @JvmField val favorites = HashSet(favorites)
         @JvmField val playlists = ArrayList(playlists)
         @JvmField val homeContent: HomeContent =
-            HomeContentBuilder().build(this.tracks, this.favorites, this.playlists)
+            HomeContentBuilder(context).build(this.tracks, this.favorites, this.playlists)
     }
 
     private val job = SupervisorJob()
@@ -56,7 +57,7 @@ class LibraryLoader(
         val playlistSnapshot = ArrayList(playlists)
         scope.launch {
             val content = LibraryDatabase(context.applicationContext).use { database ->
-                HomeContentBuilder().build(
+                HomeContentBuilder(context).build(
                     database.loadTracks(),
                     favoriteSnapshot,
                     playlistSnapshot,
@@ -78,7 +79,7 @@ class LibraryLoader(
         val favoriteSnapshot = HashSet(favorites)
         val playlistSnapshot = ArrayList(playlists)
         scope.launch {
-            val content = HomeContentBuilder().build(
+            val content = HomeContentBuilder(context).build(
                 trackSnapshot,
                 favoriteSnapshot,
                 playlistSnapshot,
@@ -100,6 +101,7 @@ class LibraryLoader(
         BenchmarkLibrarySeeder.seedIfRequested(appContext, benchmarkTrackCount)
         LibraryDatabase(appContext).use { database ->
             Snapshot(
+                appContext,
                 database.loadTracks(),
                 database.loadFavorites(),
                 database.loadPlaylists(),
@@ -109,6 +111,7 @@ class LibraryLoader(
     } catch (error: RuntimeException) {
         VoltuneLog.failure("library_load_failed", error)
         Snapshot(
+            context,
             ArrayList(),
             HashSet(),
             ArrayList(),

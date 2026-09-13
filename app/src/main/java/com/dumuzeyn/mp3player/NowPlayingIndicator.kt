@@ -14,7 +14,7 @@ object NowPlayingIndicator {
     @JvmStatic
     fun style(indicator: View, color: Int) {
         indicator.background = GradientDrawable().apply {
-            setColor(color)
+            setColor(color or 0xFF000000.toInt())
             cornerRadius = indicator.resources.getDimension(R.dimen.now_playing_indicator_width)
         }
     }

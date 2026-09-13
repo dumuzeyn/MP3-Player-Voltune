@@ -19,9 +19,10 @@ internal class PlaylistController(private val host: MainActivityCore) {
         marker: View,
         tracks: ArrayList<Track>,
         generation: Int,
+        cover: RotatingCoverImageView? = null,
     ) {
         beginPlaybackBindings(generation)
-        PlaybackBinding(playButton, marker, ArrayList(tracks), generation).also {
+        PlaybackBinding(playButton, marker, ArrayList(tracks), generation, cover).also {
             playbackBindings.add(it)
             it.apply()
         }
@@ -116,6 +117,7 @@ internal class PlaylistController(private val host: MainActivityCore) {
         private val marker: View,
         private val tracks: ArrayList<Track>,
         private val generation: Int,
+        private val cover: RotatingCoverImageView?,
     ) {
         fun isCurrentGeneration(): Boolean =
             generation == playbackGeneration &&
@@ -131,6 +133,7 @@ internal class PlaylistController(private val host: MainActivityCore) {
                 playButton,
                 host.playbackQueueController.isPlayingCollection(tracks),
             )
+            cover?.updatePlaybackState()
         }
     }
 }

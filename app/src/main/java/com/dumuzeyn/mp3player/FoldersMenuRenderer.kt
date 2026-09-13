@@ -2,10 +2,12 @@ package com.dumuzeyn.mp3player
 
 import android.text.TextUtils
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 
 class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
     override fun render() {
+        host.playlistController.beginPlaybackBindings(host.navigationState.songRenderGeneration)
         val folders = host.libraryState.homeContent.folders
         if (folders.isEmpty()) {
             host.list.addView(
@@ -56,6 +58,22 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
         }
         row.addView(play, host.uiFactory.square(44))
         row.setOnClickListener { host.overlayController.openGroup(name, tracks) }
-        return host.uiFactory.spacedLibraryCard(row)
+        val marker = NowPlayingIndicator.create(host).apply {
+            visibility = if (host.playbackQueueController.isCurrentCollection(tracks)) {
+                View.VISIBLE
+            } else {
+                View.INVISIBLE
+            }
+        }
+        return host.uiFactory.spacedLibraryCard(FrameLayout(host).apply {
+            addView(row, FrameLayout.LayoutParams(-1, host.uiFactory.libraryCardHeight()))
+            addView(marker, NowPlayingIndicator.layoutParams(host))
+            host.playlistController.bindPlaybackState(
+                play,
+                marker,
+                tracks,
+                host.navigationState.songRenderGeneration,
+            )
+        })
     }
 }

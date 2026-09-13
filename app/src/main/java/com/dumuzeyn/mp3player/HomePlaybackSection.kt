@@ -17,6 +17,7 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
     private val duration: TextView
     private val waveform: WaveformView
     private val play: Button
+    private val marker: View
     private var staticTrackKeys: Set<String> = emptySet()
     private var boundTrack: Track? = null
 
@@ -90,6 +91,8 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         }
         row.addView(play, host.uiFactory.square(44))
         container.addView(row, FrameLayout.LayoutParams(-1, host.uiFactory.libraryCardHeight()))
+        marker = NowPlayingIndicator.create(host)
+        container.addView(marker, NowPlayingIndicator.layoutParams(host))
         addView(host.uiFactory.spacedLibraryCard(container))
         visibility = GONE
     }
@@ -104,10 +107,12 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         if (current == null || staticTrackKeys.contains(key(current))) {
             boundTrack = current
             waveform.setState(host.purpleSoft, host.yellow, false)
+            marker.visibility = View.INVISIBLE
             visibility = GONE
             return
         }
         visibility = VISIBLE
+        marker.visibility = View.VISIBLE
         val previous = boundTrack
         if (previous == null || previous.uri != current.uri) {
             boundTrack = current

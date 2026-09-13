@@ -33,15 +33,15 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
             setPadding(host.dp(7), host.dp(4), host.dp(6), host.dp(4))
         }
         host.uiFactory.setSurface(card, host.panel, true, host.appearanceState.playlistCardOpacity)
-        val cover = host.uiFactory.staticCoverView()
+        val cover = host.uiFactory.coverView()
         val fallbackColor = host.purpleSoft
         if (tracks.isEmpty()) {
             cover.setBackgroundColor(fallbackColor)
         } else {
             host.artworkUi.loadUnregisteredCover(cover, tracks[0], fallbackColor, CoverLoader.THUMB_SIZE)
+            if (cover is RotatingCoverImageView) cover.bindPlaylistTracks(tracks)
         }
-        val coverSize = host.resources.getDimensionPixelSize(R.dimen.playlist_cover_size)
-        card.addView(cover, LinearLayout.LayoutParams(coverSize, coverSize))
+        card.addView(cover, host.uiFactory.libraryArtwork())
 
         val titleColumn = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
@@ -98,6 +98,7 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
                 marker,
                 tracks,
                 host.navigationState.songRenderGeneration,
+                cover as? RotatingCoverImageView,
             )
             minimumHeight = cardHeight
         }

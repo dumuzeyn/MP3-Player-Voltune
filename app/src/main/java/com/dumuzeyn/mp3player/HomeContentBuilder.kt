@@ -1,6 +1,12 @@
 package com.dumuzeyn.mp3player
 
-class HomeContentBuilder {
+import android.content.Context
+
+class HomeContentBuilder private constructor(private val folderGrouping: FolderGrouping) {
+    constructor() : this(FolderGrouping())
+
+    constructor(context: Context) : this(FolderGrouping(context))
+
     private val smartResolver = SmartPlaylistResolver()
 
     fun build(tracks: List<Track>, favorites: Set<String>, playlists: List<Playlist>): HomeContent {
@@ -18,7 +24,7 @@ class HomeContentBuilder {
             playlists.takeLast(SECTION_LIMIT).asReversed(),
             popularGroups(groups.artists),
             popularGroups(groups.albums),
-            FolderGrouping().group(tracks),
+            folderGrouping.group(tracks),
             groups.artists,
             groups.albums,
             groups.genres,

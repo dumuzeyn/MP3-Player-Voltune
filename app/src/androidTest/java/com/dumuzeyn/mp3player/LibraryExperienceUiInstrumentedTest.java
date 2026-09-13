@@ -146,7 +146,7 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Compact playlist card was not laid out", 5000L,
                 () -> host.list.findViewById(R.id.playlist_card) != null
                         && host.list.findViewById(R.id.playlist_card).getHeight() > 0);
-        ImageView playlistCover = findStaticPlaylistCover(host.list);
+        ImageView playlistCover = findPlaylistCover(host.list);
         assertNotNull(playlistCover);
         View playlistCard = host.list.findViewById(R.id.playlist_card);
         assertNotNull(playlistCard);
@@ -156,7 +156,7 @@ public class LibraryExperienceUiInstrumentedTest {
         assertVisibleOutline(playlistCard);
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
                 playlistCover.getHeight());
-        assertFalse("Playlist cover must stay static",
+        assertTrue("Playlist cover must support circular rotation",
                 playlistCover instanceof RotatingCoverImageView);
         assertTrue("Playlist card must not contain a moving ticker",
                 !containsViewClassName(host.list, "SmoothPlaylistTicker"));
@@ -228,6 +228,57 @@ public class LibraryExperienceUiInstrumentedTest {
                 () -> host.overlayHost.getChildCount() > 0);
         dispatchTouch(song, MotionEvent.obtain(down, SystemClock.uptimeMillis(),
                 MotionEvent.ACTION_UP, 20, 20, 0));
+    }
+
+    @Test
+    public void collectionsExposePlaybackStateRotationAndFolderQueueAction() {
+        MainActivityCore host = launchWithLibrary();
+        instrumentation.runOnMainSync(() -> {
+            host.appearanceState.circularCovers = true;
+            host.playbackQueueController.clear();
+        });
+        openTabByClick(host, LibraryTabs.FOLDERS);
+        View addFolder = findDescription(host.list, "Добавить папку в очередь");
+        assertNotNull(addFolder);
+        instrumentation.runOnMainSync(addFolder::performClick);
+        InstrumentedTestSupport.waitFor("Folder was not added to the queue", 5000L,
+                () -> host.playbackUiState.queue.size() == host.libraryState.tracks.size());
+
+        openTabByClick(host, LibraryTabs.GENRES);
+        applyCollectionPlaybackState(host, host.libraryState.tracks, true);
+        View groupCard = host.list.findViewById(R.id.group_card);
+        assertNotNull(groupCard);
+        ViewGroup groupContainer = (ViewGroup) groupCard.getParent();
+        View groupMarker = groupContainer.getChildAt(1);
+        assertEquals(View.VISIBLE, groupMarker.getVisibility());
+        assertEquals(255, groupMarker.getBackground().getAlpha());
+        assertNotNull(findText(groupContainer, Button.class, "Ⅱ"));
+        RotatingCoverImageView groupCover = find(groupContainer, RotatingCoverImageView.class);
+        assertNotNull(groupCover);
+        float groupRotation = groupCover.getRotation();
+        SystemClock.sleep(250L);
+        assertTrue("Playing group cover did not rotate",
+                Math.abs(groupCover.getRotation() - groupRotation) > 0.1f);
+
+        instrumentation.runOnMainSync(() -> {
+            Playlist playlist = new Playlist("Playback playlist");
+            for (Track track : host.libraryState.tracks) playlist.uris.add(track.uri);
+            host.libraryState.playlists.add(playlist);
+        });
+        openTabByClick(host, LibraryTabs.PLAYLISTS);
+        applyCollectionPlaybackState(host, host.libraryState.tracks, true);
+        View playlistCard = host.list.findViewById(R.id.playlist_card);
+        assertNotNull(playlistCard);
+        ViewGroup playlistContainer = (ViewGroup) playlistCard.getParent();
+        assertEquals(View.VISIBLE, playlistContainer.getChildAt(1).getVisibility());
+        assertNotNull(findText(playlistContainer, Button.class, "Ⅱ"));
+        RotatingCoverImageView playlistCover = find(
+                playlistContainer, RotatingCoverImageView.class);
+        assertNotNull(playlistCover);
+        float playlistRotation = playlistCover.getRotation();
+        SystemClock.sleep(250L);
+        assertTrue("Playing playlist cover did not rotate",
+                Math.abs(playlistCover.getRotation() - playlistRotation) > 0.1f);
     }
 
     @Test
@@ -410,6 +461,24 @@ public class LibraryExperienceUiInstrumentedTest {
         event.recycle();
     }
 
+    private void applyCollectionPlaybackState(
+            MainActivityCore host, ArrayList<Track> tracks, boolean playing) {
+        instrumentation.runOnMainSync(() -> {
+            host.playbackUiState.queue.clear();
+            host.playbackUiState.queue.addAll(tracks);
+            Track current = tracks.get(0);
+            ArrayList<String> mediaIds = new ArrayList<>();
+            for (Track track : tracks) mediaIds.add(MediaItemMapper.stableHash(track.uri));
+            String mediaId = mediaIds.get(0);
+            host.updatePlaybackSnapshot(new PlaybackSnapshot(
+                    mediaIds, mediaId, 0, 1000L, current.durationMs, playing,
+                    Player.STATE_READY, Player.REPEAT_MODE_OFF, false,
+                    PlaybackPhase.READY, PauseReason.NONE, StopReason.NONE,
+                    null, System.currentTimeMillis()));
+            host.refreshAfterTrackChange();
+        });
+    }
+
     private void dispatchActivityTouch(MainActivityCore host, MotionEvent event) {
         instrumentation.runOnMainSync(() -> host.dispatchTouchEvent(event));
         event.recycle();
@@ -489,14 +558,14 @@ public class LibraryExperienceUiInstrumentedTest {
         return null;
     }
 
-    private static ImageView findStaticPlaylistCover(View view) {
-        if (view instanceof ImageView && !(view instanceof RotatingCoverImageView)) {
+    private static ImageView findPlaylistCover(View view) {
+        if (view instanceof RotatingCoverImageView) {
             return (ImageView) view;
         }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int index = 0; index < group.getChildCount(); index++) {
-                ImageView found = findStaticPlaylistCover(group.getChildAt(index));
+                ImageView found = findPlaylistCover(group.getChildAt(index));
                 if (found != null) return found;
             }
         }

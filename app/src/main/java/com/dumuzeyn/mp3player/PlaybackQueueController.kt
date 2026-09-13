@@ -55,12 +55,12 @@ class PlaybackQueueController(
     }
 
     fun add(track: Track?) {
-        if (track == null || containsUri(activeQueue(), track.uri)) return
+        if (track == null || containsUri(host.playbackUiState.queue, track.uri)) return
         playback.addQueueItem(track)
     }
 
     fun addAll(tracks: List<Track?>) {
-        val seen = activeQueue().mapTo(HashSet()) { it.uri }
+        val seen = host.playbackUiState.queue.mapTo(HashSet()) { it.uri }
         val additions = tracks.mapNotNullTo(ArrayList()) { track ->
             track?.takeIf { seen.add(it.uri) }
         }

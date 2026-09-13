@@ -312,6 +312,13 @@ It is not a release-completion declaration.
 - Library cards use matching 6dp content insets on both sides. The system
   scrollbar fits in that narrow trailing gutter without touching a card and
   fades once the list is idle.
+- Thematic, genre, artist, album, folder and playlist cards now share live
+  collection playback bindings: their opaque gold marker, play/pause state and
+  circular cover rotation update without rebuilding the menu. Continue listening
+  uses the same marker, and playlist artwork follows the shared left inset.
+- Folder grouping resolves MediaStore relative paths in one indexed query instead
+  of displaying the URI authority segment. Adding a folder now compares against
+  the real queue, so it also works before playback has started.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.
