@@ -17,7 +17,17 @@ import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 
 internal class AudioEditorDialogs(private val host: MainActivityCore) {
-    enum class Focus { FULL, ANALYSIS, TRIM, VOLUME, SPLIT, REMOVE_RANGE }
+    enum class Focus {
+        POSITION,
+        ANALYSIS,
+        TRIM,
+        VOLUME,
+        SPLIT,
+        REMOVE_RANGE,
+        CLEAN_SPEECH,
+        SEPARATE_STEMS,
+        REMOVE_VOCALS,
+    }
 
     private val controller get() = host.audioEditorController
 
@@ -75,145 +85,184 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
     }
 
     @JvmOverloads
-    fun edit(clip: AudioEditClip, focus: Focus = Focus.FULL) {
+    fun edit(clip: AudioEditClip, focus: Focus = Focus.POSITION) {
         if (controller.busy) return
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
         panel.addView(host.uiFactory.centeredDialogTitle(focusTitle(focus), 18))
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(host).apply { addView(content) }
-        panel.addView(scroll, LinearLayout.LayoutParams(-1, bodyHeight(340, 230)))
+        panel.addView(scroll, LinearLayout.LayoutParams(-1, bodyHeight(390, 210)))
         content.addView(host.uiFactory.text(clip.title, 15, true))
-        val waveform = AudioEditorWaveformView(host, clip)
-        content.addView(waveform, LinearLayout.LayoutParams(-1, minOf(host.dp(140), bodyHeight(340, 230))))
-        val analysis = AudioEditorAnalysisView(host, clip)
-        content.addView(analysis)
-        val from = secondsField(content, host.tr("Start, s", "Начало, с"), clip.startMs)
-        val to = secondsField(content, host.tr("End, s", "Конец, с"), clip.endMs)
-        var updatingRange = false
-        waveform.onSelection = { start, end ->
-            updatingRange = true
-            from.setText(seconds(start))
-            to.setText(seconds(end))
-            updatingRange = false
-            analysis.selection(start, end)
+
+        fun close() = host.overlayHost.removeView(shade)
+        fun preview(selected: () -> AudioEditClip) {
+            content.addView(AudioEditorPreviewControls(host, {
+                AudioEditProject(listOf(selected().copy(offsetMs = 0, lane = 0)))
+            }, stopOnDetach = true))
         }
-        val rangeWatcher = object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                if (!updatingRange) runCatching {
-                    waveform.setSelection(millis(from), millis(to))
-                    analysis.selection(millis(from), millis(to))
+        fun primary(label: String, run: () -> Unit) {
+            panel.addView(action(label, run).apply { host.uiFactory.applyPrimaryButtonStyle(this) })
+        }
+        fun lanePicker(): Spinner {
+            content.addView(host.uiFactory.text(host.tr("Lane", "Дорожка"), 14, false))
+            return Spinner(host).apply {
+                adapter = ArrayAdapter(host, android.R.layout.simple_spinner_dropdown_item,
+                    (1..AudioEditClip.MAX_LANES).map(Int::toString))
+                setSelection(clip.lane)
+                content.addView(this, LinearLayout.LayoutParams(-1, host.dp(48)))
+            }
+        }
+        fun waveform(): AudioEditorWaveformView = AudioEditorWaveformView(host, clip).also {
+            content.addView(it, LinearLayout.LayoutParams(-1, minOf(host.dp(120), bodyHeight(390, 210))))
+        }
+        fun range(waveform: AudioEditorWaveformView): Pair<EditText, EditText> {
+            val from = secondsField(content, host.tr("Start, s", "Начало, с"), clip.startMs)
+            val to = secondsField(content, host.tr("End, s", "Конец, с"), clip.endMs)
+            var updating = false
+            waveform.onSelection = { start, end ->
+                updating = true
+                from.setText(seconds(start))
+                to.setText(seconds(end))
+                updating = false
+            }
+            val watcher = object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    if (!updating) runCatching { waveform.setSelection(millis(from), millis(to)) }
+                }
+                override fun afterTextChanged(s: Editable?) = Unit
+            }
+            from.addTextChangedListener(watcher)
+            to.addTextChangedListener(watcher)
+            return from to to
+        }
+
+        when (focus) {
+            Focus.POSITION -> {
+                val offset = secondsField(content, host.tr("Timeline position, s", "Позиция на шкале, с"), clip.offsetMs)
+                val lane = lanePicker()
+                preview { clip }
+                primary(host.tr("Apply position", "Применить положение")) {
+                    runCatching { clip.copy(offsetMs = millis(offset), lane = lane.selectedItemPosition) }
+                        .onSuccess { if (controller.change { project -> project.replace(it) }) close() }
+                        .onFailure { offset.error = host.tr("Check the position", "Проверьте положение") }
                 }
             }
-            override fun afterTextChanged(s: Editable?) = Unit
-        }
-        from.addTextChangedListener(rangeWatcher)
-        to.addTextChangedListener(rangeWatcher)
-        val offset = secondsField(content, host.tr("Timeline position, s", "Позиция на шкале, с"), clip.offsetMs)
-        content.addView(host.uiFactory.text(host.tr("Lane", "Дорожка"), 14, false))
-        val lane = Spinner(host).apply {
-            adapter = ArrayAdapter(host, android.R.layout.simple_spinner_dropdown_item,
-                (1..AudioEditClip.MAX_LANES).map(Int::toString))
-            setSelection(clip.lane)
-        }
-        content.addView(lane, LinearLayout.LayoutParams(-1, host.dp(48)))
-        val level = host.uiFactory.text("${host.tr("Volume", "Громкость")}: ${(clip.gain * 100).toInt()}%", 14, false)
-        content.addView(level)
-        val gain = SeekBar(host).apply { max = 100; progress = (clip.gain * 100).toInt() }
-        host.uiFactory.applySeekBarColors(gain)
-        gain.contentDescription = host.tr("Clip volume", "Громкость фрагмента")
-        gain.setOnSeekBarChangeListener(listener { value ->
-            level.text = "${host.tr("Volume", "Громкость")}: $value%"
-        })
-        content.addView(gain, LinearLayout.LayoutParams(-1, host.dp(48)))
-        content.addView(AudioEditorPreviewControls(host, {
-            AudioEditProject(listOf(clip.copy(startMs = millis(from), endMs = millis(to),
-                offsetMs = 0, lane = 0, gain = gain.progress / 100f)))
-        }, stopOnDetach = true))
-        val cutLabel = host.uiFactory.text("", 14, false)
-        content.addView(cutLabel)
-        val cut = SeekBar(host).apply {
-            max = 1000
-            progress = 500
-            contentDescription = host.tr("Split position", "Точка разделения")
-        }
-        fun cutPosition() = waveform.cursorMs
-        fun updateCut() { cutLabel.text = host.tr("Split at ", "Разделить в ") + seconds(cutPosition()) + host.tr(" s", " с") }
-        host.uiFactory.applySeekBarColors(cut)
-        cut.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(bar: SeekBar, value: Int, fromUser: Boolean) {
-                if (fromUser) waveform.setCursor(clip.startMs + clip.durationMs * value / 1000)
+            Focus.ANALYSIS -> {
+                val waveform = waveform()
+                val analysis = AudioEditorAnalysisView(host, clip)
+                waveform.onSelection = analysis::selection
+                content.addView(analysis)
+                preview { clip }
+            }
+            Focus.TRIM -> {
+                val waveform = waveform()
+                val (from, to) = range(waveform)
+                preview { clip.copy(startMs = millis(from), endMs = millis(to)) }
+                primary(host.tr("Apply trim", "Применить обрезку")) {
+                    runCatching { clip.copy(startMs = millis(from), endMs = millis(to)) }
+                        .onSuccess { if (controller.change { project -> project.replace(it) }) close() }
+                        .onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
+                }
+            }
+            Focus.VOLUME -> {
+                val level = host.uiFactory.text(
+                    "${host.tr("Volume", "Громкость")}: ${(clip.gain * 100).toInt()}%",
+                    14,
+                    false,
+                )
+                content.addView(level)
+                val gain = SeekBar(host).apply {
+                    max = 100
+                    progress = (clip.gain * 100).toInt()
+                    contentDescription = host.tr("Clip volume", "Громкость фрагмента")
+                    setOnSeekBarChangeListener(listener { value ->
+                        level.text = "${host.tr("Volume", "Громкость")}: $value%"
+                    })
+                }
+                host.uiFactory.applySeekBarColors(gain)
+                content.addView(gain, LinearLayout.LayoutParams(-1, host.dp(48)))
+                preview { clip.copy(gain = gain.progress / 100f) }
+                primary(host.tr("Apply volume", "Применить громкость")) {
+                    if (controller.change { it.replace(clip.copy(gain = gain.progress / 100f)) }) close()
+                }
+            }
+            Focus.SPLIT -> {
+                val waveform = waveform()
+                val cutLabel = host.uiFactory.text("", 14, false)
+                content.addView(cutLabel)
+                val cut = SeekBar(host).apply {
+                    max = 1000
+                    progress = 500
+                    contentDescription = host.tr("Split position", "Точка разделения")
+                }
+                fun updateCut() {
+                    cutLabel.text = host.tr("Split at ", "Разделить в ") + seconds(waveform.cursorMs) +
+                        host.tr(" s", " с")
+                }
+                host.uiFactory.applySeekBarColors(cut)
+                cut.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(bar: SeekBar, value: Int, fromUser: Boolean) {
+                        if (fromUser) waveform.setCursor(clip.startMs + clip.durationMs * value / 1000)
+                        updateCut()
+                    }
+                    override fun onStartTrackingTouch(bar: SeekBar) = Unit
+                    override fun onStopTrackingTouch(bar: SeekBar) = Unit
+                })
+                waveform.onCursor = { value ->
+                    cut.progress = ((value - clip.startMs) * 1000 / clip.durationMs).toInt()
+                    updateCut()
+                }
                 updateCut()
+                content.addView(cut, LinearLayout.LayoutParams(-1, host.dp(48)))
+                preview { clip }
+                primary(host.tr("Split", "Разделить")) {
+                    if (controller.change { it.split(clip.id, waveform.cursorMs) }) close()
+                }
             }
-            override fun onStartTrackingTouch(bar: SeekBar) = Unit
-            override fun onStopTrackingTouch(bar: SeekBar) = Unit
-        })
-        waveform.onCursor = { value ->
-            cut.progress = ((value - clip.startMs) * 1000 / clip.durationMs).toInt()
-            updateCut()
+            Focus.REMOVE_RANGE -> {
+                val waveform = waveform()
+                val (from, to) = range(waveform)
+                preview { clip.copy(startMs = millis(from), endMs = millis(to)) }
+                primary(host.tr("Remove selected range", "Удалить выделенный отрезок")) {
+                    runCatching { millis(from) to millis(to) }.onSuccess { selected ->
+                        if (controller.change { it.removeRange(clip.id, selected.first, selected.second) }) close()
+                    }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
+                }
+            }
+            Focus.CLEAN_SPEECH -> {
+                preview { clip }
+                primary(host.tr("Clean speech", "Очистить речь")) {
+                    if (controller.processing.cleanSpeech(clip)) close()
+                }
+            }
+            Focus.SEPARATE_STEMS, Focus.REMOVE_VOCALS -> {
+                val lane = lanePicker()
+                preview { clip }
+                val instrumental = focus == Focus.REMOVE_VOCALS
+                primary(if (instrumental) host.tr("Remove vocals", "Удалить вокал")
+                    else host.tr("Separate into four stems", "Разделить на четыре дорожки")) {
+                    runCatching { clip.copy(lane = lane.selectedItemPosition) }
+                        .onSuccess { if (controller.processing.separate(it, instrumental)) close() }
+                }
+            }
         }
-        updateCut()
-        content.addView(cut, LinearLayout.LayoutParams(-1, host.dp(48)))
-        content.addView(action(host.tr("Split", "Разделить")) {
-            if (controller.change { it.split(clip.id, cutPosition()) }) host.overlayHost.removeView(shade)
-        })
-        content.addView(action(host.tr("Remove selected range", "Удалить выделенный отрезок")) {
-            if (controller.change { it.removeRange(clip.id, millis(from), millis(to)) }) {
-                host.overlayHost.removeView(shade)
-            }
-        })
-        content.addView(action(host.tr("Remove clip", "Удалить фрагмент")) {
-            controller.change { it.remove(clip.id) }
-            host.overlayHost.removeView(shade)
-        })
-        content.addView(action(host.tr("Clean speech", "Очистить речь")) {
-            runCatching {
-                clip.copy(startMs = millis(from), endMs = millis(to), offsetMs = millis(offset),
-                    lane = lane.selectedItemPosition, gain = gain.progress / 100f)
-            }.onSuccess { selected ->
-                if (controller.processing.cleanSpeech(selected)) host.overlayHost.removeView(shade)
-            }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
-        })
-        for (instrumental in listOf(false, true)) {
-            content.addView(action(if (instrumental) host.tr("Remove vocals", "Удалить вокал")
-                else host.tr("Separate into four stems", "Разделить на четыре дорожки")) {
-                runCatching {
-                    clip.copy(startMs = millis(from), endMs = millis(to), offsetMs = millis(offset),
-                        lane = lane.selectedItemPosition, gain = gain.progress / 100f)
-                }.onSuccess { selected ->
-                    if (controller.processing.separate(selected, instrumental)) host.overlayHost.removeView(shade)
-                }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
-            })
-        }
-        panel.addView(action(host.tr("Apply trim and settings", "Применить обрезку и настройки")) {
-            if (controller.change { it.replace(clip.copy(startMs = millis(from), endMs = millis(to),
-                    offsetMs = millis(offset), lane = lane.selectedItemPosition, gain = gain.progress / 100f)) }) {
-                host.overlayHost.removeView(shade)
-            }
-        }.apply { host.uiFactory.applyPrimaryButtonStyle(this) })
         panel.addView(action(host.tr("Cancel", "Отмена")) { host.overlayHost.removeView(shade) })
         shade.addView(panel, host.centerParams(host.dp(360), -2))
         host.overlayHost.addView(shade)
-        if (focus != Focus.FULL) {
-            val target = when (focus) {
-                Focus.ANALYSIS -> analysis
-                Focus.TRIM, Focus.REMOVE_RANGE -> waveform
-                Focus.VOLUME -> gain
-                Focus.SPLIT -> cut
-                Focus.FULL -> waveform
-            }
-            scroll.post { scroll.smoothScrollTo(0, target.top.coerceAtLeast(0)) }
-        }
     }
 
     private fun focusTitle(focus: Focus): String = when (focus) {
-        Focus.FULL -> host.tr("Edit audio", "Редактирование аудио")
+        Focus.POSITION -> host.tr("Clip position", "Положение фрагмента")
         Focus.ANALYSIS -> host.tr("BPM and key", "BPM и тональность")
         Focus.TRIM -> host.tr("Trim audio", "Обрезка аудио")
         Focus.VOLUME -> host.tr("Clip volume", "Громкость фрагмента")
         Focus.SPLIT -> host.tr("Split audio", "Разделение аудио")
         Focus.REMOVE_RANGE -> host.tr("Remove a range", "Удаление отрезка")
+        Focus.CLEAN_SPEECH -> host.tr("Clean speech", "Очистка речи")
+        Focus.SEPARATE_STEMS -> host.tr("Separate stems", "Разделение дорожек")
+        Focus.REMOVE_VOCALS -> host.tr("Remove vocals", "Удаление вокала")
     }
 
     private fun secondsField(parent: LinearLayout, label: String, value: Long): EditText {

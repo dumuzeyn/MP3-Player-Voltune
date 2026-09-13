@@ -47,6 +47,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
             controller.selectedClip?.let { selected ->
                 renderClipTools(controller, dialogs, selected)
             }
+            host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(6)))
             controller.project.clips.groupBy { it.lane }.toSortedMap().forEach { (lane, clips) ->
                 val header = host.uiFactory.row()
                 header.addView(host.uiFactory.text("${host.tr("Lane", "Дорожка")} ${lane + 1}", 16, true),
@@ -60,9 +61,10 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                         "${clip.title}\n${host.formatSeconds(clip.offsetMs / 1000)} + " +
                             host.formatSeconds(clip.durationMs / 1000),
                     ).apply {
-                        minHeight = host.dp(62)
-                        maxLines = 4
-                        setPadding(host.dp(8), host.dp(8), host.dp(8), host.dp(8))
+                        minHeight = 0
+                        maxHeight = host.dp(44)
+                        maxLines = 2
+                        setPadding(host.dp(8), host.dp(3), host.dp(8), host.dp(3))
                         host.uiFactory.applyPlayerToolStyle(this, clip.id == controller.selectedClipId)
                         setOnClickListener { controller.select(clip) }
                         contentDescription = if (clip.id == controller.selectedClipId) {
@@ -71,9 +73,12 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                             "${host.tr("Select clip", "Выбрать фрагмент")}: ${clip.title}"
                         }
                     }
-                    host.list.addView(host.uiFactory.spaced(row))
+                    host.list.addView(row, LinearLayout.LayoutParams(-1, host.dp(44)).apply {
+                        setMargins(0, host.dp(1), 0, host.dp(1))
+                    })
                 }
             }
+            host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(8)))
             val nextLane = (0 until AudioEditClip.MAX_LANES).firstOrNull { lane ->
                 controller.project.clips.none { it.lane == lane }
             }
@@ -127,6 +132,9 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         ))
         val enabled = !controller.busy
         val actions = listOf(
+            EditorAction(host.tr("Position", "Положение"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.POSITION)
+            },
             EditorAction(host.tr("Analysis", "BPM и тональность"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.ANALYSIS)
             },
@@ -143,13 +151,13 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                 dialogs.edit(clip, AudioEditorDialogs.Focus.REMOVE_RANGE)
             },
             EditorAction(host.tr("Clean speech", "Очистить речь"), enabled) {
-                controller.processing.cleanSpeech(clip)
+                dialogs.edit(clip, AudioEditorDialogs.Focus.CLEAN_SPEECH)
             },
             EditorAction(host.tr("Separate stems", "Разделить дорожки"), enabled) {
-                controller.processing.separate(clip, false)
+                dialogs.edit(clip, AudioEditorDialogs.Focus.SEPARATE_STEMS)
             },
             EditorAction(host.tr("Remove vocals", "Удалить вокал"), enabled) {
-                controller.processing.separate(clip, true)
+                dialogs.edit(clip, AudioEditorDialogs.Focus.REMOVE_VOCALS)
             },
         )
         actions.chunked(2).forEach { pair ->

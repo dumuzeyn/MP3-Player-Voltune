@@ -7,7 +7,7 @@ inline Eigen::MatrixXf voltune_attention(const Eigen::MatrixXf& q, const Eigen::
                                        const Eigen::MatrixXf& v, int heads) {
     const int width = static_cast<int>(q.cols()) / heads;
     Eigen::MatrixXf result(q.rows(), q.cols());
-    #pragma omp parallel for num_threads(2) schedule(static)
+    #pragma omp parallel for schedule(static)
     for (int head = 0; head < heads; ++head) {
         const auto keys = k.middleCols(head * width, width);
         const auto values = v.middleCols(head * width, width);

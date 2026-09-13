@@ -12,8 +12,13 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
     enum class Phase { IDLE, PREPARING, STARTING, PLAYING, PAUSED }
     private val exporter = AudioEditExporter(host)
     private val handler = Handler(Looper.getMainLooper())
-    private var cachedProject: AudioEditProject? = null
-    private var cachedFile: File? = null
+    private val cachedFiles = object : LinkedHashMap<AudioEditProject, File>(6, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<AudioEditProject, File>): Boolean {
+            val remove = size > MAX_CACHED_PREVIEWS
+            if (remove) eldest.value.delete()
+            return remove
+        }
+    }
     private var generation = 0
     private var closed = false
     private var token = ""
@@ -56,16 +61,14 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         phase = Phase.PREPARING
         notifyChanged(true)
         handler.post(tick)
-        if (cachedProject == project && cachedFile?.isFile == true) {
-            play(checkNotNull(cachedFile))
+        cachedFiles[project]?.takeIf(File::isFile)?.let {
+            play(it)
             return
         }
         exporter.export(project, { progress = it; notifyChanged() }) { result ->
             if (closed || generation != expected) { result.getOrNull()?.delete(); return@export }
             result.fold(onSuccess = { file ->
-                cachedFile?.delete()
-                cachedFile = file
-                cachedProject = project
+                cachedFiles.put(project, file)?.takeUnless { it == file }?.delete()
                 play(file)
             }, onFailure = { fail() })
         }
@@ -143,7 +146,10 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         stop()
         handler.removeCallbacksAndMessages(null)
         exporter.close()
-        cachedFile?.delete()
+        cachedFiles.values.forEach(File::delete)
+        cachedFiles.clear()
         listeners.clear()
     }
+
+    companion object { private const val MAX_CACHED_PREVIEWS = 6 }
 }

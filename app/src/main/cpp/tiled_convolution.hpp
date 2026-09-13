@@ -13,7 +13,7 @@ Eigen::MatrixXf voltune_conv_product(const Eigen::Tensor3dXf& input, const Eigen
         : static_cast<int>(std::ceil((width + 2 * pw - dw * (kw - 1) - 1) / float(sw))) + 1;
     const int rows = rowsH * rowsW;
     Eigen::MatrixXf result(rows, weights.rows());
-    #pragma omp parallel for num_threads(2) schedule(static)
+    #pragma omp parallel for schedule(static)
     for (int offset = 0; offset < rows; offset += 256) {
         const int count = std::min(256, rows - offset);
         Eigen::MatrixXf tile = Eigen::MatrixXf::Zero(count, channels * kh * kw);
