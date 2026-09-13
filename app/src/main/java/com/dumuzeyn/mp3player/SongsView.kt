@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player
 
 import android.view.View
 import android.view.ViewGroup
+import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.ConcatAdapter
@@ -14,6 +15,11 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
     private val songAdapter = SongAdapter(host)
     private val headerAdapter = HeaderAdapter()
     private val emptyAdapter = EmptyAdapter()
+    private val scrollThumb = View(host).apply {
+        background = host.getDrawable(R.drawable.voltune_scrollbar_thumb)
+        alpha = 0f
+        visibility = View.INVISIBLE
+    }
     private val searchOwner = "songs-" + Integer.toHexString(System.identityHashCode(this))
     private val progressTicker = object : Runnable {
         override fun run() {
@@ -29,6 +35,12 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             }
         }
     }
+    private val hideScrollThumb = Runnable {
+        scrollThumb.animate().cancel()
+        scrollThumb.animate().alpha(0f).setDuration(180L).withEndAction {
+            if (scrollThumb.alpha == 0f) scrollThumb.visibility = View.INVISIBLE
+        }.start()
+    }
     private var sourceSnapshot = ArrayList<Track>()
     private var query = ""
     private var closed = false
@@ -40,17 +52,33 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
-        recyclerView.isVerticalScrollBarEnabled = true
-        recyclerView.scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
-        recyclerView.isScrollbarFadingEnabled = true
+        recyclerView.isVerticalScrollBarEnabled = false
         val cardInset = host.responsiveLayoutController.contentScrollbarClearance()
         recyclerView.setPadding(cardInset, 0, cardInset, host.dp(88))
         recyclerView.itemAnimator = null
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
+                updateScrollThumb()
+                if (dy != 0) showScrollThumb()
+            }
+
+            override fun onScrollStateChanged(view: RecyclerView, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    host.uiHandler.removeCallbacks(hideScrollThumb)
+                    host.uiHandler.postDelayed(hideScrollThumb, 350L)
+                } else {
+                    showScrollThumb()
+                }
+            }
+        })
         val config = ConcatAdapter.Config.Builder()
             .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
             .build()
         recyclerView.adapter = ConcatAdapter(config, headerAdapter, songAdapter, emptyAdapter)
         addView(recyclerView, LayoutParams(-1, -1))
+        addView(scrollThumb, LayoutParams(host.dp(3), host.dp(40), Gravity.END).apply {
+            marginEnd = host.dp(1)
+        })
         visibility = View.GONE
     }
 
@@ -71,6 +99,9 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         translationX = 0f
         visibility = View.GONE
         host.uiHandler.removeCallbacks(progressTicker)
+        host.uiHandler.removeCallbacks(hideScrollThumb)
+        scrollThumb.visibility = View.INVISIBLE
+        scrollThumb.alpha = 0f
     }
 
     fun refreshPlayback() {
@@ -102,6 +133,7 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         if (closed) return
         closed = true
         host.uiHandler.removeCallbacks(progressTicker)
+        host.uiHandler.removeCallbacks(hideScrollThumb)
         host.trackSearchController.cancel(searchOwner)
         recyclerView.adapter = null
     }
@@ -125,6 +157,25 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         host.uiHandler.removeCallbacks(progressTicker)
         if (hostVisible && visibility == View.VISIBLE && host.isPlaybackPlaying()) {
             host.uiHandler.post(progressTicker)
+        }
+    }
+
+    private fun showScrollThumb() {
+        if (!recyclerView.canScrollVertically(-1) && !recyclerView.canScrollVertically(1)) return
+        host.uiHandler.removeCallbacks(hideScrollThumb)
+        scrollThumb.animate().cancel()
+        scrollThumb.alpha = 1f
+        scrollThumb.visibility = View.VISIBLE
+        updateScrollThumb()
+    }
+
+    private fun updateScrollThumb() {
+        val maximum = (recyclerView.computeVerticalScrollRange() -
+            recyclerView.computeVerticalScrollExtent()).coerceAtLeast(0)
+        val travel = (height - scrollThumb.height).coerceAtLeast(0)
+        scrollThumb.translationY = if (maximum == 0) 0f else {
+            recyclerView.computeVerticalScrollOffset().coerceIn(0, maximum).toFloat() /
+                maximum * travel
         }
     }
 

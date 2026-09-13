@@ -64,10 +64,8 @@ class SongsScrollbarInstrumentedTest {
 
         val songs = checkNotNull(host.songsView)
         val recycler = songs.recyclerView()
-        assertEquals(1, songs.childCount)
-        assertTrue(recycler.isVerticalScrollBarEnabled)
-        assertTrue(recycler.isScrollbarFadingEnabled)
-        assertEquals(View.SCROLLBARS_INSIDE_OVERLAY, recycler.scrollBarStyle)
+        assertEquals(2, songs.childCount)
+        assertTrue(!recycler.isVerticalScrollBarEnabled)
         assertEquals(host.dp(6), recycler.paddingLeft)
         assertEquals(host.dp(6), recycler.paddingRight)
 
