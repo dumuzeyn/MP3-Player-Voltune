@@ -58,17 +58,23 @@ internal class MainScreenView(
 
         val page = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
+            clipChildren = false
+            clipToPadding = false
             val horizontalPadding = layout.pageHorizontalPadding()
             setPadding(horizontalPadding, layout.pageTopPadding(), horizontalPadding, 0)
         }
         root.addView(page, layout.mainPageParams())
         callbacks.buildTabs(page)
 
-        val contentHost = FrameLayout(context)
+        val contentHost = FrameLayout(context).apply {
+            clipChildren = false
+            clipToPadding = false
+        }
         val contentScroll = ScrollView(context)
         val contentList = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 0, layout.contentScrollbarClearance(), 0)
+            val clearance = layout.contentScrollbarClearance()
+            setPadding(clearance, 0, clearance, 0)
         }
         contentScroll.addView(contentList, FrameLayout.LayoutParams(-1, -2))
         contentScroll.setOnScrollChangeListener { _, _, _, _, _ -> callbacks.onContentScrolled() }

@@ -32,6 +32,17 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             }
         }
     }
+    private val hideAlphabetRail = Runnable {
+        if (alphabetRail.visibility != View.VISIBLE) return@Runnable
+        alphabetRail.animate().cancel()
+        alphabetRail.animate()
+            .alpha(0f)
+            .setDuration(ALPHABET_FADE_MS)
+            .withEndAction {
+                if (alphabetRail.alpha == 0f) alphabetRail.visibility = View.INVISIBLE
+            }
+            .start()
+    }
 
     private var sourceSnapshot = ArrayList<Track>()
     private var query = ""
@@ -39,16 +50,31 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
     private var hostVisible = true
 
     init {
+        clipChildren = false
+        clipToPadding = false
         recyclerView.layoutManager = LinearLayoutManager(host).apply {
             recycleChildrenOnDetach = true
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
-        recyclerView.setPadding(0, 0, host.dp(24), host.dp(88))
+        val cardInset = host.responsiveLayoutController.contentScrollbarClearance()
+        recyclerView.setPadding(cardInset, 0, cardInset, host.dp(88))
         recyclerView.itemAnimator = null
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
                 syncAlphabetToList()
+                if (dy != 0) {
+                    showAlphabetRail()
+                    if (view.scrollState == RecyclerView.SCROLL_STATE_IDLE) scheduleAlphabetRailHide()
+                }
+            }
+
+            override fun onScrollStateChanged(view: RecyclerView, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    scheduleAlphabetRailHide()
+                } else {
+                    showAlphabetRail()
+                }
             }
         })
         val config = ConcatAdapter.Config.Builder()
@@ -56,9 +82,11 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             .build()
         recyclerView.adapter = ConcatAdapter(config, headerAdapter, songAdapter, emptyAdapter)
         addView(recyclerView, LayoutParams(-1, -1))
-        addView(alphabetRail, LayoutParams(host.dp(30), -1, Gravity.END).apply {
-            marginEnd = host.dp(4)
+        addView(alphabetRail, LayoutParams(host.dp(18), -1, Gravity.END).apply {
+            marginEnd = 0
         })
+        alphabetRail.translationX =
+            host.responsiveLayoutController.pageHorizontalPadding().toFloat()
         visibility = View.GONE
     }
 
@@ -79,6 +107,10 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         translationX = 0f
         visibility = View.GONE
         host.uiHandler.removeCallbacks(progressTicker)
+        host.uiHandler.removeCallbacks(hideAlphabetRail)
+        alphabetRail.animate().cancel()
+        alphabetRail.visibility = View.INVISIBLE
+        alphabetRail.alpha = 0f
     }
 
     fun refreshPlayback() {
@@ -110,6 +142,8 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         if (closed) return
         closed = true
         host.uiHandler.removeCallbacks(progressTicker)
+        host.uiHandler.removeCallbacks(hideAlphabetRail)
+        alphabetRail.animate().cancel()
         host.trackSearchController.cancel(searchOwner)
         recyclerView.adapter = null
     }
@@ -138,6 +172,8 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             host.primaryText,
         ) { progress ->
             recyclerView.stopScroll()
+            showAlphabetRail()
+            scheduleAlphabetRailHide()
             scrollToProgress(progress)
         }
         syncAlphabetToList()
@@ -162,7 +198,8 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             progress <= 0f -> manager.scrollToPositionWithOffset(0, 0)
             progress >= 1f -> manager.scrollToPositionWithOffset(
                 headerAdapter.itemCount + count - 1,
-                recyclerView.height - recyclerView.paddingBottom - host.dp(66),
+                recyclerView.height - recyclerView.paddingBottom -
+                    host.resources.getDimensionPixelSize(R.dimen.library_card_slot_height),
             )
             else -> {
                 val maximum = (recyclerView.computeVerticalScrollRange() -
@@ -179,6 +216,19 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         if (hostVisible && visibility == View.VISIBLE && host.isPlaybackPlaying()) {
             host.uiHandler.post(progressTicker)
         }
+    }
+
+    private fun showAlphabetRail() {
+        if (!alphabetRail.isAvailable()) return
+        host.uiHandler.removeCallbacks(hideAlphabetRail)
+        alphabetRail.animate().cancel()
+        alphabetRail.alpha = 1f
+        alphabetRail.visibility = View.VISIBLE
+    }
+
+    private fun scheduleAlphabetRailHide() {
+        host.uiHandler.removeCallbacks(hideAlphabetRail)
+        host.uiHandler.postDelayed(hideAlphabetRail, ALPHABET_HIDE_DELAY_MS)
     }
 
     private inner class HeaderAdapter : RecyclerView.Adapter<HeaderHolder>() {
@@ -246,6 +296,8 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         const val HEADER_ID = 1L
         const val EMPTY_ID = 2L
         const val PROGRESS_INTERVAL_MS = 500L
+        const val ALPHABET_HIDE_DELAY_MS = 350L
+        const val ALPHABET_FADE_MS = 180L
 
         fun sameSnapshot(left: List<Track>, right: List<Track>): Boolean {
             if (left.size != right.size) return false

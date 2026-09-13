@@ -196,10 +196,11 @@ internal class SwipeController(private val host: MainActivityCore) {
             previewUsesSongsSurface = false
             val list = LinearLayout(host).apply {
                 orientation = LinearLayout.VERTICAL
+                val clearance = host.responsiveLayoutController.contentScrollbarClearance()
                 setPadding(
+                    clearance,
                     0,
-                    0,
-                    host.responsiveLayoutController.contentScrollbarClearance(),
+                    clearance,
                     0,
                 )
             }

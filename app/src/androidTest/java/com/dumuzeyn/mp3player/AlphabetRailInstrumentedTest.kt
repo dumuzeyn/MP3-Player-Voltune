@@ -62,10 +62,16 @@ class AlphabetRailInstrumentedTest {
         val rail = find(host.songsView!!, AlphabetRailView::class.java)
         val recycler = host.songsView!!.recyclerView()
         assertNotNull(rail)
-        assertEquals(View.VISIBLE, rail!!.visibility)
-        assertTrue(rail.width <= host.dp(30))
+        assertEquals(View.INVISIBLE, rail!!.visibility)
+        assertTrue(rail.width <= host.dp(18))
         assertTrue(rail.height >= host.songsView!!.height - host.dp(2))
-        assertEquals(host.dp(24), recycler.paddingRight)
+        val cardInset = host.responsiveLayoutController.contentScrollbarClearance()
+        assertEquals(cardInset, recycler.paddingLeft)
+        assertEquals(cardInset, recycler.paddingRight)
+        instrumentation.runOnMainSync { recycler.scrollBy(0, host.dp(120)) }
+        InstrumentedTestSupport.waitFor("Alphabet rail did not appear while scrolling", 2000) {
+            rail.visibility == View.VISIBLE && rail.alpha == 1f
+        }
         val initialThumbCenter = thumbCenter(host, rail)
         touchRail(rail, 0.20f)
         val firstFreePosition = thumbCenter(host, rail)
@@ -83,7 +89,7 @@ class AlphabetRailInstrumentedTest {
             rail.getLocationInWindow(railLocation)
             firstCard.getLocationInWindow(cardLocation)
         }
-        val circleLeft = railLocation[0] + rail.width - host.dp(12) - host.dp(6)
+        val circleLeft = railLocation[0] + rail.width - host.dp(11) - host.dp(6)
         assertTrue(circleLeft - (cardLocation[0] + firstCard.width) >= host.dp(1))
         capture(host, "alphabet-rail.png")
 
@@ -103,6 +109,9 @@ class AlphabetRailInstrumentedTest {
         }
         InstrumentedTestSupport.waitFor("Rail selection did not follow list scrolling", 5000) {
             rail.contentDescription.toString().startsWith("A")
+        }
+        InstrumentedTestSupport.waitFor("Alphabet rail stayed visible while the list was idle", 2000) {
+            rail.visibility == View.INVISIBLE && rail.alpha == 0f
         }
     }
 

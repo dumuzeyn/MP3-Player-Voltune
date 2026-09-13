@@ -313,6 +313,10 @@ It is not a release-completion declaration.
   one content width across Home, Songs, Favorites, playlists, genres, artists,
   albums and folders. Animated tab previews retain the same scrollbar clearance,
   so cards cannot widen after a tap or swipe transition.
+- Library cards use matching 10dp content insets on both sides, restoring the
+  wide layout. The Songs letters and gradient thumb fit in the narrow trailing
+  gutter without touching a card, appear only during active scrolling and fade
+  out together once the list is idle, matching the Home scrollbar behavior.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

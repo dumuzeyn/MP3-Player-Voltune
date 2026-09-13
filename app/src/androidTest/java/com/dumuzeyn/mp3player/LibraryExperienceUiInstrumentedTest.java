@@ -86,7 +86,9 @@ public class LibraryExperienceUiInstrumentedTest {
     @Test
     public void homeSearchQueueLyricsMetadataFavoritesPlaylistsAndSettingsOpen() {
         MainActivityCore host = launchWithLibrary();
-        assertEquals(host.dp(24), host.list.getPaddingRight());
+        int cardInset = host.responsiveLayoutController.contentScrollbarClearance();
+        assertEquals(cardInset, host.list.getPaddingLeft());
+        assertEquals(cardInset, host.list.getPaddingRight());
         assertEquals(LibraryTabs.HOME, host.navigationState.tabIndex);
         Track track = host.libraryState.tracks.get(0);
         View homeSongCard = host.list.findViewById(R.id.song_card);
@@ -149,7 +151,8 @@ public class LibraryExperienceUiInstrumentedTest {
         View playlistCard = host.list.findViewById(R.id.playlist_card);
         assertNotNull(playlistCard);
         assertLibraryCardSize(playlistCard, libraryCardWidth, libraryCardHeight);
-        assertEquals(host.dp(24), host.list.getPaddingRight());
+        assertEquals(cardInset, host.list.getPaddingLeft());
+        assertEquals(cardInset, host.list.getPaddingRight());
         assertVisibleOutline(playlistCard);
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
                 playlistCover.getHeight());
@@ -189,7 +192,8 @@ public class LibraryExperienceUiInstrumentedTest {
                         && !host.navigationState.tabAnimating);
         assertLibraryCardSize(host.list.findViewById(R.id.folder_card),
                 libraryCardWidth, libraryCardHeight);
-        assertEquals(host.dp(24), host.list.getPaddingRight());
+        assertEquals(cardInset, host.list.getPaddingLeft());
+        assertEquals(cardInset, host.list.getPaddingRight());
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
@@ -435,7 +439,9 @@ public class LibraryExperienceUiInstrumentedTest {
                         && host.list.findViewById(R.id.group_card) != null
                         && !host.navigationState.tabAnimating);
         assertLibraryCardSize(host.list.findViewById(R.id.group_card), width, height);
-        assertEquals(host.dp(24), host.list.getPaddingRight());
+        int inset = host.responsiveLayoutController.contentScrollbarClearance();
+        assertEquals(inset, host.list.getPaddingLeft());
+        assertEquals(inset, host.list.getPaddingRight());
     }
 
     private static void assertLibraryCardSize(View card, int width, int height) {

@@ -49,7 +49,8 @@ internal class AlphabetRailView(context: Context) : View(context) {
         selectedPaint.color = gradientEnd
         textPaint.color = foreground
         selectedTextPaint.color = android.graphics.Color.BLACK
-        visibility = if (values.size > 1) VISIBLE else GONE
+        visibility = if (values.size > 1) INVISIBLE else GONE
+        alpha = 0f
         selected = -1
         scrollProgress = 0f
         if (values.isNotEmpty()) selectTrackPosition(0)
@@ -80,7 +81,7 @@ internal class AlphabetRailView(context: Context) : View(context) {
             RectF(thumbCenterX - halfThumb, thumbTop, thumbCenterX + halfThumb, thumbBottom),
             halfThumb, halfThumb, thumbPaint,
         )
-        val labelCenterX = width - dp(12f)
+        val labelCenterX = width - dp(11f)
         textPaint.textSize = min(dp(11f), max(dp(7f), cell * 0.72f))
         entries.forEachIndexed { index, entry ->
             val labelCenterY = paddingTop + cell * (index + 0.5f)
@@ -123,6 +124,8 @@ internal class AlphabetRailView(context: Context) : View(context) {
         super.performClick()
         return true
     }
+
+    fun isAvailable(): Boolean = entries.size > 1
 
     private fun scrollTo(y: Float) {
         val available = (height - paddingTop - paddingBottom).coerceAtLeast(1).toFloat()
