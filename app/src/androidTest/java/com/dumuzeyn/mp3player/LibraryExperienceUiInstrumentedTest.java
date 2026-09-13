@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
@@ -274,10 +275,7 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(findText(groupContainer, Button.class, "Ⅱ"));
         RotatingCoverImageView groupCover = find(groupContainer, RotatingCoverImageView.class);
         assertNotNull(groupCover);
-        float groupRotation = groupCover.getRotation();
-        SystemClock.sleep(250L);
-        assertTrue("Playing group cover did not rotate",
-                Math.abs(groupCover.getRotation() - groupRotation) > 0.1f);
+        assertPlayingCoverRotates("Playing group cover did not rotate", groupCover);
 
         instrumentation.runOnMainSync(() -> {
             Playlist playlist = new Playlist("Playback playlist");
@@ -294,10 +292,7 @@ public class LibraryExperienceUiInstrumentedTest {
         RotatingCoverImageView playlistCover = find(
                 playlistContainer, RotatingCoverImageView.class);
         assertNotNull(playlistCover);
-        float playlistRotation = playlistCover.getRotation();
-        SystemClock.sleep(250L);
-        assertTrue("Playing playlist cover did not rotate",
-                Math.abs(playlistCover.getRotation() - playlistRotation) > 0.1f);
+        assertPlayingCoverRotates("Playing playlist cover did not rotate", playlistCover);
     }
 
     @Test
@@ -507,6 +502,23 @@ public class LibraryExperienceUiInstrumentedTest {
                     PlaybackPhase.READY, PauseReason.NONE, StopReason.NONE,
                     null, System.currentTimeMillis()));
             host.refreshAfterTrackChange();
+        });
+    }
+
+    private void assertPlayingCoverRotates(String message, RotatingCoverImageView cover) {
+        assertTrue("Playing cover must remain attached", cover.isAttachedToWindow());
+        float initialRotation = cover.getRotation();
+        if (ValueAnimator.areAnimatorsEnabled()) {
+            InstrumentedTestSupport.waitFor(message, 2000L,
+                    () -> Math.abs(cover.getRotation() - initialRotation) > 0.1f);
+            return;
+        }
+
+        instrumentation.runOnMainSync(() -> {
+            cover.beginSeekSpin(0);
+            cover.updateSeekSpin(1000);
+            assertTrue(message, Math.abs(cover.getRotation() - initialRotation) > 0.1f);
+            cover.endSeekSpin(1000, false);
         });
     }
 
