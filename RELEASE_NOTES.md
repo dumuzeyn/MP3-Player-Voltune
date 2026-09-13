@@ -22,6 +22,12 @@
   открываются удержанием; кнопки воспроизведения больше не имеют отдельной подложки.
 - Алфавитная навигация в песнях, стилизованные полосы прокрутки, градиентный фон
   без частиц по умолчанию. Сохранённые пользовательские темы не сбрасываются.
+- В настройках можно отключать ненужные разделы колеса и менять их порядок
+  перетаскиванием; скрытые разделы пропускаются при нажатиях и свайпах.
+- Кнопка добавления в большом плеере показывает состояние выбранного плейлиста,
+  режимы выравнивания громкости применяются сразу, а меню удержания стали компактнее.
+- Исправлены индикаторы воспроизведения, группировка неизвестных альбомов и
+  просвечивание прокручиваемого содержимого под колесом меню.
 - Исправлены окна на узких и горизонтальных экранах, запуск базы на Android 8/9,
   импорт Opus/OGA и экспорт выделенных фрагментов AAC/FLAC.
 
@@ -47,6 +53,11 @@ Voltune now includes a local multitrack audio editor.
   prefetched covers, long-press song properties and simpler play/pause buttons.
 - Alphabet navigation, themed scrollbars, gradient defaults without particles,
   and dialogs that fit narrow and short screens. Existing custom themes are preserved.
+- Menu sections can be hidden and reordered in Settings; navigation skips hidden sections.
+- The full-player save button follows the selected playlist, loudness modes apply as soon
+  as analysis completes, and hold menus use compact centered layouts.
+- Playback indicators, unknown-album grouping, and content drawing behind the tab wheel
+  have been corrected.
 - Android 8/9 database compatibility, Opus/OGA import and accurate AAC/FLAC selections.
 
 Audio processing stays on the device. The bundled separation model increases APK size.
