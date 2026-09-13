@@ -6,4 +6,7 @@
     <item name="group_card" type="id" />
     <item name="folder_card" type="id" />
     <item name="playlist_card" type="id" />
+    <item name="editor_mode_lock" type="id" />
+    <item name="editor_mode_bounds" type="id" />
+    <item name="editor_workspace" type="id" />
 </resources>

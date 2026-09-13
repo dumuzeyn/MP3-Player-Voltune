@@ -179,6 +179,10 @@ internal class OverlayController(private val host: MainActivityCore) : AutoClose
             close(shade)
             host.metadataEditorController.open(track)
         }
+        addCompactPanelButton(panel, host.tr("Edit audio", "Редактировать аудио")) {
+            close(shade)
+            host.audioEditorController.openTrack(track)
+        }
         if (sourcePlaylist != null) {
             addCompactPanelButton(
                 panel,

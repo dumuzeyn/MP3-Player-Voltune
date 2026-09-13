@@ -1,6 +1,8 @@
 package com.dumuzeyn.mp3player
 
 import android.os.Build
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -25,6 +27,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                 host.tr("Remove all clips from the draft?", "Удалить все фрагменты из черновика?"),
                 Runnable { controller.change { AudioEditProject() } })
         })
+        toolbar.addView(editorModeTool(controller.editingMode) { controller.toggleEditingMode() })
         host.list.addView(toolbar)
         if (controller.project.clips.isNotEmpty()) host.list.addView(AudioEditorPreviewControls(host, { controller.project }))
         if (controller.project.clips.isEmpty()) {
@@ -104,6 +107,27 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
             alpha = if (enabled) 1f else 0.4f
             layoutParams = host.uiFactory.square(44)
             setOnClickListener { run() }
+        }
+
+    private fun editorModeTool(active: Boolean, run: () -> Unit): Button =
+        tool(
+            "⌖",
+            if (active) host.tr("Exit editing mode", "Выйти из режима редактирования")
+            else host.tr("Lock editing mode", "Зафиксировать режим редактирования"),
+            true,
+            run,
+        ).apply {
+            id = R.id.editor_mode_lock
+            if (active) {
+                setTextColor(Color.rgb(35, 28, 8))
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL
+                    setColor(host.yellow)
+                }
+                elevation = host.dp(2).toFloat()
+            } else {
+                host.uiFactory.applyPlainIconStyle(this)
+            }
         }
 
     private fun command(label: String, enabled: Boolean, run: () -> Unit) = host.uiFactory.button(label).apply {

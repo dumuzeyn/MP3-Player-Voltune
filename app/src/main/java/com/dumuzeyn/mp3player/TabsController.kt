@@ -25,6 +25,7 @@ internal class TabsController(private val host: MainActivityCore) {
     private var transitionToX = 0f
     private var infiniteLoopAttached = false
     private var lastViewportWidth = 0
+    private var editorModeBounds: EditorModeBoundsView? = null
 
     fun buildTabs(page: LinearLayout) {
         cancelScrollAnimation()
@@ -51,9 +52,19 @@ internal class TabsController(private val host: MainActivityCore) {
         scrollView.addView(track, FrameLayout.LayoutParams(-2, host.dp(48)))
         container.addView(scrollView, LinearLayout.LayoutParams(-1, host.dp(48)))
         container.addView(host.uiFactory.lineView(), LinearLayout.LayoutParams(-1, 1))
-        page.addView(container, LinearLayout.LayoutParams(-1, host.dp(50)))
+        val tabsFrame = FrameLayout(host)
+        tabsFrame.addView(container, FrameLayout.LayoutParams(-1, host.dp(50)))
+        editorModeBounds = EditorModeBoundsView(host).apply {
+            id = R.id.editor_mode_bounds
+            visibility = View.GONE
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        tabsFrame.addView(editorModeBounds, FrameLayout.LayoutParams(-1, host.dp(50)))
+        page.addView(tabsFrame, LinearLayout.LayoutParams(-1, host.dp(50)))
+        scrollView.setOnTouchListener { _, _ -> host.isEditorNavigationLocked() }
 
         addTabButtons()
+        refreshEditorModeIndicator()
         scrollView.addOnLayoutChangeListener { _, left, _, right, _, _, _, _, _ ->
             if (right <= left || host.tabRow.width <= 0) return@addOnLayoutChangeListener
             val viewportWidth = right - left
@@ -81,7 +92,21 @@ internal class TabsController(private val host: MainActivityCore) {
             val tabIndex = child.tag as? Int
             if (child is Button && tabIndex != null) styleTab(child, tabIndex)
         }
+        refreshEditorModeIndicator()
         if (transitionFrom == null) positionIndicatorToActive()
+    }
+
+    fun refreshEditorModeIndicator() {
+        val locked = host.isEditorNavigationLocked()
+        editorModeBounds?.visibility = if (locked) View.VISIBLE else View.GONE
+        editorModeBounds?.invalidate()
+        val row = host.tabRow ?: return
+        for (index in 0 until row.childCount) {
+            val button = row.getChildAt(index) as? Button ?: continue
+            val tabIndex = button.tag as? Int ?: continue
+            button.isEnabled = !locked || tabIndex == LibraryTabs.EDITOR
+            button.alpha = if (button.isEnabled) 1f else 0.42f
+        }
     }
 
     fun rebuildTabs() {
@@ -220,6 +245,9 @@ internal class TabsController(private val host: MainActivityCore) {
         button.setTextColor(
             if (index == host.navigationState.tabIndex) Color.WHITE else host.secondaryText,
         )
+        val locked = host.isEditorNavigationLocked()
+        button.isEnabled = !locked || index == LibraryTabs.EDITOR
+        button.alpha = if (button.isEnabled) 1f else 0.42f
     }
 
     private fun positionIndicatorToActive() {

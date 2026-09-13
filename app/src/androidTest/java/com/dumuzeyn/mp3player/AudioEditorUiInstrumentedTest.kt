@@ -6,6 +6,7 @@ import android.net.Uri
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
@@ -128,6 +129,62 @@ class AudioEditorUiInstrumentedTest {
         instrumentation.runOnMainSync {
             restored.switchTabAnimated(LibraryTabs.EDITOR, 1)
             assertEquals(2, restored.audioEditorController.project.clips.size)
+        }
+    }
+
+    @Test fun songPropertiesOpenSelectedEditorAndLockBlocksNavigation() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        context.getSharedPreferences("mp3_player_ui", 0).edit()
+            .putBoolean("animations", false).putBoolean("particlesEnabled", false).commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-properties.wav", 4)
+        val track = Track(
+            Uri.fromFile(wave).toString(),
+            "Песня для редактора",
+            "Voltune",
+            "Test",
+            "Test",
+            4000,
+        )
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+
+        instrumentation.runOnMainSync {
+            host.overlayController.openSongActions(track)
+            descendants(host.overlayHost).filterIsInstance<TextView>()
+                .first { it.text.toString() == "Редактировать аудио" }.performClick()
+        }
+        InstrumentedTestSupport.waitFor("Audio editor did not open from song properties", 5000) {
+            host.navigationState.tabIndex == LibraryTabs.EDITOR
+        }
+        awaitLayout(host)
+
+        instrumentation.runOnMainSync {
+            assertEquals(track.uri, host.audioEditorController.selectedClip?.uri)
+            val lock = host.root.findViewById<View>(R.id.editor_mode_lock)
+            val bounds = host.root.findViewById<View>(R.id.editor_mode_bounds)
+            assertNotNull(lock)
+            assertNotNull(bounds)
+            lock.performClick()
+            assertTrue(host.audioEditorController.editingMode)
+            assertEquals(View.VISIBLE, bounds.visibility)
+
+            host.switchTabAnimated(LibraryTabs.SETTINGS, 1)
+            host.swipeController.animateToTab(LibraryTabs.SETTINGS, 1, true, "")
+            assertTrue(host.backNavigationController.handleBack())
+            assertEquals(LibraryTabs.EDITOR, host.navigationState.tabIndex)
+
+            val settingsTab = descendants(host.tabRow)
+                .filterIsInstance<Button>()
+                .first { it.tag == LibraryTabs.SETTINGS }
+            assertFalse(settingsTab.isEnabled)
+            settingsTab.performClick()
+            assertEquals(LibraryTabs.EDITOR, host.navigationState.tabIndex)
+
+            host.root.findViewById<View>(R.id.editor_mode_lock).performClick()
+            assertFalse(host.audioEditorController.editingMode)
+            assertEquals(View.GONE, bounds.visibility)
+            host.switchTabAnimated(LibraryTabs.SETTINGS, 1)
+            assertEquals(LibraryTabs.SETTINGS, host.navigationState.tabIndex)
         }
     }
 

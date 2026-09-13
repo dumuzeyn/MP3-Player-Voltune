@@ -36,6 +36,7 @@ internal class SwipeController(private val host: MainActivityCore) {
     private var targetSearch = ""
 
     fun handle(event: MotionEvent): Boolean {
+        if (host.isEditorNavigationLocked()) return false
         val tabs = host.tabs
         if (
             tabs == null ||
@@ -64,6 +65,7 @@ internal class SwipeController(private val host: MainActivityCore) {
     }
 
     fun animateToTab(target: Int, requestedDirection: Int, saveHistory: Boolean, search: String?) {
+        if (host.isEditorNavigationLocked() && target != LibraryTabs.EDITOR) return
         val tabs = host.tabs
         if (
             tabs == null ||

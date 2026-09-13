@@ -24,6 +24,10 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     private val redo = ArrayDeque<AudioEditProject>()
     var project: AudioEditProject = AudioEditProject()
         private set
+    var selectedClipId: String? = null
+        private set
+    var editingMode = false
+        private set
     private var loaded = false
     private var closed = false
     private var working = false
@@ -45,6 +49,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (loaded) return
         loaded = true
         project = store.load()
+        selectedClipId = project.clips.firstOrNull()?.id
         val saved = host.getSharedPreferences("audio_editor", 0).getString("export", null)
         readyFile = saved?.let { File(host.cacheDir, it) }?.takeIf {
             it.parentFile?.canonicalFile == host.cacheDir.canonicalFile && it.isFile
@@ -61,6 +66,9 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             while (undo.size > 32) undo.removeFirst()
             redo.clear()
             project = next
+            selectedClipId = selectedClipId?.takeIf { selected ->
+                next.clips.any { it.id == selected }
+            } ?: next.clips.lastOrNull()?.id
             status = ""
             store.save(project)
             render()
@@ -77,8 +85,54 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             message(host.tr("Track duration is unavailable", "Длительность трека неизвестна"))
             return
         }
-        change { it.append(AudioEditClip(uri = track.uri, title = track.title,
-            sourceDurationMs = track.durationMs.toLong()), lane) }
+        val clip = AudioEditClip(uri = track.uri, title = track.title,
+            sourceDurationMs = track.durationMs.toLong())
+        val previousSelection = selectedClipId
+        selectedClipId = clip.id
+        if (!change { it.append(clip, lane) }) selectedClipId = previousSelection
+    }
+
+    val selectedClip: AudioEditClip?
+        get() = selectedClipId?.let { selected -> project.clips.firstOrNull { it.id == selected } }
+
+    fun select(clip: AudioEditClip) {
+        if (project.clips.none { it.id == clip.id } || selectedClipId == clip.id) return
+        selectedClipId = clip.id
+        render()
+    }
+
+    fun toggleEditingMode() {
+        if (host.navigationState.tabIndex != LibraryTabs.EDITOR) return
+        editingMode = !editingMode
+        host.tabsController.refreshEditorModeIndicator()
+        render()
+    }
+
+    fun openTrack(track: Track) {
+        load()
+        if (busy) {
+            message(host.tr("Finish the current editor operation first",
+                "Сначала завершите текущую операцию редактора"))
+            return
+        }
+        val existing = project.clips.firstOrNull { it.uri == track.uri }
+        if (existing != null) {
+            selectedClipId = existing.id
+        } else {
+            add(track, 0)
+        }
+        if (!host.menuConfigurationController.isVisible(LibraryTabs.EDITOR)) {
+            host.menuConfigurationController.setEnabled(LibraryTabs.EDITOR, true)
+            host.refreshMenuConfiguration()
+        }
+        if (host.navigationState.tabIndex == LibraryTabs.EDITOR) {
+            render()
+        } else {
+            host.switchTabAnimated(
+                LibraryTabs.EDITOR,
+                host.tabsController.directionTo(LibraryTabs.EDITOR),
+            )
+        }
     }
 
     fun undo() = restore(undo, redo)
@@ -88,6 +142,9 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (busy || from.isEmpty()) return
         to.addLast(project)
         project = from.removeLast()
+        selectedClipId = selectedClipId?.takeIf { selected ->
+            project.clips.any { it.id == selected }
+        } ?: project.clips.lastOrNull()?.id
         store.save(project)
         render()
     }
@@ -183,6 +240,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
 
     override fun close() {
         closed = true
+        editingMode = false
         if (previewController.isInitialized()) preview.close()
         if (analysisRepository.isInitialized()) analysis.close()
         if (processingController.isInitialized()) processing.close()
