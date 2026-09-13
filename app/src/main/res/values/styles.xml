@@ -7,6 +7,8 @@
         <item name="android:statusBarColor">@color/voltune_background_light</item>
         <item name="android:navigationBarColor">@color/voltune_background_light</item>
         <item name="android:windowBackground">@color/voltune_background_light</item>
+        <item name="android:scrollbarThumbVertical">@drawable/voltune_scrollbar_thumb</item>
+        <item name="android:scrollbarStyle">insideOverlay</item>
     </style>
     <style name="AppTheme.Dark" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:windowNoTitle">true</item>
@@ -15,6 +17,8 @@
         <item name="android:statusBarColor">@color/voltune_background_dark</item>
         <item name="android:navigationBarColor">@color/voltune_background_dark</item>
         <item name="android:windowBackground">@color/voltune_background_dark</item>
+        <item name="android:scrollbarThumbVertical">@drawable/voltune_scrollbar_thumb</item>
+        <item name="android:scrollbarStyle">insideOverlay</item>
     </style>
     <style name="AppThemeCustomBlueLight" parent="AppTheme">
         <item name="android:statusBarColor">@color/launcher_icon_blue_light_bg</item>

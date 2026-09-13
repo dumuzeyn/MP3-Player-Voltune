@@ -28,4 +28,14 @@ public class LoudnessGainPolicyTest {
 
         assertTrue(loudTarget > quietTarget);
     }
+
+    @Test
+    public void playerVolumeAppliesCutsAndLeavesBoostsForEnhancer() {
+        assertEquals(1.0f, AudioEffectsManager.playerVolumeForGainDb(3.0f), 0.0001f);
+        assertEquals(0.5f, AudioEffectsManager.playerVolumeForGainDb(-6.0206f), 0.001f);
+        assertEquals(
+                AudioEffectsManager.playerVolumeForGainDb(LoudnessGainPolicy.MAX_CUT_DB),
+                AudioEffectsManager.playerVolumeForGainDb(-100.0f),
+                0.0001f);
+    }
 }

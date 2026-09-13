@@ -274,6 +274,7 @@ public class BackgroundPlaybackInstrumentedTest {
             return;
         }
         controllerAction(() -> {
+            controller.sendCustomCommand(Media3Commands.TIMER_CANCEL_COMMAND, Bundle.EMPTY);
             controller.stop();
             controller.clearMediaItems();
             controller.sendCustomCommand(Media3Commands.CLEAR_QUEUE_COMMAND, Bundle.EMPTY);

@@ -1,0 +1,6 @@
+[submodule "third_party/rnnoise"]
+	path = third_party/rnnoise
+	url = https://github.com/xiph/rnnoise.git
+[submodule "third_party/demucs"]
+	path = third_party/demucs
+	url = https://github.com/sevagh/demucs.cpp.git

@@ -22,7 +22,8 @@ public class SongMetadataAlignmentInstrumentedTest {
         View item = LayoutInflater.from(context).inflate(R.layout.item_song,
                 new FrameLayout(context), false);
         int width = dp(context, 360);
-        int height = dp(context, 66);
+        int height = context.getResources().getDimensionPixelSize(
+                R.dimen.library_card_slot_height);
         item.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
                 View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
         item.layout(0, 0, width, height);
@@ -32,7 +33,7 @@ public class SongMetadataAlignmentInstrumentedTest {
         View duration = item.findViewById(R.id.song_duration);
         assertEquals(waveform.getTop(), duration.getTop());
         assertEquals(waveform.getBottom(), duration.getBottom());
-        assertEquals(dp(context, 4), card.getHeight() - waveform.getBottom());
+        assertEquals(dp(context, 6), card.getHeight() - waveform.getBottom());
         assertTrue(waveform.getTop() >= item.findViewById(R.id.song_title).getBottom());
 
         View marker = item.findViewById(R.id.song_current_marker);
@@ -41,6 +42,8 @@ public class SongMetadataAlignmentInstrumentedTest {
         assertEquals(context.getResources().getDimensionPixelSize(
                 R.dimen.now_playing_indicator_height), marker.getHeight());
         NowPlayingIndicator.style(marker, Color.MAGENTA);
+        assertEquals(1.0f, marker.getAlpha(), 0.0f);
+        assertTrue(marker.getElevation() > 0.0f);
         assertTrue(marker.getBackground() instanceof GradientDrawable);
         assertTrue(((GradientDrawable) marker.getBackground()).getCornerRadius() > 0.0f);
     }

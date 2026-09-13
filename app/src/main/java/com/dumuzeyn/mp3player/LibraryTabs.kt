@@ -1,0 +1,30 @@
+package com.dumuzeyn.mp3player
+
+object LibraryTabs {
+    const val HOME = 0
+    const val SONGS = 1
+    const val FAVORITES = 2
+    const val PLAYLISTS = 3
+    const val SOUND = 4
+    const val GENRES = 5
+    const val ARTISTS = 6
+    const val ALBUMS = 7
+    const val FOLDERS = 8
+    const val EDITOR = 9
+    const val SETTINGS = 10
+
+    @JvmField
+    val ALL: List<Int> = listOf(
+        HOME,
+        SONGS,
+        FAVORITES,
+        PLAYLISTS,
+        SOUND,
+        GENRES,
+        ARTISTS,
+        ALBUMS,
+        FOLDERS,
+        EDITOR,
+        SETTINGS,
+    )
+}

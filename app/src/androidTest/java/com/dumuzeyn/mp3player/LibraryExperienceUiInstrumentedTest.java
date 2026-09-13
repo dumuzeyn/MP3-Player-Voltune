@@ -10,6 +10,10 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.SystemClock;
@@ -25,6 +29,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.viewpager2.widget.ViewPager2;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.After;
@@ -80,8 +86,16 @@ public class LibraryExperienceUiInstrumentedTest {
     @Test
     public void homeSearchQueueLyricsMetadataFavoritesPlaylistsAndSettingsOpen() {
         MainActivityCore host = launchWithLibrary();
+        int cardInset = host.responsiveLayoutController.contentScrollbarClearance();
+        assertEquals(cardInset, host.list.getPaddingLeft());
+        assertEquals(cardInset, host.list.getPaddingRight());
         assertEquals(LibraryTabs.HOME, host.navigationState.tabIndex);
         Track track = host.libraryState.tracks.get(0);
+        View homeSongCard = host.list.findViewById(R.id.song_card);
+        assertNotNull(homeSongCard);
+        int libraryCardWidth = homeSongCard.getWidth();
+        int libraryCardHeight = host.uiFactory.libraryCardHeight();
+        assertLibraryCardSize(homeSongCard, libraryCardWidth, libraryCardHeight);
 
         assertOverlayOpens(host, host.overlayController::openSearch);
         assertOverlayOpens(host, host.overlayController::openQueue);
@@ -108,6 +122,8 @@ public class LibraryExperienceUiInstrumentedTest {
         });
         InstrumentedTestSupport.waitFor("Songs tab did not open", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.SONGS);
+        assertLibraryCardSize(host.songsView.findViewById(R.id.song_card),
+                libraryCardWidth, libraryCardHeight);
         assertTrue(host.libraryState.favorites.contains(track.uri));
         assertFalse(host.libraryState.playlists.isEmpty());
 
@@ -116,6 +132,8 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Favorite track did not render", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.FAVORITES
                         && findText(host.list, TextView.class, track.title) != null);
+        assertLibraryCardSize(host.list.findViewById(R.id.song_card),
+                libraryCardWidth, libraryCardHeight);
 
         instrumentation.runOnMainSync(() -> {
             host.switchTabAnimated(LibraryTabs.PLAYLISTS, 1);
@@ -128,15 +146,17 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Compact playlist card was not laid out", 5000L,
                 () -> host.list.findViewById(R.id.playlist_card) != null
                         && host.list.findViewById(R.id.playlist_card).getHeight() > 0);
-        ImageView playlistCover = findStaticPlaylistCover(host.list);
+        ImageView playlistCover = findPlaylistCover(host.list);
         assertNotNull(playlistCover);
         View playlistCard = host.list.findViewById(R.id.playlist_card);
         assertNotNull(playlistCard);
-        assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_card_height),
-                playlistCard.getHeight());
+        assertLibraryCardSize(playlistCard, libraryCardWidth, libraryCardHeight);
+        assertEquals(cardInset, host.list.getPaddingLeft());
+        assertEquals(cardInset, host.list.getPaddingRight());
+        assertVisibleOutline(playlistCard);
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
                 playlistCover.getHeight());
-        assertFalse("Playlist cover must stay static",
+        assertTrue("Playlist cover must support circular rotation",
                 playlistCover instanceof RotatingCoverImageView);
         assertTrue("Playlist card must not contain a moving ticker",
                 !containsViewClassName(host.list, "SmoothPlaylistTicker"));
@@ -148,11 +168,169 @@ public class LibraryExperienceUiInstrumentedTest {
         instrumentation.runOnMainSync(() -> assertSame(
                 "Playlist artwork changed after the removed ticker interval",
                 initialPlaylistArtwork[0], playlistCover.getDrawable()));
+        capture(host, "playlist-cards.png");
+
+        assertGroupCardSize(host, LibraryTabs.GENRES, libraryCardWidth, libraryCardHeight);
+        assertGroupCardSize(host, LibraryTabs.ARTISTS, libraryCardWidth, libraryCardHeight);
+        assertGroupCardSize(host, LibraryTabs.ALBUMS, libraryCardWidth, libraryCardHeight);
+        View groupCard = host.list.findViewById(R.id.group_card);
+        assertVisibleOutline(groupCard);
+        int[] groupLocation = new int[2];
+        int[] contentLocation = new int[2];
+        instrumentation.runOnMainSync(() -> {
+            groupCard.getLocationInWindow(groupLocation);
+            host.contentHost.getLocationInWindow(contentLocation);
+        });
+        assertTrue("Group card touches the tab wheel",
+                groupLocation[1] - contentLocation[1] >= host.dp(8));
+        capture(host, "collection-cards.png");
+
+        instrumentation.runOnMainSync(() -> host.switchTabAnimated(LibraryTabs.FOLDERS, 1));
+        InstrumentedTestSupport.waitFor("Folder cards did not open", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.FOLDERS
+                        && host.list.findViewById(R.id.folder_card) != null
+                        && !host.navigationState.tabAnimating);
+        assertLibraryCardSize(host.list.findViewById(R.id.folder_card),
+                libraryCardWidth, libraryCardHeight);
+        assertEquals(cardInset, host.list.getPaddingLeft());
+        assertEquals(cardInset, host.list.getPaddingRight());
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
         InstrumentedTestSupport.waitFor("Settings tab did not open", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.SETTINGS);
+    }
+
+    @Test
+    public void scrollingContentCannotDrawBehindTabWheel() {
+        MainActivityCore host = launchWithLibrary();
+        instrumentation.runOnMainSync(() -> {
+            assertTrue("Content host must clip children at the tab boundary",
+                    host.contentHost.getClipChildren());
+            assertTrue("Content host must clip drawing to its bounds",
+                    host.contentHost.getClipToPadding());
+            assertEquals("Vertical stretch can expose content behind the tab wheel",
+                    View.OVER_SCROLL_NEVER, host.contentScroll.getOverScrollMode());
+        });
+
+        openTabByClick(host, LibraryTabs.SONGS);
+        instrumentation.runOnMainSync(() -> assertEquals(
+                "Songs list must not stretch behind the tab wheel",
+                View.OVER_SCROLL_NEVER,
+                findRecyclerView(host.songsView).getOverScrollMode()));
+    }
+
+    @Test
+    public void songPropertiesRequireDeliberateStationaryHold() {
+        MainActivityCore host = launchWithLibrary();
+        openTabByClick(host, LibraryTabs.SONGS);
+        View song = findDescription(host.songsView,
+                "Открыть или включить песню UI song 0");
+        assertNotNull(song);
+        instrumentation.runOnMainSync(host.overlayHost::removeAllViews);
+
+        long down = SystemClock.uptimeMillis();
+        dispatchTouch(song, MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, 20, 20, 0));
+        SystemClock.sleep(650L);
+        assertEquals("A normal touch must not open properties", 0, host.overlayHost.getChildCount());
+        dispatchTouch(song, MotionEvent.obtain(down, down + 660L,
+                MotionEvent.ACTION_MOVE, 80, 20, 0));
+        SystemClock.sleep(600L);
+        assertEquals("A swipe must cancel property opening", 0, host.overlayHost.getChildCount());
+        dispatchTouch(song, MotionEvent.obtain(down, down + 1270L,
+                MotionEvent.ACTION_UP, 80, 20, 0));
+
+        down = SystemClock.uptimeMillis();
+        dispatchTouch(song, MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, 20, 20, 0));
+        SystemClock.sleep(SafeLongPress.HOLD_MS + 120L);
+        InstrumentedTestSupport.waitFor("A deliberate hold did not open properties", 3000L,
+                () -> host.overlayHost.getChildCount() > 0);
+        dispatchTouch(song, MotionEvent.obtain(down, SystemClock.uptimeMillis(),
+                MotionEvent.ACTION_UP, 20, 20, 0));
+    }
+
+    @Test
+    public void collectionsExposePlaybackStateRotationAndFolderQueueAction() {
+        MainActivityCore host = launchWithLibrary();
+        instrumentation.runOnMainSync(() -> {
+            host.appearanceState.circularCovers = true;
+            host.playbackQueueController.clear();
+        });
+        openTabByClick(host, LibraryTabs.FOLDERS);
+        View addFolder = findDescription(host.list, "Добавить папку в очередь");
+        assertNotNull(addFolder);
+        instrumentation.runOnMainSync(addFolder::performClick);
+        InstrumentedTestSupport.waitFor("Folder was not added to the queue", 5000L,
+                () -> host.playbackUiState.queue.size() == host.libraryState.tracks.size());
+
+        openTabByClick(host, LibraryTabs.GENRES);
+        applyCollectionPlaybackState(host, host.libraryState.tracks, true);
+        View groupCard = host.list.findViewById(R.id.group_card);
+        assertNotNull(groupCard);
+        ViewGroup groupContainer = (ViewGroup) groupCard.getParent();
+        View groupMarker = groupContainer.getChildAt(1);
+        assertEquals(View.VISIBLE, groupMarker.getVisibility());
+        assertEquals(255, groupMarker.getBackground().getAlpha());
+        assertNotNull(findText(groupContainer, Button.class, "Ⅱ"));
+        RotatingCoverImageView groupCover = find(groupContainer, RotatingCoverImageView.class);
+        assertNotNull(groupCover);
+        float groupRotation = groupCover.getRotation();
+        SystemClock.sleep(250L);
+        assertTrue("Playing group cover did not rotate",
+                Math.abs(groupCover.getRotation() - groupRotation) > 0.1f);
+
+        instrumentation.runOnMainSync(() -> {
+            Playlist playlist = new Playlist("Playback playlist");
+            for (Track track : host.libraryState.tracks) playlist.uris.add(track.uri);
+            host.libraryState.playlists.add(playlist);
+        });
+        openTabByClick(host, LibraryTabs.PLAYLISTS);
+        applyCollectionPlaybackState(host, host.libraryState.tracks, true);
+        View playlistCard = host.list.findViewById(R.id.playlist_card);
+        assertNotNull(playlistCard);
+        ViewGroup playlistContainer = (ViewGroup) playlistCard.getParent();
+        assertEquals(View.VISIBLE, playlistContainer.getChildAt(1).getVisibility());
+        assertNotNull(findText(playlistContainer, Button.class, "Ⅱ"));
+        RotatingCoverImageView playlistCover = find(
+                playlistContainer, RotatingCoverImageView.class);
+        assertNotNull(playlistCover);
+        float playlistRotation = playlistCover.getRotation();
+        SystemClock.sleep(250L);
+        assertTrue("Playing playlist cover did not rotate",
+                Math.abs(playlistCover.getRotation() - playlistRotation) > 0.1f);
+    }
+
+    @Test
+    public void tabSwipeCancelsPendingSongProperties() {
+        MainActivityCore host = launchWithLibrary();
+        openTabByClick(host, LibraryTabs.SONGS);
+        View song = findDescription(host.songsView,
+                "Открыть или включить песню UI song 0");
+        assertNotNull(song);
+        instrumentation.runOnMainSync(host.overlayHost::removeAllViews);
+
+        int[] location = new int[2];
+        instrumentation.runOnMainSync(() -> song.getLocationInWindow(location));
+        float startX = location[0] + song.getWidth() * 0.35f;
+        float y = location[1] + song.getHeight() * 0.5f;
+        float endX = startX + host.dp(84);
+        long down = SystemClock.uptimeMillis();
+        dispatchActivityTouch(host, MotionEvent.obtain(
+                down, down, MotionEvent.ACTION_DOWN, startX, y, 0));
+        dispatchActivityTouch(host, MotionEvent.obtain(
+                down, down + 40L, MotionEvent.ACTION_MOVE, endX, y, 0));
+
+        SystemClock.sleep(SafeLongPress.HOLD_MS + 150L);
+        assertEquals("A tab swipe must cancel pending song properties",
+                0, host.overlayHost.getChildCount());
+
+        dispatchActivityTouch(host, MotionEvent.obtain(
+                down, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, endX, y, 0));
+        InstrumentedTestSupport.waitFor("Swipe did not return to Home", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.HOME
+                        && !host.navigationState.tabAnimating);
+        assertEquals("Song properties appeared after the tab transition",
+                0, host.overlayHost.getChildCount());
     }
 
     private void assertFullPlayerPages(MainActivityCore host, Track track) {
@@ -182,7 +360,8 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(queueTile);
         instrumentation.runOnMainSync(queueTile::performClick);
         InstrumentedTestSupport.waitFor("Queue tile did not open the queue", 5000L,
-                () -> pager.getCurrentItem() == FullPlayerPageOrder.QUEUE);
+                () -> pager.getCurrentItem() == FullPlayerPageOrder.QUEUE
+                        && pager.getScrollState() == ViewPager2.SCROLL_STATE_IDLE);
         RecyclerView queueList = findQueueList(host.overlayHost);
         assertNotNull(queueList);
         InstrumentedTestSupport.waitFor("Queue row did not render", 5000L,
@@ -227,6 +406,18 @@ public class LibraryExperienceUiInstrumentedTest {
             }
         }
         return null;
+    }
+
+    private static RecyclerView findRecyclerView(View view) {
+        if (view instanceof RecyclerView) return (RecyclerView) view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                RecyclerView found = findRecyclerView(group.getChildAt(index));
+                if (found != null) return found;
+            }
+        }
+        throw new AssertionError("RecyclerView not found");
     }
 
     private void swipeRight(RecyclerView target, View row) {
@@ -301,6 +492,78 @@ public class LibraryExperienceUiInstrumentedTest {
         event.recycle();
     }
 
+    private void applyCollectionPlaybackState(
+            MainActivityCore host, ArrayList<Track> tracks, boolean playing) {
+        instrumentation.runOnMainSync(() -> {
+            host.playbackUiState.queue.clear();
+            host.playbackUiState.queue.addAll(tracks);
+            Track current = tracks.get(0);
+            ArrayList<String> mediaIds = new ArrayList<>();
+            for (Track track : tracks) mediaIds.add(MediaItemMapper.stableHash(track.uri));
+            String mediaId = mediaIds.get(0);
+            host.updatePlaybackSnapshot(new PlaybackSnapshot(
+                    mediaIds, mediaId, 0, 1000L, current.durationMs, playing,
+                    Player.STATE_READY, Player.REPEAT_MODE_OFF, false,
+                    PlaybackPhase.READY, PauseReason.NONE, StopReason.NONE,
+                    null, System.currentTimeMillis()));
+            host.refreshAfterTrackChange();
+        });
+    }
+
+    private void dispatchActivityTouch(MainActivityCore host, MotionEvent event) {
+        instrumentation.runOnMainSync(() -> host.dispatchTouchEvent(event));
+        event.recycle();
+    }
+
+    private static void assertVisibleOutline(View card) {
+        Drawable background = card.getBackground();
+        assertNotNull(background);
+        Rect previous = background.copyBounds();
+        Bitmap bitmap = Bitmap.createBitmap(96, 48, Bitmap.Config.ARGB_8888);
+        background.setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        background.draw(new Canvas(bitmap));
+        int edge = bitmap.getPixel(bitmap.getWidth() / 2, 0);
+        int center = bitmap.getPixel(bitmap.getWidth() / 2, bitmap.getHeight() / 2);
+        int difference = Math.abs(Color.red(edge) - Color.red(center))
+                + Math.abs(Color.green(edge) - Color.green(center))
+                + Math.abs(Color.blue(edge) - Color.blue(center));
+        bitmap.recycle();
+        background.setBounds(previous);
+        assertTrue("Card outline is not visible", difference >= 12);
+    }
+
+    private void assertGroupCardSize(MainActivityCore host, int tab, int width, int height) {
+        instrumentation.runOnMainSync(() -> host.switchTabAnimated(tab, 1));
+        InstrumentedTestSupport.waitFor("Group cards did not open: " + tab, 5000L,
+                () -> host.navigationState.tabIndex == tab
+                        && host.list.findViewById(R.id.group_card) != null
+                        && !host.navigationState.tabAnimating);
+        assertLibraryCardSize(host.list.findViewById(R.id.group_card), width, height);
+        int inset = host.responsiveLayoutController.contentScrollbarClearance();
+        assertEquals(inset, host.list.getPaddingLeft());
+        assertEquals(inset, host.list.getPaddingRight());
+    }
+
+    private static void assertLibraryCardSize(View card, int width, int height) {
+        assertNotNull(card);
+        assertEquals("Library cards must share one width", width, card.getWidth());
+        assertEquals("Library cards must share one height", height, card.getHeight());
+    }
+
+    private void capture(MainActivityCore host, String name) {
+        Bitmap bitmap = Bitmap.createBitmap(
+                host.root.getWidth(), host.root.getHeight(), Bitmap.Config.ARGB_8888);
+        instrumentation.runOnMainSync(() -> host.root.draw(new Canvas(bitmap)));
+        File output = new File(host.getExternalFilesDir(null), name);
+        try (FileOutputStream stream = new FileOutputStream(output, false)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        } catch (Exception error) {
+            throw new AssertionError("Could not capture " + name, error);
+        } finally {
+            bitmap.recycle();
+        }
+    }
+
     private static boolean containsText(View view, String expected) {
         if (view instanceof TextView && expected.contentEquals(((TextView) view).getText())) {
             return true;
@@ -326,14 +589,14 @@ public class LibraryExperienceUiInstrumentedTest {
         return null;
     }
 
-    private static ImageView findStaticPlaylistCover(View view) {
-        if (view instanceof ImageView && !(view instanceof RotatingCoverImageView)) {
+    private static ImageView findPlaylistCover(View view) {
+        if (view instanceof RotatingCoverImageView) {
             return (ImageView) view;
         }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int index = 0; index < group.getChildCount(); index++) {
-                ImageView found = findStaticPlaylistCover(group.getChildAt(index));
+                ImageView found = findPlaylistCover(group.getChildAt(index));
                 if (found != null) return found;
             }
         }

@@ -69,6 +69,13 @@ public class TextClippingInstrumentedTest {
         checkDialog(host, "sleep timer", host.sleepTimerController::openDialog);
         checkDialog(host, "volume leveling",
                 host.volumeLevelingController::openDialog);
+        checkDialog(host, "track fade", () -> new FadeSettingsController(host).openDialog());
+        checkDialog(host, "leveling modes", host.volumeLevelingController::openModeDialog);
+        checkDialog(host, "playback speed", () -> new PlayerToolActions(host).chooseSpeed());
+        checkDialog(host, "editor clip", () -> new AudioEditorDialogs(host).edit(
+                new AudioEditClip("clipping-test", "content://test/audio", "Длинное название аудиофрагмента",
+                        120000L, 0L, 120000L, 0, 0L, 1.0f)));
+        checkDialog(host, "editor source picker", () -> new AudioEditorDialogs(host).chooseTrack(0));
         checkDialog(host, "text input", () -> host.overlayController.showInput(
                 "Название нового плейлиста", "Название плейлиста", "", false,
                 value -> { }));
@@ -80,8 +87,8 @@ public class TextClippingInstrumentedTest {
         context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
                 .clear().commit();
         MainActivityCore host = launchRussianActivity();
-        assertEquals("Voltune", host.getString(R.string.app_name));
-        assertEquals("Похожие", host.tabs[LibraryTabs.SOUND]);
+        assertEquals("Voltune — аудио плеер и редактор", host.getString(R.string.app_name));
+        assertEquals("Тематические альбомы", host.tabs[LibraryTabs.SOUND]);
         assertHomeTabCentered(host, "clean launch");
         List<String> duplicates = new ArrayList<>();
         instrumentation.runOnMainSync(() -> collectExactText(
@@ -151,6 +158,16 @@ public class TextClippingInstrumentedTest {
         });
         InstrumentedTestSupport.waitFor(name + " did not finish layout", 5000L,
                 () -> !host.overlayHost.isLayoutRequested());
+        instrumentation.runOnMainSync(() -> {
+            ViewGroup shade = (ViewGroup) host.overlayHost.getChildAt(0);
+            for (int index = 0; index < shade.getChildCount(); index++) {
+                View panel = shade.getChildAt(index);
+                assertTrue(name + " extends outside its viewport",
+                        panel.getLeft() >= 0 && panel.getTop() >= 0
+                                && panel.getRight() <= shade.getWidth()
+                                && panel.getBottom() <= shade.getHeight());
+            }
+        });
         assertNoClipping(name, host.overlayHost);
         Log.i("VoltuneClippingTest", "Finished " + name);
     }
