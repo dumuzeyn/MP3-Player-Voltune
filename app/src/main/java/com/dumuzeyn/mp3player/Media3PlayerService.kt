@@ -193,6 +193,7 @@ class Media3PlayerService : MediaLibraryService() {
 
     private fun applyAudioEffects() {
         if (editorPreview.active) return
+        if (loudnessNormalizer.isEnabled) prefetchLoudness()
         val analyzedGain = if (loudnessNormalizer.isEnabled) {
             loudnessNormalizer.cachedGainDb(playbackState.currentTrack())
         } else {
@@ -213,7 +214,13 @@ class Media3PlayerService : MediaLibraryService() {
             mapper.fromMediaItem(player.getMediaItemAt((start + offset) % player.mediaItemCount))
                 ?.let(upcoming::add)
         }
-        loudnessNormalizer.prefetch(upcoming, 0)
+        loudnessNormalizer.prefetch(upcoming, 0) { analyzed ->
+            serviceScope.launch {
+                if (playbackState.currentTrack()?.trackId == analyzed.trackId) {
+                    applyAudioEffects()
+                }
+            }
+        }
     }
 
     private fun recoverFromError(error: PlaybackException) {

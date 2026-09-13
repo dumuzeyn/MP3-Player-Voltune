@@ -35,6 +35,12 @@ class PlayerAudioToolsTest {
         }
     }
 
+    @Test fun aSingleAnalyzedTrackUsesDistinctStandardTargets() {
+        assertEquals(-20f, LoudnessLevelingMode.REDUCE.referenceTarget(listOf(-18f)), 0f)
+        assertEquals(-14f, LoudnessLevelingMode.BOOST.referenceTarget(listOf(-18f)), 0f)
+        assertEquals(-16f, LoudnessLevelingMode.BALANCED.referenceTarget(listOf(-18f)), 0f)
+    }
+
     @Test fun directionalModesNeverChangeTracksInOppositeDirection() {
         for (lufs in -50..0) for (peak in -40..0) {
             val cut = LoudnessLevelingMode.REDUCE.gainDb(lufs.toFloat(), peak.toFloat(), -20f)

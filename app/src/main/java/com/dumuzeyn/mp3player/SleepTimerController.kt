@@ -13,7 +13,7 @@ internal class SleepTimerController(private val host: MainActivityCore) {
         val panel = host.uiFactory.panelCard()
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16))
         panel.addView(
-            host.uiFactory.dialogTitle(host.tr3("Sleep timer", "Таймер сна", "◷")),
+            host.uiFactory.centeredDialogTitle(host.tr3("Sleep timer", "Таймер сна", "◷")),
             host.uiFactory.dialogTitleParams(),
         )
 

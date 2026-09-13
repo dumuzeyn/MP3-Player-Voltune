@@ -146,7 +146,12 @@ internal class FullPlayerPlaybackPage(
                 state.currentTrack()?.let(tools::toggleSaved)
                 refresh(false)
             }
-            setOnLongClickListener { state.currentTrack()?.let(tools::chooseCollection); true }
+            setOnLongClickListener {
+                state.currentTrack()?.let {
+                    tools.chooseCollection { refresh(false) }
+                }
+                true
+            }
         }.also { row.addView(it, toolParams()) }
         repeat = host.uiFactory.button(host.loopLabel()).apply {
             setOnClickListener {

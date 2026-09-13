@@ -78,10 +78,14 @@ internal class TrackLoudnessNormalizer(context: Context) {
         editor.apply()
     }
 
-    fun prefetch(queue: List<Track>?, currentIndex: Int) {
+    fun prefetch(
+        queue: List<Track>?,
+        currentIndex: Int,
+        onAnalyzed: ((Track) -> Unit)? = null,
+    ) {
         if (!isEnabled || queue.isNullOrEmpty()) return
         for (offset in 0 until min(3, queue.size)) {
-            prefetch(queue[(max(0, currentIndex) + offset) % queue.size])
+            prefetch(queue[(max(0, currentIndex) + offset) % queue.size], onAnalyzed)
         }
     }
 
@@ -148,12 +152,13 @@ internal class TrackLoudnessNormalizer(context: Context) {
             .getSharedPreferences(EqualizerController.PREFS, Context.MODE_PRIVATE)
             .getBoolean(VolumeLevelingController.ENABLED, false)
 
-    private fun prefetch(track: Track?) {
+    private fun prefetch(track: Track?, onAnalyzed: ((Track) -> Unit)?) {
         if (track == null || cachedResult(track) != null || !pending.add(track.trackId)) return
         executor.execute {
             try {
-                analyzeAndCache(track)
+                val analyzed = analyzeAndCache(track)
                 updateReferenceLevels()
+                if (analyzed) onAnalyzed?.invoke(track)
             } finally {
                 pending.remove(track.trackId)
             }

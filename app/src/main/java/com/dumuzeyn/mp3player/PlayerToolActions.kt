@@ -4,6 +4,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.SeekBar
 import java.util.Locale
+import kotlin.math.min
 
 /** Quick actions share the playback session's remembered collection. */
 internal class PlayerToolActions(private val host: MainActivityCore) {
@@ -29,16 +30,16 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
         host.playerUiController.syncPlaybackUi()
     }
 
-    fun chooseCollection(track: Track) {
+    fun chooseCollection(onSelectionChanged: () -> Unit = {}) {
         val options = mutableListOf<Pair<String, () -> Unit>>()
         options += host.tr("Favorites", "Избранное") to {
             preferences.edit().remove("collection").apply()
-            if (!isSaved(track)) toggleSaved(track)
+            onSelectionChanged()
         }
         host.libraryState.playlists.forEach { playlist ->
             options += playlist.name to {
                 preferences.edit().putString("collection", playlist.name).apply()
-                if (!isSaved(track)) toggleSaved(track)
+                onSelectionChanged()
             }
         }
         options += host.tr("Create playlist", "Создать плейлист") to {
@@ -46,8 +47,9 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
                 host.tr("New playlist", "Новый плейлист"),
                 host.tr("Name", "Название"), "", false,
             ) { name ->
-                val playlist = host.playlistController.createPlaylistWithTrack(name, track)
+                val playlist = host.playlistController.createPlaylist(name)
                 preferences.edit().putString("collection", playlist.name).apply()
+                onSelectionChanged()
                 host.playerUiController.syncPlaybackUi()
             }
         }
@@ -84,7 +86,7 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
     fun chooseSpeed() {
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
-        panel.addView(host.uiFactory.dialogTitle(host.tr("Playback speed", "Скорость воспроизведения")),
+        panel.addView(host.uiFactory.centeredDialogTitle(host.tr("Playback speed", "Скорость воспроизведения")),
             host.uiFactory.dialogTitleParams())
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         panel.addView(ScrollView(host).apply { addView(content) }, LinearLayout.LayoutParams(-1, -2, 1f))
@@ -130,7 +132,7 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
     private fun choose(title: String, options: List<Pair<String, () -> Unit>>) {
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
-        panel.addView(host.uiFactory.dialogTitle(title), host.uiFactory.dialogTitleParams())
+        panel.addView(host.uiFactory.centeredDialogTitle(title), host.uiFactory.dialogTitleParams())
         val rows = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         options.forEach { (label, action) ->
             rows.addView(host.uiFactory.button(label).apply {
@@ -142,7 +144,8 @@ internal class PlayerToolActions(private val host: MainActivityCore) {
             }, LinearLayout.LayoutParams(-1, host.dp(52)))
         }
         panel.addView(ScrollView(host).apply { addView(rows) }, LinearLayout.LayoutParams(-1, 0, 1f))
-        shade.addView(panel, host.centerParams(host.dp(340), host.dp(420)))
+        val panelHeight = min(420, 70 + options.size * 52)
+        shade.addView(panel, host.centerParams(host.dp(340), host.dp(panelHeight)))
         host.overlayHost.addView(shade)
     }
 }

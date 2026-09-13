@@ -1,6 +1,8 @@
 package com.dumuzeyn.mp3player
 
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -45,21 +47,26 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
     fun openModeDialog() {
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
-        panel.addView(host.uiFactory.dialogTitle(host.tr("Leveling mode", "Режим громкости")),
+        panel.addView(host.uiFactory.centeredDialogTitle(host.tr("Leveling mode", "Режим громкости")),
             host.uiFactory.dialogTitleParams())
         val choices = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         panel.addView(ScrollView(host).apply { addView(choices) }, LinearLayout.LayoutParams(-1, -2, 1f))
         LoudnessLevelingMode.entries.forEach { value ->
-            val option = dialogButton(modeLabel(value)).apply {
-                isSelected = value == mode()
-                if (isSelected) host.uiFactory.applyPrimaryButtonStyle(this)
+            val selected = value == mode()
+            val option = host.uiFactory.button(
+                (if (selected) "●  " else "○  ") + modeLabel(value),
+            ).apply {
+                gravity = Gravity.CENTER
+                setTextColor(if (selected) host.yellow else host.primaryText)
+                setBackgroundColor(Color.TRANSPARENT)
+                TextOutlinePolicy.markCardSurface(this, false)
                 setOnClickListener {
                     prefs().edit().putString(LoudnessLevelingMode.PREFERENCE, value.name).apply()
                     dispatchSettings()
                     host.overlayHost.removeView(shade)
                 }
             }
-            choices.addView(option, LinearLayout.LayoutParams(-1, host.dp(60)))
+            choices.addView(option, LinearLayout.LayoutParams(-1, host.dp(54)))
         }
         shade.addView(panel, host.centerParams(host.dp(350), -2))
         host.overlayHost.addView(shade)
@@ -71,7 +78,7 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
         val panel = host.uiFactory.panelCard()
         panel.setPadding(host.dp(16), host.dp(14), host.dp(16), host.dp(14))
         panel.addView(
-            host.uiFactory.dialogTitle(host.tr("Volume leveling", "Единая громкость")),
+            host.uiFactory.centeredDialogTitle(host.tr("Volume leveling", "Единая громкость")),
             host.uiFactory.dialogTitleParams(),
         )
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }

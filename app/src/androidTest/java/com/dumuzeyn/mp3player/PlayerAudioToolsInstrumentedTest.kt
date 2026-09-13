@@ -11,6 +11,8 @@ import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
@@ -84,9 +86,9 @@ class PlayerAudioToolsInstrumentedTest {
             assertFalse(prefs.getBoolean(VolumeLevelingController.ENABLED, true))
             assertTrue(level.performLongClick())
             for (label in listOf("Громкие до уровня тихих", "Тихие до уровня громких", "Сбалансированный")) {
-                assertNotNull(findText(activity.overlayHost, label))
+                assertNotNull(findTextContaining(activity.overlayHost, label))
             }
-            findText(activity.overlayHost, "Тихие до уровня громких")!!.performClick()
+            findTextContaining(activity.overlayHost, "Тихие до уровня громких")!!.performClick()
             assertEquals("BOOST", prefs.getString(LoudnessLevelingMode.PREFERENCE, null))
             assertFalse("Choosing a mode must not turn leveling on", prefs.getBoolean(VolumeLevelingController.ENABLED, true))
             prefs.edit()
@@ -121,6 +123,78 @@ class PlayerAudioToolsInstrumentedTest {
             waitSpeed(activity, coefficient)
             onMain { PlayerToolActions(activity).toggleSpeed() }
             waitSpeed(activity, 1f)
+        }
+    }
+
+    @Test fun choosingSaveDestinationDoesNotChangeMembership() {
+        val activity = launch()
+        onMain {
+            val track = activity.libraryState.tracks.first()
+            activity.libraryState.favorites.clear()
+            activity.libraryState.playlists.clear()
+            val playlist = Playlist("Проверочный плейлист")
+            activity.libraryState.playlists.add(playlist)
+            val tools = PlayerToolActions(activity)
+            var changes = 0
+
+            tools.chooseCollection { changes++ }
+            findText(activity.overlayHost, playlist.name)!!.performClick()
+
+            assertEquals(1, changes)
+            assertEquals(
+                playlist.name,
+                context.getSharedPreferences("player_tool_session", 0)
+                    .getString("collection", null),
+            )
+            assertFalse("Selecting a playlist must not add the song", playlist.uris.contains(track.uri))
+            assertFalse(tools.isSaved(track))
+
+            tools.toggleSaved(track)
+            assertTrue(playlist.uris.contains(track.uri))
+            assertTrue(tools.isSaved(track))
+
+            tools.chooseCollection { changes++ }
+            findText(activity.overlayHost, "Избранное")!!.performClick()
+            assertEquals(2, changes)
+            assertFalse("Selecting Favorites must not add the song", activity.libraryState.favorites.contains(track.uri))
+            assertFalse("Button state must follow the newly selected destination", tools.isSaved(track))
+
+            activity.libraryState.playlists.clear()
+            activity.saveLibraryState()
+            context.getSharedPreferences("player_tool_session", 0).edit().remove("collection").commit()
+        }
+    }
+
+    @Test fun firstAnalyzedTrackReceivesLevelingWithoutWaitingForTransition() {
+        val settings = context.getSharedPreferences(EqualizerController.PREFS, 0)
+        val cache = context.getSharedPreferences(TrackLoudnessNormalizer.PREFS, 0)
+        settings.edit()
+            .putBoolean(VolumeLevelingController.ENABLED, true)
+            .putString(LoudnessLevelingMode.PREFERENCE, LoudnessLevelingMode.BOOST.name)
+            .commit()
+        cache.edit().clear().commit()
+        val wave = InstrumentedTestSupport.createTestWave(context, "leveling-first-track.wav", 2)
+        val track = Track(
+            Uri.fromFile(wave).toString(),
+            "Quiet track",
+            "Voltune tests",
+            "Test",
+            "Test",
+            2_000,
+        )
+        val completed = CountDownLatch(1)
+        val normalizer = TrackLoudnessNormalizer(context)
+        try {
+            normalizer.prefetch(listOf(track), 0) { completed.countDown() }
+            assertTrue("Level analysis did not finish", completed.await(10, TimeUnit.SECONDS))
+            assertTrue(
+                "Boost mode must produce an audible gain for the first quiet track",
+                normalizer.cachedGainDb(track) > 0.05f,
+            )
+        } finally {
+            normalizer.release()
+            cache.edit().clear().commit()
+            settings.edit().remove(LoudnessLevelingMode.PREFERENCE).commit()
         }
     }
 
@@ -160,4 +234,7 @@ class PlayerAudioToolsInstrumentedTest {
 
     private fun findText(view: View, label: String): TextView? =
         descendants(view).filterIsInstance<TextView>().firstOrNull { it.text.toString() == label }
+
+    private fun findTextContaining(view: View, label: String): TextView? =
+        descendants(view).filterIsInstance<TextView>().firstOrNull { label in it.text.toString() }
 }

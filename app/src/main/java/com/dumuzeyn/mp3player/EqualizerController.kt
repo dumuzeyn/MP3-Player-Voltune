@@ -29,7 +29,7 @@ internal class EqualizerController(private val host: MainActivityCore) {
         val panel = host.uiFactory.panelCard()
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16))
         panel.addView(
-            host.uiFactory.dialogTitle(host.tr("Equalizer", "Эквалайзер")),
+            host.uiFactory.centeredDialogTitle(host.tr("Equalizer", "Эквалайзер")),
             host.uiFactory.dialogTitleParams(),
         )
 
@@ -109,7 +109,7 @@ internal class EqualizerController(private val host: MainActivityCore) {
         val panel = host.uiFactory.panelCard()
         panel.setPadding(host.dp(16), host.dp(16), host.dp(16), host.dp(16))
         panel.addView(
-            host.uiFactory.dialogTitle(
+            host.uiFactory.centeredDialogTitle(
                 host.tr("Equalizer profile", "Профиль эквалайзера"),
                 21,
             ),

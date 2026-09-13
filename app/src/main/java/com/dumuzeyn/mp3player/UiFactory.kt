@@ -44,6 +44,9 @@ internal class UiFactory(private val host: MainActivityCore) {
         setPadding(0, host.dp(4), 0, host.dp(10))
     }
 
+    fun centeredDialogTitle(value: String, size: Int = 22): TextView =
+        dialogTitle(value, size).apply { gravity = Gravity.CENTER }
+
     fun dialogTitleParams(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(
         LinearLayout.LayoutParams.MATCH_PARENT,
         LinearLayout.LayoutParams.WRAP_CONTENT,

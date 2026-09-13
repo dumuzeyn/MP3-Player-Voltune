@@ -10,7 +10,7 @@ internal enum class LoudnessLevelingMode(val fallbackTarget: Float) {
 
     fun referenceTarget(levels: List<Float>): Float {
         val finite = levels.filter { it.isFinite() }
-        if (finite.isEmpty()) return fallbackTarget
+        if (finite.size < MIN_REFERENCE_TRACKS) return fallbackTarget
         return when (this) {
             REDUCE -> finite.min()
             BOOST -> finite.max()
@@ -29,6 +29,7 @@ internal enum class LoudnessLevelingMode(val fallbackTarget: Float) {
 
     companion object {
         const val PREFERENCE = "leveling_mode"
+        private const val MIN_REFERENCE_TRACKS = 2
 
         fun fromPreference(value: String?, legacyReduceOnly: Boolean): LoudnessLevelingMode =
             entries.firstOrNull { it.name == value } ?: if (legacyReduceOnly) REDUCE else BALANCED
