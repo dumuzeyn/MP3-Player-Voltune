@@ -202,6 +202,25 @@ public class LibraryExperienceUiInstrumentedTest {
     }
 
     @Test
+    public void scrollingContentCannotDrawBehindTabWheel() {
+        MainActivityCore host = launchWithLibrary();
+        instrumentation.runOnMainSync(() -> {
+            assertTrue("Content host must clip children at the tab boundary",
+                    host.contentHost.getClipChildren());
+            assertTrue("Content host must clip drawing to its bounds",
+                    host.contentHost.getClipToPadding());
+            assertEquals("Vertical stretch can expose content behind the tab wheel",
+                    View.OVER_SCROLL_NEVER, host.contentScroll.getOverScrollMode());
+        });
+
+        openTabByClick(host, LibraryTabs.SONGS);
+        instrumentation.runOnMainSync(() -> assertEquals(
+                "Songs list must not stretch behind the tab wheel",
+                View.OVER_SCROLL_NEVER,
+                findRecyclerView(host.songsView).getOverScrollMode()));
+    }
+
+    @Test
     public void songPropertiesRequireDeliberateStationaryHold() {
         MainActivityCore host = launchWithLibrary();
         openTabByClick(host, LibraryTabs.SONGS);
@@ -387,6 +406,18 @@ public class LibraryExperienceUiInstrumentedTest {
             }
         }
         return null;
+    }
+
+    private static RecyclerView findRecyclerView(View view) {
+        if (view instanceof RecyclerView) return (RecyclerView) view;
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                RecyclerView found = findRecyclerView(group.getChildAt(index));
+                if (found != null) return found;
+            }
+        }
+        throw new AssertionError("RecyclerView not found");
     }
 
     private void swipeRight(RecyclerView target, View row) {

@@ -218,6 +218,7 @@ internal class SwipeController(private val host: MainActivityCore) {
             val scroll = ScrollView(host).apply {
                 addView(list, FrameLayout.LayoutParams(-1, -2))
                 translationX = direction * transitionDistance.toFloat()
+                overScrollMode = View.OVER_SCROLL_NEVER
             }
             previewList = list
             previewScroll = scroll

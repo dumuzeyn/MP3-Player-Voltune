@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player
 
 import android.content.Context
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -67,10 +68,12 @@ internal class MainScreenView(
         callbacks.buildTabs(page)
 
         val contentHost = FrameLayout(context).apply {
-            clipChildren = false
-            clipToPadding = false
+            clipChildren = true
+            clipToPadding = true
         }
-        val contentScroll = ScrollView(context)
+        val contentScroll = ScrollView(context).apply {
+            overScrollMode = View.OVER_SCROLL_NEVER
+        }
         val contentList = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             val clearance = layout.contentScrollbarClearance()

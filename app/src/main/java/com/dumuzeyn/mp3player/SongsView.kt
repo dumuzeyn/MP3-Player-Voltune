@@ -52,6 +52,7 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
+        recyclerView.overScrollMode = View.OVER_SCROLL_NEVER
         recyclerView.isVerticalScrollBarEnabled = false
         val cardInset = host.responsiveLayoutController.contentScrollbarClearance()
         recyclerView.setPadding(cardInset, 0, cardInset, host.dp(88))
