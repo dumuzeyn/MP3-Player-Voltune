@@ -159,6 +159,21 @@ object TrackStore {
     }
 
     @JvmStatic
+    fun refreshFolderAlbumMetadata(context: Context, oldTrack: Track): Track {
+        val refreshed = refreshMetadata(context, oldTrack)
+        return refreshed.withMetadata(
+            oldTrack.title,
+            keepExplicit(oldTrack.artist, "Unknown artist", refreshed.artist),
+            refreshed.album,
+            keepExplicit(oldTrack.albumArtist, "Unknown artist", refreshed.albumArtist),
+            if (GenreNormalizer.isUnknown(oldTrack.genre)) refreshed.genre else oldTrack.genre,
+            oldTrack.year.takeIf { it > 0 } ?: refreshed.year,
+            oldTrack.trackNumber.takeIf { it > 0 } ?: refreshed.trackNumber,
+            oldTrack.discNumber.takeIf { it > 0 } ?: refreshed.discNumber,
+        )
+    }
+
+    @JvmStatic
     fun canOpenForRead(context: Context, uri: Uri): Boolean {
         var descriptor: AssetFileDescriptor? = null
         return try {
@@ -306,6 +321,13 @@ object TrackStore {
     }
 
     private fun isBlank(value: String?): Boolean = value.isNullOrBlank()
+
+    private fun keepExplicit(current: String, placeholder: String, refreshed: String): String =
+        current.takeUnless {
+            it.isBlank() ||
+                it.equals(placeholder, ignoreCase = true) ||
+                it.equals("<unknown>", ignoreCase = true)
+        } ?: refreshed
 
     private fun parseDurationMs(raw: String?): Int {
         if (raw.isNullOrBlank()) return 0

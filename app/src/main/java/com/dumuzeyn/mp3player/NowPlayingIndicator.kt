@@ -9,10 +9,14 @@ import android.widget.FrameLayout
 /** Creates the shared current-track marker used by every library surface. */
 object NowPlayingIndicator {
     @JvmStatic
-    fun create(host: MainActivityCore): View = View(host).also { style(it, host.yellowDark) }
+    fun create(host: MainActivityCore): View = View(host).also {
+        style(it, host.getColor(R.color.voltune_secondary_strong))
+    }
 
     @JvmStatic
     fun style(indicator: View, color: Int) {
+        indicator.alpha = 1f
+        indicator.elevation = indicator.resources.displayMetrics.density * 2f
         indicator.background = GradientDrawable().apply {
             setColor(color or 0xFF000000.toInt())
             cornerRadius = indicator.resources.getDimension(R.dimen.now_playing_indicator_width)

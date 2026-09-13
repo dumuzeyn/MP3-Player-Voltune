@@ -109,11 +109,9 @@ object DeviceMusicScanner {
             0L,
             0L,
         )
-        return if (GenreNormalizer.isUnknown(indexed.genre)) {
-            TrackStore.refreshMetadata(context, indexed)
-        } else {
-            indexed
-        }
+        // MediaStore synthesizes album names from folders when files have no album tag.
+        // Read the file metadata once so Albums reflects tags rather than storage layout.
+        return TrackStore.refreshMetadata(context, indexed)
     }
 
     private fun projection(includeGenre: Boolean): Array<String> = buildList {

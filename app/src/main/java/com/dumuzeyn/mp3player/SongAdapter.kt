@@ -149,7 +149,10 @@ internal class SongAdapter(private val host: MainActivityCore) :
             title.setTextColor(host.primaryText)
             title.ellipsize = TextUtils.TruncateAt.END
             duration.setTextColor(host.secondaryText)
-            NowPlayingIndicator.style(marker, host.yellowDark)
+            NowPlayingIndicator.style(
+                marker,
+                host.getColor(R.color.voltune_secondary_strong),
+            )
             configureButton(play)
             host.uiFactory.applyPlainIconStyle(play, host.purple)
 

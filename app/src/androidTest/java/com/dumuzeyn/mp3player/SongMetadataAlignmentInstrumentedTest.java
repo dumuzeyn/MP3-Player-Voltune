@@ -42,6 +42,8 @@ public class SongMetadataAlignmentInstrumentedTest {
         assertEquals(context.getResources().getDimensionPixelSize(
                 R.dimen.now_playing_indicator_height), marker.getHeight());
         NowPlayingIndicator.style(marker, Color.MAGENTA);
+        assertEquals(1.0f, marker.getAlpha(), 0.0f);
+        assertTrue(marker.getElevation() > 0.0f);
         assertTrue(marker.getBackground() instanceof GradientDrawable);
         assertTrue(((GradientDrawable) marker.getBackground()).getCornerRadius() > 0.0f);
     }

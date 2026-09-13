@@ -71,6 +71,7 @@ class LibraryMaintenanceController(
         val unavailable = ArrayList<Track>()
         val checked = HashSet<String>()
         val candidates = candidatesById()
+        val folders = deviceFoldersByTrackId(tracks)
         for (track in tracks) {
             if (closed) return
             when (LibraryFileAccessManager.accessState(context, track)) {
@@ -83,8 +84,13 @@ class LibraryMaintenanceController(
             }
             if (track.trackId !in candidates) continue
             checked += track.trackId
-            if (!needsRefresh(track)) continue
-            val updated = TrackStore.refreshMetadata(context, track)
+            val folderAlbum = folders[track.trackId]?.equals(track.album, ignoreCase = true) == true
+            if (!needsRefresh(track) && !folderAlbum) continue
+            val updated = if (folderAlbum) {
+                TrackStore.refreshFolderAlbumMetadata(context, track)
+            } else {
+                TrackStore.refreshMetadata(context, track)
+            }
             if (metadataChanged(track, updated)) refreshed += updated
         }
         if (closed) return
@@ -112,6 +118,16 @@ class LibraryMaintenanceController(
         TrackStore.loadMetadataRefreshCandidates(context, METADATA_REVISION)
             .associateBy(Track::trackId)
 
+    private fun deviceFoldersByTrackId(tracks: List<Track>): Map<String, String> {
+        val folders = HashMap<String, String>()
+        FolderGrouping(context).group(tracks).forEach { (name, groupedTracks) ->
+            groupedTracks.forEach { track ->
+                if (track.uri.startsWith("content://media/")) folders[track.trackId] = name
+            }
+        }
+        return folders
+    }
+
     private fun needsRefresh(track: Track): Boolean =
         track.durationMs <= 0 ||
             isMissing(track.artist, "Unknown artist") ||
@@ -136,6 +152,6 @@ class LibraryMaintenanceController(
             before.discNumber != after.discNumber
 
     companion object {
-        const val METADATA_REVISION = 1
+        const val METADATA_REVISION = 2
     }
 }
