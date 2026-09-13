@@ -24,6 +24,7 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
 
     private fun folderRow(name: String, tracks: ArrayList<Track>): View {
         val row = host.uiFactory.row().apply {
+            id = R.id.folder_card
             setPadding(host.dp(10), host.dp(5), host.dp(6), host.dp(5))
         }
         host.uiFactory.applyCardStyle(row, host.appearanceState.songCardOpacity)

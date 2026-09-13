@@ -66,7 +66,10 @@ internal class MainScreenView(
 
         val contentHost = FrameLayout(context)
         val contentScroll = ScrollView(context)
-        val contentList = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
+        val contentList = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 0, layout.contentScrollbarClearance(), 0)
+        }
         contentScroll.addView(contentList, FrameLayout.LayoutParams(-1, -2))
         contentScroll.setOnScrollChangeListener { _, _, _, _, _ -> callbacks.onContentScrolled() }
         contentHost.addView(contentScroll, FrameLayout.LayoutParams(-1, -1))

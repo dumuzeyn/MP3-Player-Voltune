@@ -4,6 +4,7 @@ import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.Space
 
 internal class HeaderController(private val host: MainActivityCore) {
     fun renderSectionHeader() {
@@ -34,6 +35,13 @@ internal class HeaderController(private val host: MainActivityCore) {
                 }
                 addView(actions, LinearLayout.LayoutParams(-1, host.dp(62)))
             }
+
+            LibraryTabs.SOUND,
+            LibraryTabs.GENRES,
+            LibraryTabs.ARTISTS,
+            LibraryTabs.ALBUMS,
+            LibraryTabs.FOLDERS,
+            -> addView(Space(host), LinearLayout.LayoutParams(-1, host.dp(10)))
         }
     }
 

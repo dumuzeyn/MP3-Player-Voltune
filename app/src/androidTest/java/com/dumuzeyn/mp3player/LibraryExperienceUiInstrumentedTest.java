@@ -10,6 +10,10 @@ import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.SystemClock;
@@ -25,6 +29,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.viewpager2.widget.ViewPager2;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.After;
@@ -80,6 +86,7 @@ public class LibraryExperienceUiInstrumentedTest {
     @Test
     public void homeSearchQueueLyricsMetadataFavoritesPlaylistsAndSettingsOpen() {
         MainActivityCore host = launchWithLibrary();
+        assertEquals(host.dp(24), host.list.getPaddingRight());
         assertEquals(LibraryTabs.HOME, host.navigationState.tabIndex);
         Track track = host.libraryState.tracks.get(0);
 
@@ -134,6 +141,7 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(playlistCard);
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_card_height),
                 playlistCard.getHeight());
+        assertVisibleOutline(playlistCard);
         assertEquals(host.getResources().getDimensionPixelSize(R.dimen.playlist_cover_size),
                 playlistCover.getHeight());
         assertFalse("Playlist cover must stay static",
@@ -148,6 +156,24 @@ public class LibraryExperienceUiInstrumentedTest {
         instrumentation.runOnMainSync(() -> assertSame(
                 "Playlist artwork changed after the removed ticker interval",
                 initialPlaylistArtwork[0], playlistCover.getDrawable()));
+        capture(host, "playlist-cards.png");
+
+        instrumentation.runOnMainSync(() ->
+                host.switchTabAnimated(LibraryTabs.ALBUMS, 1));
+        InstrumentedTestSupport.waitFor("Album cards did not open", 5000L,
+                () -> host.navigationState.tabIndex == LibraryTabs.ALBUMS
+                        && host.list.findViewById(R.id.group_card) != null);
+        View groupCard = host.list.findViewById(R.id.group_card);
+        assertVisibleOutline(groupCard);
+        int[] groupLocation = new int[2];
+        int[] contentLocation = new int[2];
+        instrumentation.runOnMainSync(() -> {
+            groupCard.getLocationInWindow(groupLocation);
+            host.contentHost.getLocationInWindow(contentLocation);
+        });
+        assertTrue("Group card touches the tab wheel",
+                groupLocation[1] - contentLocation[1] >= host.dp(8));
+        capture(host, "collection-cards.png");
 
         instrumentation.runOnMainSync(() ->
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
@@ -367,6 +393,37 @@ public class LibraryExperienceUiInstrumentedTest {
     private void dispatchActivityTouch(MainActivityCore host, MotionEvent event) {
         instrumentation.runOnMainSync(() -> host.dispatchTouchEvent(event));
         event.recycle();
+    }
+
+    private static void assertVisibleOutline(View card) {
+        Drawable background = card.getBackground();
+        assertNotNull(background);
+        Rect previous = background.copyBounds();
+        Bitmap bitmap = Bitmap.createBitmap(96, 48, Bitmap.Config.ARGB_8888);
+        background.setBounds(0, 0, bitmap.getWidth(), bitmap.getHeight());
+        background.draw(new Canvas(bitmap));
+        int edge = bitmap.getPixel(bitmap.getWidth() / 2, 0);
+        int center = bitmap.getPixel(bitmap.getWidth() / 2, bitmap.getHeight() / 2);
+        int difference = Math.abs(Color.red(edge) - Color.red(center))
+                + Math.abs(Color.green(edge) - Color.green(center))
+                + Math.abs(Color.blue(edge) - Color.blue(center));
+        bitmap.recycle();
+        background.setBounds(previous);
+        assertTrue("Card outline is not visible", difference >= 12);
+    }
+
+    private void capture(MainActivityCore host, String name) {
+        Bitmap bitmap = Bitmap.createBitmap(
+                host.root.getWidth(), host.root.getHeight(), Bitmap.Config.ARGB_8888);
+        instrumentation.runOnMainSync(() -> host.root.draw(new Canvas(bitmap)));
+        File output = new File(host.getExternalFilesDir(null), name);
+        try (FileOutputStream stream = new FileOutputStream(output, false)) {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        } catch (Exception error) {
+            throw new AssertionError("Could not capture " + name, error);
+        } finally {
+            bitmap.recycle();
+        }
     }
 
     private static boolean containsText(View view, String expected) {

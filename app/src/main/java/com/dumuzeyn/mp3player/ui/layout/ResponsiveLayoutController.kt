@@ -21,6 +21,8 @@ class ResponsiveLayoutController(private val activity: Activity) {
 
     fun pageTopPadding(): Int = dp(if (isTablet()) 18 else 14)
 
+    fun contentScrollbarClearance(): Int = dp(24)
+
     fun mainPageParams(): FrameLayout.LayoutParams = if (!isTablet()) {
         FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,

@@ -32,7 +32,7 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
             gravity = Gravity.CENTER_VERTICAL
             setPadding(host.dp(7), host.dp(4), host.dp(6), host.dp(4))
         }
-        host.uiFactory.setSurface(card, host.panel, false, host.appearanceState.playlistCardOpacity)
+        host.uiFactory.setSurface(card, host.panel, true, host.appearanceState.playlistCardOpacity)
         val cover = host.uiFactory.staticCoverView()
         val fallbackColor = host.purpleSoft
         if (tracks.isEmpty()) {

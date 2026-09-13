@@ -303,6 +303,12 @@ It is not a release-completion declaration.
   moves a short blue-to-gold thumb continuously like the Home scrollbar. Letters
   follow the free thumb position without snapping it, stay clear of song cards,
   and the bottom endpoint always exposes the final song in the filtered list.
+- Song cards keep their original width while the alphabet labels sit beside the
+  slightly inset thumb. Other library lists reserve the same end clearance, so
+  the Home scrollbar never touches their cards.
+- Playlist, thematic, genre, artist and album cards use a density-correct 1dp
+  outline. Thematic groups and collection lists keep a 10dp gap below the tab
+  wheel, including folders whose cards already use the standard outline.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

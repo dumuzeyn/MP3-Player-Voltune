@@ -72,7 +72,7 @@ internal class AlphabetRailView(context: Context) : View(context) {
         val thumbTop = paddingTop + thumbTravel * scrollProgress
         val thumbBottom = thumbTop + thumbHeight
         val halfThumb = dp(1.5f)
-        val thumbCenterX = width - dp(2.5f)
+        val thumbCenterX = width - dp(5f)
         thumbPaint.shader = LinearGradient(
             0f, thumbTop, 0f, thumbBottom, gradientStart, gradientEnd, Shader.TileMode.CLAMP,
         )
@@ -80,12 +80,12 @@ internal class AlphabetRailView(context: Context) : View(context) {
             RectF(thumbCenterX - halfThumb, thumbTop, thumbCenterX + halfThumb, thumbBottom),
             halfThumb, halfThumb, thumbPaint,
         )
-        val labelCenterX = (width - dp(8f)) / 2f
+        val labelCenterX = width - dp(12f)
         textPaint.textSize = min(dp(11f), max(dp(7f), cell * 0.72f))
         entries.forEachIndexed { index, entry ->
             val labelCenterY = paddingTop + cell * (index + 0.5f)
             if (index == selected) {
-                val radius = min(dp(7f), max(dp(5f), cell * 0.46f))
+                val radius = min(dp(6f), max(dp(5f), cell * 0.46f))
                 canvas.drawCircle(labelCenterX, labelCenterY, radius, selectedPaint)
             }
             selectedTextPaint.textSize = textPaint.textSize

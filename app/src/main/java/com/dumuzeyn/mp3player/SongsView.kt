@@ -44,7 +44,7 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
-        recyclerView.setPadding(0, 0, host.dp(44), host.dp(88))
+        recyclerView.setPadding(0, 0, host.dp(24), host.dp(88))
         recyclerView.itemAnimator = null
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {

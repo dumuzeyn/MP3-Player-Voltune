@@ -191,6 +191,6 @@ internal class UiFactory(private val host: MainActivityCore) {
         GradientDrawable().apply {
             setColor(color)
             cornerRadius = host.dp(if (outlined) 16 else 14).toFloat()
-            setStroke(if (outlined) 1 else 0, if (outlined) host.cardStroke else color)
+            setStroke(if (outlined) host.dp(1) else 0, if (outlined) host.cardStroke else color)
         }
 }

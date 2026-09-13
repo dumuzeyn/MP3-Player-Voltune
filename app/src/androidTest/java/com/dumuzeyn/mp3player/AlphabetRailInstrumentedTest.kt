@@ -60,10 +60,12 @@ class AlphabetRailInstrumentedTest {
                 && (host.songsView?.recyclerView()?.adapter?.itemCount ?: 0) > 50
         }
         val rail = find(host.songsView!!, AlphabetRailView::class.java)
+        val recycler = host.songsView!!.recyclerView()
         assertNotNull(rail)
         assertEquals(View.VISIBLE, rail!!.visibility)
         assertTrue(rail.width <= host.dp(30))
         assertTrue(rail.height >= host.songsView!!.height - host.dp(2))
+        assertEquals(host.dp(24), recycler.paddingRight)
         val initialThumbCenter = thumbCenter(host, rail)
         touchRail(rail, 0.20f)
         val firstFreePosition = thumbCenter(host, rail)
@@ -81,7 +83,8 @@ class AlphabetRailInstrumentedTest {
             rail.getLocationInWindow(railLocation)
             firstCard.getLocationInWindow(cardLocation)
         }
-        assertTrue(railLocation[0] - (cardLocation[0] + firstCard.width) >= host.dp(8))
+        val circleLeft = railLocation[0] + rail.width - host.dp(12) - host.dp(6)
+        assertTrue(circleLeft - (cardLocation[0] + firstCard.width) >= host.dp(1))
         capture(host, "alphabet-rail.png")
 
         touchRail(rail, 1f)
@@ -121,7 +124,7 @@ class AlphabetRailInstrumentedTest {
             bitmap = Bitmap.createBitmap(rail.width, rail.height, Bitmap.Config.ARGB_8888)
             rail.draw(Canvas(bitmap))
         }
-        val x = rail.width - host.dp(3)
+        val x = rail.width - host.dp(5)
         val rows = (0 until rail.height).filter { Color.alpha(bitmap.getPixel(x, it)) > 128 }
         assertTrue(rows.size in host.dp(20)..host.dp(44))
         val colors = rows.map { bitmap.getPixel(x, it) }

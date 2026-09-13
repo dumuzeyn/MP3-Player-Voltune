@@ -35,9 +35,10 @@ internal abstract class TrackGroupMenuRenderer(
 
     private fun groupCard(name: String, tracks: ArrayList<Track>): LinearLayout {
         val row = host.uiFactory.row().apply {
+            id = R.id.group_card
             setPadding(host.dp(6), host.dp(4), host.dp(8), host.dp(4))
         }
-        host.uiFactory.setSurface(row, host.panel, false, cardOpacity())
+        host.uiFactory.setSurface(row, host.panel, true, cardOpacity())
         val cover = host.uiFactory.coverView()
         val fallbackColor = host.purpleSoft
         if (tracks.isEmpty()) {
