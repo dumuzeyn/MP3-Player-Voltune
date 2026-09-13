@@ -4,11 +4,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
-import android.view.Gravity
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlin.math.roundToInt
 
 /** Persistent, recyclable surface for the main Songs tab. */
 internal class SongsView(private val host: MainActivityCore) : FrameLayout(host), AutoCloseable {
@@ -16,7 +14,6 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
     private val songAdapter = SongAdapter(host)
     private val headerAdapter = HeaderAdapter()
     private val emptyAdapter = EmptyAdapter()
-    private val alphabetRail = AlphabetRailView(host)
     private val searchOwner = "songs-" + Integer.toHexString(System.identityHashCode(this))
     private val progressTicker = object : Runnable {
         override fun run() {
@@ -32,61 +29,28 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             }
         }
     }
-    private val hideAlphabetRail = Runnable {
-        if (alphabetRail.visibility != View.VISIBLE) return@Runnable
-        alphabetRail.animate().cancel()
-        alphabetRail.animate()
-            .alpha(0f)
-            .setDuration(ALPHABET_FADE_MS)
-            .withEndAction {
-                if (alphabetRail.alpha == 0f) alphabetRail.visibility = View.INVISIBLE
-            }
-            .start()
-    }
-
     private var sourceSnapshot = ArrayList<Track>()
     private var query = ""
     private var closed = false
     private var hostVisible = true
 
     init {
-        clipChildren = false
-        clipToPadding = false
         recyclerView.layoutManager = LinearLayoutManager(host).apply {
             recycleChildrenOnDetach = true
         }
         recyclerView.setItemViewCacheSize(6)
         recyclerView.clipToPadding = false
+        recyclerView.isVerticalScrollBarEnabled = true
+        recyclerView.scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
+        recyclerView.isScrollbarFadingEnabled = true
         val cardInset = host.responsiveLayoutController.contentScrollbarClearance()
         recyclerView.setPadding(cardInset, 0, cardInset, host.dp(88))
         recyclerView.itemAnimator = null
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(view: RecyclerView, dx: Int, dy: Int) {
-                syncAlphabetToList()
-                if (dy != 0) {
-                    showAlphabetRail()
-                    if (view.scrollState == RecyclerView.SCROLL_STATE_IDLE) scheduleAlphabetRailHide()
-                }
-            }
-
-            override fun onScrollStateChanged(view: RecyclerView, newState: Int) {
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    scheduleAlphabetRailHide()
-                } else {
-                    showAlphabetRail()
-                }
-            }
-        })
         val config = ConcatAdapter.Config.Builder()
             .setStableIdMode(ConcatAdapter.Config.StableIdMode.ISOLATED_STABLE_IDS)
             .build()
         recyclerView.adapter = ConcatAdapter(config, headerAdapter, songAdapter, emptyAdapter)
         addView(recyclerView, LayoutParams(-1, -1))
-        addView(alphabetRail, LayoutParams(host.dp(18), -1, Gravity.END).apply {
-            marginEnd = 0
-        })
-        alphabetRail.translationX =
-            host.responsiveLayoutController.pageHorizontalPadding().toFloat()
         visibility = View.GONE
     }
 
@@ -107,10 +71,6 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         translationX = 0f
         visibility = View.GONE
         host.uiHandler.removeCallbacks(progressTicker)
-        host.uiHandler.removeCallbacks(hideAlphabetRail)
-        alphabetRail.animate().cancel()
-        alphabetRail.visibility = View.INVISIBLE
-        alphabetRail.alpha = 0f
     }
 
     fun refreshPlayback() {
@@ -142,8 +102,6 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         if (closed) return
         closed = true
         host.uiHandler.removeCallbacks(progressTicker)
-        host.uiHandler.removeCallbacks(hideAlphabetRail)
-        alphabetRail.animate().cancel()
         host.trackSearchController.cancel(searchOwner)
         recyclerView.adapter = null
     }
@@ -159,56 +117,8 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
             songAdapter.submitList(ArrayList(filtered)) {
                 emptyAdapter.setEmpty(filtered.isEmpty())
                 headerAdapter.refresh()
-                updateAlphabet(filtered)
             }
         }
-    }
-
-    private fun updateAlphabet(tracks: List<Track>) {
-        val entries = AlphabetIndex.build(tracks.map(Track::title))
-        alphabetRail.configure(
-            entries,
-            tracks.size,
-            host.primaryText,
-        ) { progress ->
-            recyclerView.stopScroll()
-            showAlphabetRail()
-            scheduleAlphabetRailHide()
-            scrollToProgress(progress)
-        }
-        syncAlphabetToList()
-    }
-
-    private fun syncAlphabetToList() {
-        val count = songAdapter.itemCount
-        if (count == 0) return
-        val maximum = (recyclerView.computeVerticalScrollRange() -
-            recyclerView.computeVerticalScrollExtent()).coerceAtLeast(0)
-        val offset = recyclerView.computeVerticalScrollOffset().coerceIn(0, maximum)
-        val progress = if (maximum == 0) 0f else offset.toFloat() / maximum
-        val position = (progress * (count - 1)).roundToInt().coerceIn(0, count - 1)
-        alphabetRail.syncToList(progress, position)
-    }
-
-    private fun scrollToProgress(progress: Float) {
-        val count = songAdapter.itemCount
-        if (count == 0) return
-        val manager = recyclerView.layoutManager as? LinearLayoutManager ?: return
-        when {
-            progress <= 0f -> manager.scrollToPositionWithOffset(0, 0)
-            progress >= 1f -> manager.scrollToPositionWithOffset(
-                headerAdapter.itemCount + count - 1,
-                recyclerView.height - recyclerView.paddingBottom -
-                    host.resources.getDimensionPixelSize(R.dimen.library_card_slot_height),
-            )
-            else -> {
-                val maximum = (recyclerView.computeVerticalScrollRange() -
-                    recyclerView.computeVerticalScrollExtent()).coerceAtLeast(0)
-                val target = (progress * maximum).roundToInt()
-                recyclerView.scrollBy(0, target - recyclerView.computeVerticalScrollOffset())
-            }
-        }
-        recyclerView.post(::syncAlphabetToList)
     }
 
     private fun updateProgressTicker() {
@@ -216,19 +126,6 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         if (hostVisible && visibility == View.VISIBLE && host.isPlaybackPlaying()) {
             host.uiHandler.post(progressTicker)
         }
-    }
-
-    private fun showAlphabetRail() {
-        if (!alphabetRail.isAvailable()) return
-        host.uiHandler.removeCallbacks(hideAlphabetRail)
-        alphabetRail.animate().cancel()
-        alphabetRail.alpha = 1f
-        alphabetRail.visibility = View.VISIBLE
-    }
-
-    private fun scheduleAlphabetRailHide() {
-        host.uiHandler.removeCallbacks(hideAlphabetRail)
-        host.uiHandler.postDelayed(hideAlphabetRail, ALPHABET_HIDE_DELAY_MS)
     }
 
     private inner class HeaderAdapter : RecyclerView.Adapter<HeaderHolder>() {
@@ -296,9 +193,6 @@ internal class SongsView(private val host: MainActivityCore) : FrameLayout(host)
         const val HEADER_ID = 1L
         const val EMPTY_ID = 2L
         const val PROGRESS_INTERVAL_MS = 500L
-        const val ALPHABET_HIDE_DELAY_MS = 350L
-        const val ALPHABET_FADE_MS = 180L
-
         fun sameSnapshot(left: List<Track>, right: List<Track>): Boolean {
             if (left.size != right.size) return false
             for (index in left.indices) {

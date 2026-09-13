@@ -124,6 +124,11 @@ internal class UiFactory(private val host: MainActivityCore) {
             setMargins(host.dp(4), host.dp(4), host.dp(4), host.dp(4))
         }
 
+    fun libraryArtwork(size: Int = 52): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(host.dp(size), host.dp(size)).apply {
+            setMargins(host.dp(4), host.dp(2), host.dp(4), host.dp(2))
+        }
+
     fun spaced(view: View): View {
         view.layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
             setMargins(0, host.dp(2), 0, host.dp(2))

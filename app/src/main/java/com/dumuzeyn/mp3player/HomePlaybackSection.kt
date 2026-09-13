@@ -39,7 +39,7 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         }
 
         cover = host.uiFactory.coverView()
-        row.addView(cover, host.uiFactory.square(52))
+        row.addView(cover, host.uiFactory.libraryArtwork())
 
         val textColumn = LinearLayout(host).apply {
             orientation = VERTICAL
@@ -67,7 +67,7 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         }
         metaRow.addView(duration, LayoutParams(host.dp(46), host.dp(26)))
         textColumn.addView(metaRow)
-        row.addView(textColumn, LayoutParams(0, host.dp(62), 1f))
+        row.addView(textColumn, LayoutParams(0, host.dp(56), 1f))
 
         val properties = {
             boundTrack?.let(host.overlayController::openSongActions)

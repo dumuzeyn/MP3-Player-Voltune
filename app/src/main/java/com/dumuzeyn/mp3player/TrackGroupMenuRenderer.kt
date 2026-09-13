@@ -48,7 +48,7 @@ internal abstract class TrackGroupMenuRenderer(
             host.artworkUi.loadGroupCover(cover, tracks, fallbackColor)
             if (cover is RotatingCoverImageView) cover.bindTracks(tracks)
         }
-        row.addView(cover, host.uiFactory.square(52))
+        row.addView(cover, host.uiFactory.libraryArtwork())
 
         val labels = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
@@ -59,7 +59,7 @@ internal abstract class TrackGroupMenuRenderer(
             })
             addView(host.uiFactory.text(groupSubtitle(name, tracks), 13, false))
         }
-        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(60), 1.0f))
+        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(56), 1.0f))
 
         val playing = host.playbackQueueController.isPlayingSource(tracks)
         val play = host.uiFactory.icon(if (playing) "Ⅱ" else "▶")

@@ -151,7 +151,7 @@ internal class SongsRenderer(private val host: MainActivityCore) {
         )
         cover.contentDescription = openDescription
         row.contentDescription = openDescription
-        row.addView(cover, host.uiFactory.square(52))
+        row.addView(cover, host.uiFactory.libraryArtwork())
 
         val textColumn = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
@@ -178,7 +178,7 @@ internal class SongsRenderer(private val host: MainActivityCore) {
         metaRow.addView(duration, LinearLayout.LayoutParams(host.dp(46), host.dp(26)))
         host.activeSongRows().registerMetadata(track.uri, title, duration)
         textColumn.addView(metaRow)
-        row.addView(textColumn, LinearLayout.LayoutParams(0, host.dp(62), 1f))
+        row.addView(textColumn, LinearLayout.LayoutParams(0, host.dp(56), 1f))
 
         if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
             val favorite = host.uiFactory.icon(
@@ -254,7 +254,7 @@ internal class SongsRenderer(private val host: MainActivityCore) {
             track,
             if (host.appearanceState.dark) Color.rgb(28, 28, 28) else Color.rgb(235, 235, 235),
         )
-        row.addView(cover, host.uiFactory.square(52))
+        row.addView(cover, host.uiFactory.libraryArtwork())
 
         val title = host.uiFactory.text(track.title, 17, true).apply {
             setSingleLine(true)
@@ -262,7 +262,7 @@ internal class SongsRenderer(private val host: MainActivityCore) {
             setPadding(host.dp(12), 0, host.dp(8), 0)
             setTextColor(host.fg)
         }
-        row.addView(title, LinearLayout.LayoutParams(0, host.dp(62), 1f))
+        row.addView(title, LinearLayout.LayoutParams(0, host.dp(56), 1f))
 
         val remove = host.uiFactory.icon("−")
         host.uiFactory.applyPlainIconStyle(remove, Color.rgb(190, 45, 45))

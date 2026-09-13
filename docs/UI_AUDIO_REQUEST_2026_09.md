@@ -54,13 +54,11 @@ It is not a release-completion declaration.
   normalization, follows playback-speed changes, and resets on track transitions.
 - Fresh palette defaults use blue, purple, gold and white while explicit saved
   custom themes remain unchanged.
-- Songs has an alphabet rail with present English letters first, followed by
-  present Russian letters and `#`. The rail does not duplicate English for an
-  English-only library. Its moving thumb uses the same blue-to-gold palette and
-  short rounded shape as the Home scrollbar.
+- Songs uses the same compact blue-to-gold system scrollbar as Home. It appears
+  during scrolling and fades while the list is idle.
 - Added unit coverage for fade boundaries, short tracks and speed changes, plus
-  alphabet ordering and normalization. Headless UI coverage verifies rail jumps
-  and checks the fade dialog for clipped Russian text.
+  headless UI coverage for the Songs scrollbar, complete list reachability and
+  clipped Russian text in the fade dialog.
 
 ## Implemented in the third stage
 
@@ -299,24 +297,21 @@ It is not a release-completion declaration.
 - Song properties require a stationary 1.1-second hold. Crossing the platform
   touch slop, swiping a list or leaving the row cancels the pending action, so a
   navigation gesture cannot open properties on the destination screen.
-- The Songs alphabet rail fills the available side, marks the current letter and
-  moves a short blue-to-gold thumb continuously like the Home scrollbar. Letters
-  follow the free thumb position without snapping it, stay clear of song cards,
-  and the bottom endpoint always exposes the final song in the filtered list.
-- Song cards keep their original width while the alphabet labels sit beside the
-  slightly inset thumb. Other library lists reserve the same end clearance, so
-  the Home scrollbar never touches their cards.
+- Songs uses the same blue-to-gold fading system scrollbar as Home. The custom
+  alphabet labels and their separate touch surface were removed, so scrolling is
+  equally fluid on both tabs and the final filtered song remains reachable.
+- Song cards and other library lists reserve matching side clearance, keeping
+  the system scrollbar clear of card surfaces.
 - Playlist, thematic, genre, artist and album cards use a density-correct 1dp
-  outline. Thematic groups and collection lists keep a 10dp gap below the tab
+  outline. Thematic groups and collection lists keep a gap below the tab
   wheel, including folders whose cards already use the standard outline.
-- Library content cards now share one 68dp visible height, a 72dp row slot and
+- Library content cards now share one 64dp visible height, a 68dp row slot and
   one content width across Home, Songs, Favorites, playlists, genres, artists,
   albums and folders. Animated tab previews retain the same scrollbar clearance,
   so cards cannot widen after a tap or swipe transition.
-- Library cards use matching 10dp content insets on both sides, restoring the
-  wide layout. The Songs letters and gradient thumb fit in the narrow trailing
-  gutter without touching a card, appear only during active scrolling and fade
-  out together once the list is idle, matching the Home scrollbar behavior.
+- Library cards use matching 6dp content insets on both sides. The system
+  scrollbar fits in that narrow trailing gutter without touching a card and
+  fades once the list is idle.
 - Artwork thumbnails moved from disposable cache storage to the application's
   persistent private files. Existing cache entries migrate automatically, disk
   hits render before the row appears, and recurring UI loads no longer crossfade.

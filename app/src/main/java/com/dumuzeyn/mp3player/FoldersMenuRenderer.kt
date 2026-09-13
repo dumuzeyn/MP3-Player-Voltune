@@ -38,7 +38,7 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
             addView(title)
             addView(host.uiFactory.text("${tracks.size} ${host.tr("songs", "песен")}", 13, false))
         }
-        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(58), 1.0f))
+        row.addView(labels, LinearLayout.LayoutParams(0, host.dp(54), 1.0f))
 
         val add = host.uiFactory.icon("+").apply {
             contentDescription = host.tr("Add folder to queue", "Добавить папку в очередь")
