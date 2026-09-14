@@ -15,8 +15,6 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     val waveforms get() = waveformRepository.value
     private val previewController = lazy { AudioEditorPreviewController(host, ::render) }
     val preview get() = previewController.value
-    private val analysisRepository = lazy { AudioEditorAnalysisRepository(host) }
-    val analysis get() = analysisRepository.value
     private val processingController = lazy { AudioEditorProcessing(host, ::render) }
     val processing get() = processingController.value
     private val files = Executors.newSingleThreadExecutor()
@@ -52,6 +50,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         loaded = true
         project = store.load()
         selectedClipId = project.clips.firstOrNull()?.id
+        preview.retainCache(project)
         val saved = host.getSharedPreferences("audio_editor", 0).getString("export", null)
         readyFile = saved?.let { File(host.cacheDir, it) }?.takeIf {
             it.parentFile?.canonicalFile == host.cacheDir.canonicalFile && it.isFile
@@ -68,6 +67,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             while (undo.size > 32) undo.removeFirst()
             redo.clear()
             project = next
+            preview.clearCache()
             previewMutedLanes.retainAll(next.clips.mapTo(HashSet(), AudioEditClip::lane))
             selectedClipId = selectedClipId?.takeIf { selected ->
                 next.clips.any { it.id == selected }
@@ -161,6 +161,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (busy || from.isEmpty()) return
         to.addLast(project)
         project = from.removeLast()
+        preview.clearCache()
         previewMutedLanes.retainAll(project.clips.mapTo(HashSet(), AudioEditClip::lane))
         selectedClipId = selectedClipId?.takeIf { selected ->
             project.clips.any { it.id == selected }
@@ -242,6 +243,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
                 if (closed) return@post
                 working = false
                 if (result.isSuccess) host.audioImportController.importExported(uri, data.flags)
+                if (result.isSuccess) preview.clearCache()
                 status = if (result.isSuccess) host.tr("Audio saved", "Аудио сохранено")
                     else host.tr("Saving failed; export is available to retry",
                         "Не удалось сохранить; экспорт доступен для повторной попытки")
@@ -262,7 +264,6 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         closed = true
         editingMode = false
         if (previewController.isInitialized()) preview.close()
-        if (analysisRepository.isInitialized()) analysis.close()
         if (processingController.isInitialized()) processing.close()
         onProgress = null
         exporter.close()

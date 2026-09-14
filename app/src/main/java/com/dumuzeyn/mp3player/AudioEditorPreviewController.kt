@@ -11,14 +11,8 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
     private val render: () -> Unit) : AutoCloseable {
     enum class Phase { IDLE, PREPARING, STARTING, PLAYING, PAUSED }
     private val exporter = AudioEditExporter(host)
+    private val cache = AudioEditorPreviewCache(host)
     private val handler = Handler(Looper.getMainLooper())
-    private val cachedFiles = object : LinkedHashMap<AudioEditProject, File>(6, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<AudioEditProject, File>): Boolean {
-            val remove = size > MAX_CACHED_PREVIEWS
-            if (remove) eldest.value.delete()
-            return remove
-        }
-    }
     private var generation = 0
     private var closed = false
     private var token = ""
@@ -63,18 +57,21 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         phase = Phase.PREPARING
         notifyChanged(true)
         handler.post(tick)
-        cachedFiles[project]?.takeIf(File::isFile)?.let {
+        cache.get(project)?.let {
             play(it)
             return
         }
         exporter.export(project, { progress = it; notifyChanged() }) { result ->
             if (closed || generation != expected) { result.getOrNull()?.delete(); return@export }
             result.fold(onSuccess = { file ->
-                cachedFiles.put(project, file)?.takeUnless { it == file }?.delete()
-                play(file)
+                runCatching { cache.put(project, file) }
+                    .fold(onSuccess = ::play, onFailure = { file.delete(); fail() })
             }, onFailure = { fail() })
         }
     }
+
+    fun retainCache(project: AudioEditProject) = cache.retain(project)
+    fun clearCache() = cache.clear()
 
     private fun play(file: File) {
         if (host.navigationState.tabIndex != LibraryTabs.EDITOR) { stop(); return }
@@ -157,10 +154,6 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         stop()
         handler.removeCallbacksAndMessages(null)
         exporter.close()
-        cachedFiles.values.forEach(File::delete)
-        cachedFiles.clear()
         listeners.clear()
     }
-
-    companion object { private const val MAX_CACHED_PREVIEWS = 6 }
 }

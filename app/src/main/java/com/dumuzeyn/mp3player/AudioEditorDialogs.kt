@@ -19,7 +19,6 @@ import java.util.Locale
 internal class AudioEditorDialogs(private val host: MainActivityCore) {
     enum class Focus {
         POSITION,
-        ANALYSIS,
         TRIM,
         VOLUME,
         SPLIT,
@@ -149,13 +148,6 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
                         .onFailure { offset.error = host.tr("Check the position", "Проверьте положение") }
                 }
             }
-            Focus.ANALYSIS -> {
-                val waveform = waveform()
-                val analysis = AudioEditorAnalysisView(host, clip)
-                waveform.onSelection = analysis::selection
-                content.addView(analysis)
-                preview { clip }
-            }
             Focus.TRIM -> {
                 val waveform = waveform()
                 val (from, to) = range(waveform)
@@ -174,7 +166,7 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
                 )
                 content.addView(level)
                 val gain = SeekBar(host).apply {
-                    max = 100
+                    max = 200
                     progress = (clip.gain * 100).toInt()
                     contentDescription = host.tr("Clip volume", "Громкость фрагмента")
                     setOnSeekBarChangeListener(listener { value ->
@@ -255,7 +247,6 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
 
     private fun focusTitle(focus: Focus): String = when (focus) {
         Focus.POSITION -> host.tr("Clip position", "Положение фрагмента")
-        Focus.ANALYSIS -> host.tr("BPM and key", "BPM и тональность")
         Focus.TRIM -> host.tr("Trim audio", "Обрезка аудио")
         Focus.VOLUME -> host.tr("Clip volume", "Громкость фрагмента")
         Focus.SPLIT -> host.tr("Split audio", "Разделение аудио")

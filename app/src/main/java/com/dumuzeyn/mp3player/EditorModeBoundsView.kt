@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player
 
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.view.MotionEvent
 import android.view.View
 
 internal class EditorModeBoundsView(private val host: MainActivityCore) : View(host) {
@@ -12,20 +13,23 @@ internal class EditorModeBoundsView(private val host: MainActivityCore) : View(h
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val inset = host.dp(3).toFloat()
-        val length = host.dp(24).toFloat()
+        val inset = host.dp(1).toFloat()
+        val horizontalLength = host.dp(20).toFloat()
+        val verticalLength = host.dp(14).toFloat()
         val right = width - inset
         val bottom = height - inset
         paint.color = host.yellow
-        paint.strokeWidth = host.dp(3).toFloat()
+        paint.strokeWidth = host.dp(2).toFloat()
 
-        canvas.drawLine(inset, inset, inset + length, inset, paint)
-        canvas.drawLine(inset, inset, inset, inset + length, paint)
-        canvas.drawLine(right - length, inset, right, inset, paint)
-        canvas.drawLine(right, inset, right, inset + length, paint)
-        canvas.drawLine(inset, bottom, inset + length, bottom, paint)
-        canvas.drawLine(inset, bottom - length, inset, bottom, paint)
-        canvas.drawLine(right - length, bottom, right, bottom, paint)
-        canvas.drawLine(right, bottom - length, right, bottom, paint)
+        canvas.drawLine(inset, inset, inset + horizontalLength, inset, paint)
+        canvas.drawLine(inset, inset, inset, inset + verticalLength, paint)
+        canvas.drawLine(right - horizontalLength, inset, right, inset, paint)
+        canvas.drawLine(right, inset, right, inset + verticalLength, paint)
+        canvas.drawLine(inset, bottom, inset + horizontalLength, bottom, paint)
+        canvas.drawLine(inset, bottom - verticalLength, inset, bottom, paint)
+        canvas.drawLine(right - horizontalLength, bottom, right, bottom, paint)
+        canvas.drawLine(right, bottom - verticalLength, right, bottom, paint)
     }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean = false
 }

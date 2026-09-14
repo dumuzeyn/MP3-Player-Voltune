@@ -20,12 +20,13 @@ internal data class AudioEditClip(
         require(uri.isNotBlank() && sourceDurationMs in 1..MAX_TIME_MS)
         require(startMs >= 0 && endMs > startMs && endMs <= sourceDurationMs)
         require(lane in 0 until MAX_LANES && offsetMs >= 0 && finishMs <= MAX_TIME_MS)
-        require(gain.isFinite() && gain in 0f..1f)
+        require(gain.isFinite() && gain in 0f..MAX_GAIN)
     }
 
     companion object {
         const val MAX_LANES = 8
         const val MAX_TIME_MS = 86_400_000L
+        const val MAX_GAIN = 2f
     }
 }
 

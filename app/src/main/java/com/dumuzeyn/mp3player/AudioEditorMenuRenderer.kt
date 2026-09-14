@@ -137,9 +137,6 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
             EditorAction(host.tr("Position", "Положение"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.POSITION)
             },
-            EditorAction(host.tr("Analysis", "BPM и тональность"), enabled) {
-                dialogs.edit(clip, AudioEditorDialogs.Focus.ANALYSIS)
-            },
             EditorAction(host.tr("Trim", "Обрезка"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.TRIM)
             },
@@ -201,7 +198,9 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         ).apply {
             id = R.id.editor_mode_lock
             if (active) {
-                setTextColor(Color.rgb(35, 28, 8))
+                val blackContrast = ThemeContrastPolicy.contrastRatio(Color.BLACK, host.yellow)
+                val whiteContrast = ThemeContrastPolicy.contrastRatio(Color.WHITE, host.yellow)
+                setTextColor(if (blackContrast >= whiteContrast) Color.BLACK else Color.WHITE)
                 background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(host.yellow)

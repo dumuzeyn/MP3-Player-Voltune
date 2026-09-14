@@ -57,8 +57,11 @@ internal class EditorPreviewSession(
 
     private fun start(controller: MediaSession.ControllerInfo, args: Bundle) {
         val file = File(checkNotNull(args.getString("path"))).canonicalFile
-        require(file.parentFile == context.cacheDir.canonicalFile &&
-            file.name.startsWith("voltune-edit-") && file.extension == "m4a" && file.isFile)
+        val temporary = file.parentFile == context.cacheDir.canonicalFile &&
+            file.name.startsWith("voltune-edit-")
+        val persistent = file.parentFile == File(context.filesDir, "editor-preview").canonicalFile &&
+            file.nameWithoutExtension.matches(Regex("[0-9a-f]{64}"))
+        require((temporary || persistent) && file.extension == "m4a" && file.isFile)
         val requestedToken = checkNotNull(args.getString("token")).also { require(it.isNotBlank()) }
         stop()
         val items = (0 until player.mediaItemCount).map(player::getMediaItemAt)

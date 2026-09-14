@@ -62,6 +62,13 @@ class AudioEditProjectTest {
         }
         assertThrows(IllegalArgumentException::class.java) { clip().copy(endMs = 10001) }
         assertThrows(IllegalArgumentException::class.java) { clip().copy(gain = Float.NaN) }
+        assertThrows(IllegalArgumentException::class.java) { clip().copy(gain = 2.01f) }
+    }
+
+    @Test fun supportsTwoHundredPercentGain() {
+        val project = AudioEditProject(listOf(clip().copy(gain = AudioEditClip.MAX_GAIN)))
+
+        assertEquals(2f, AudioEditStore.decode(AudioEditStore.encode(project)).clips.single().gain)
     }
 
     @Test fun appendUsesEndOfChosenLane() {

@@ -114,7 +114,6 @@ class AudioEditorUiInstrumentedTest {
                 .map { it.text.toString() }.toSet()
             assertTrue(commands.containsAll(setOf(
                 "Положение",
-                "BPM и тональность",
                 "Обрезка",
                 "Громкость",
                 "Разделить",
@@ -131,9 +130,14 @@ class AudioEditorUiInstrumentedTest {
             val volumeButtons = descendants(host.overlayHost).filterIsInstance<Button>()
                 .map { it.text.toString() }
             assertTrue(volumeButtons.contains("Применить громкость"))
+            val volume = descendants(host.overlayHost).filterIsInstance<SeekBar>()
+                .single { it.max == 200 }
+            volume.progress = 200
+            descendants(host.overlayHost).filterIsInstance<Button>()
+                .first { it.text.toString() == "Применить громкость" }.performClick()
+            assertEquals(2f, host.audioEditorController.project.clips.single().gain)
             assertFalse("Volume menu contains split controls", volumeButtons.contains("Разделить"))
             assertFalse("Volume menu contains trim controls", volumeButtons.contains("Применить обрезку"))
-            host.overlayHost.removeAllViews()
         }
         assertEquals("Редактор", host.tabs[LibraryTabs.EDITOR])
         capture("audio-editor.png")
@@ -316,6 +320,13 @@ class AudioEditorUiInstrumentedTest {
             ready
         }
         awaitLayout(host)
+        InstrumentedTestSupport.waitFor("Preview control not rendered", 5000) {
+            var rendered = false
+            instrumentation.runOnMainSync {
+                rendered = descendants(host.list).any { it.contentDescription == "Прослушать аудио" }
+            }
+            rendered
+        }
         instrumentation.runOnMainSync {
             descendants(host.list).first { it.contentDescription == "Прослушать аудио" }.performClick()
         }
@@ -364,6 +375,7 @@ class AudioEditorUiInstrumentedTest {
         instrumentation.runOnMainSync {
             val editor = host.audioEditorController
             originalPreview = editor.project
+            assertNotNull(AudioEditorPreviewCache(context).get(originalPreview))
             editor.preview.start(editor.project)
             assertEquals("Unchanged project was encoded again", AudioEditorPreviewController.Phase.STARTING, editor.preview.phase)
             editor.preview.stop()
@@ -378,6 +390,7 @@ class AudioEditorUiInstrumentedTest {
                 editor.preview.phase)
             editor.preview.stop()
             editor.change { it.replace(it.clips.single().copy(endMs = 4000)) }
+            assertNull(AudioEditorPreviewCache(context).get(originalPreview))
             editor.preview.start(editor.project)
             editor.preview.stop()
         }
