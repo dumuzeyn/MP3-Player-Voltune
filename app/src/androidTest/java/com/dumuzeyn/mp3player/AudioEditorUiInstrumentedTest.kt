@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -118,11 +119,16 @@ class AudioEditorUiInstrumentedTest {
                 "Громкость",
                 "Разделить",
                 "Удалить отрезок",
-                "Очистить речь",
+                "Убрать шумы",
                 "Разделить дорожки",
                 "Удалить вокал",
                 "Удалить выбранный фрагмент",
             )))
+            AudioEditorDialogs(host).chooseExport()
+            val formats = descendants(host.overlayHost).filterIsInstance<android.widget.Spinner>().single()
+            assertEquals(listOf("M4A", "MP3", "WAV"),
+                (0 until formats.adapter.count).map { formats.adapter.getItem(it).toString() })
+            host.overlayHost.removeAllViews()
             descendants(host.list).filterIsInstance<Button>()
                 .first { it.text.toString() == "Громкость" }.performClick()
             assertNotNull(descendants(host.overlayHost).filterIsInstance<TextView>()
@@ -138,6 +144,18 @@ class AudioEditorUiInstrumentedTest {
             assertEquals(2f, host.audioEditorController.project.clips.single().gain)
             assertFalse("Volume menu contains split controls", volumeButtons.contains("Разделить"))
             assertFalse("Volume menu contains trim controls", volumeButtons.contains("Применить обрезку"))
+            AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single(),
+                AudioEditorDialogs.Focus.POSITION)
+            assertNotNull(descendants(host.overlayHost).filterIsInstance<Switch>()
+                .firstOrNull { it.text.toString() == "К ближайшему свободному месту" })
+            host.overlayHost.removeAllViews()
+            AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single(),
+                AudioEditorDialogs.Focus.REMOVE_RANGE)
+            val rangeOptions = descendants(host.overlayHost).filterIsInstance<Switch>()
+                .associateBy { it.text.toString() }
+            assertTrue(rangeOptions.getValue("Соединить оставшиеся части").isChecked)
+            assertTrue(rangeOptions.getValue("Плавное соединение").isChecked)
+            host.overlayHost.removeAllViews()
         }
         assertEquals("Редактор", host.tabs[LibraryTabs.EDITOR])
         capture("audio-editor.png")
@@ -173,6 +191,63 @@ class AudioEditorUiInstrumentedTest {
         instrumentation.runOnMainSync {
             restored.switchTabAnimated(LibraryTabs.EDITOR, 1)
             assertEquals(2, restored.audioEditorController.project.clips.size)
+        }
+    }
+
+    @Test fun longPressMovesClipBetweenLanesAndInvalidDropRestoresIt() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        context.getSharedPreferences("mp3_player_ui", 0).edit()
+            .putBoolean("animations", false).putBoolean("particlesEnabled", false).commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-drag.wav", 6)
+        val first = Track(Uri.fromFile(wave).toString(), "Перемещаемый", "Voltune", "Test", "Test", 6000)
+        val second = Track(first.uri + "?lane=2", "Вторая дорожка", "Voltune", "Test", "Test", 6000)
+        TrackStore.save(context, listOf(first, second))
+        val host = launch()
+        lateinit var moving: AudioEditClip
+        instrumentation.runOnMainSync {
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            host.audioEditorController.add(first, 0)
+            moving = host.audioEditorController.project.clips.single()
+            host.audioEditorController.change { project ->
+                project.replace(moving.copy(endMs = 2000))
+            }
+            moving = host.audioEditorController.project.clips.single()
+            host.audioEditorController.add(second, 1)
+        }
+        awaitLayout(host)
+
+        fun longDrag(targetY: Float) {
+            val timeline = descendants(host.list).filterIsInstance<AudioEditorTimelineView>().single()
+            val time = android.os.SystemClock.uptimeMillis()
+            instrumentation.runOnMainSync {
+                val down = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN,
+                    timeline.width / 6f, host.dp(54).toFloat(), 0)
+                timeline.dispatchTouchEvent(down)
+                down.recycle()
+            }
+            Thread.sleep(750)
+            instrumentation.runOnMainSync {
+                val moveTime = android.os.SystemClock.uptimeMillis()
+                val move = MotionEvent.obtain(moveTime, moveTime, MotionEvent.ACTION_MOVE,
+                    timeline.width / 2f, targetY, 0)
+                val up = MotionEvent.obtain(moveTime, moveTime + 20,
+                    MotionEvent.ACTION_UP, timeline.width / 2f, targetY, 0)
+                timeline.dispatchTouchEvent(move)
+                timeline.dispatchTouchEvent(up)
+                move.recycle()
+                up.recycle()
+            }
+        }
+
+        longDrag(-host.dp(12).toFloat())
+        instrumentation.runOnMainSync {
+            assertEquals(0, host.audioEditorController.project.clips.first { it.id == moving.id }.lane)
+        }
+        longDrag(host.dp(118).toFloat())
+        instrumentation.runOnMainSync {
+            val moved = host.audioEditorController.project.clips.first { it.id == moving.id }
+            assertEquals(1, moved.lane)
+            assertEquals(6000L, moved.offsetMs)
         }
     }
 
@@ -418,7 +493,7 @@ class AudioEditorUiInstrumentedTest {
         awaitLayout(host)
         instrumentation.runOnMainSync {
             descendants(host.overlayHost).filterIsInstance<TextView>()
-                .first { it.text.toString() == "Очистить речь" }.performClick()
+                .first { it.text.toString() == "Убрать шумы" }.performClick()
             assertTrue(host.audioEditorController.busy)
             assertEquals(0, host.overlayHost.childCount)
             assertFalse(host.audioEditorController.canUndo)

@@ -12,6 +12,7 @@ internal class AudioEditorWorkspaceView(
     mutedLanes: Set<Int>,
     select: (AudioEditClip) -> Unit,
     toggleLane: (Int) -> Unit,
+    moveClip: (AudioEditClip, Int, Long) -> Boolean,
 ) : LinearLayout(host) {
     init {
         id = R.id.editor_workspace
@@ -62,7 +63,7 @@ internal class AudioEditorWorkspaceView(
             setMargins(0, host.dp(4), 0, host.dp(6))
         })
         addView(
-            AudioEditorTimelineView(host, project, selectedClipId, select),
+            AudioEditorTimelineView(host, project, selectedClipId, select, moveClip),
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
         )
     }

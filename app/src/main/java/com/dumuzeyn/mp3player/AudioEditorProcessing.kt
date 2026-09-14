@@ -65,7 +65,7 @@ internal class AudioEditorProcessing(private val host: MainActivityCore, private
         val token = ++generation
         active = true
         progress = 0
-        status = if (operation == Operation.SPEECH) host.tr("Cleaning speech", "Очистка речи")
+        status = if (operation == Operation.SPEECH) host.tr("Removing noise", "Удаление шумов")
             else host.tr("Separating audio", "Разделение аудио")
         render()
         job = executor.submit {
@@ -91,7 +91,7 @@ internal class AudioEditorProcessing(private val host: MainActivityCore, private
                 job = null
                 val changed = result.isSuccess && controller.project == original && controller.change { project ->
                     val names = when (operation) {
-                        Operation.SPEECH -> listOf(host.tr("speech", "речь"))
+                        Operation.SPEECH -> listOf(host.tr("noise reduced", "без шумов"))
                         Operation.INSTRUMENTAL -> listOf(host.tr("instrumental", "без вокала"))
                         Operation.STEMS -> listOf(host.tr("drums", "ударные"), host.tr("bass", "бас"),
                             host.tr("other", "остальное"), host.tr("vocals", "вокал"))

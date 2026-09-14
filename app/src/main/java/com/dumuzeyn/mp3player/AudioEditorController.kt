@@ -31,6 +31,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     private var loaded = false
     private var closed = false
     private var working = false
+    private var exportGeneration = 0
     val busy get() = working || (previewController.isInitialized() && preview.active) ||
         (processingController.isInitialized() && processing.active)
     var exporting = false
@@ -40,6 +41,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
     var progress = -1
         private set
     private var readyFile: File? = null
+    private var readyFormat = AudioExportFormat.M4A
     var onProgress: (() -> Unit)? = null
     val canUndo get() = undo.isNotEmpty() && !busy
     val canRedo get() = redo.isNotEmpty() && !busy
@@ -55,6 +57,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         readyFile = saved?.let { File(host.cacheDir, it) }?.takeIf {
             it.parentFile?.canonicalFile == host.cacheDir.canonicalFile && it.isFile
         }
+        readyFile?.let { AudioExportFormat.fromFile(it) }?.let { readyFormat = it }
     }
 
     fun change(operation: (AudioEditProject) -> AudioEditProject): Boolean {
@@ -102,6 +105,11 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (project.clips.none { it.id == clip.id } || selectedClipId == clip.id) return
         selectedClipId = clip.id
         render()
+    }
+
+    fun moveClip(clip: AudioEditClip, lane: Int, nearMs: Long): Boolean = change { project ->
+        val offset = project.nearestFreeOffset(clip.id, lane, nearMs)
+        project.replace(clip.copy(lane = lane, offsetMs = offset))
     }
 
     fun previewProject(): AudioEditProject = if (previewMutedLanes.isEmpty()) project else project.copy(
@@ -170,36 +178,72 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         render()
     }
 
-    fun export() {
+    fun export(format: AudioExportFormat = AudioExportFormat.M4A) {
         if (busy || project.clips.isEmpty()) return
+        val token = ++exportGeneration
         working = true
         exporting = true
-        status = host.tr("Exporting M4A", "Экспорт M4A")
+        status = host.tr("Preparing ${format.name}", "Подготовка ${format.name}")
         render()
         exporter.export(project, { value ->
             progress = value
             onProgress?.invoke()
         }) { result ->
-            working = false
-            exporting = false
-            progress = -1
-            result.fold(onSuccess = { file ->
-                readyFile?.delete()
-                readyFile = file
-                host.getSharedPreferences("audio_editor", 0).edit().putString("export", file.name).apply()
-                status = host.tr("M4A is ready to save", "M4A готов к сохранению")
+            if (token != exportGeneration) { result.getOrNull()?.delete(); return@export }
+            val m4a = result.getOrElse { error -> completeExport(token, format, Result.failure(error)); return@export }
+            if (format == AudioExportFormat.M4A) completeExport(token, format, Result.success(m4a))
+            else {
+                status = host.tr("Creating ${format.name}", "Создание ${format.name}")
                 render()
-                saveExport()
-            }, onFailure = {
-                status = host.tr("Export failed. Check source files and free space.",
-                    "Не удалось экспортировать. Проверьте исходники и свободное место.")
-                render()
-            })
+                files.execute {
+                    val wave = File.createTempFile("voltune-edit-", ".wav", host.cacheDir)
+                    var convertedFile: File? = null
+                    val converted = runCatching {
+                        WaveAudioConverter.convert(m4a, wave) { token != exportGeneration || closed }
+                        if (format == AudioExportFormat.WAV) wave else {
+                            File.createTempFile("voltune-edit-", ".mp3", host.cacheDir).also { mp3 ->
+                                convertedFile = mp3
+                                Mp3AudioConverter.convert(wave, mp3)
+                                check(token == exportGeneration && !closed) { "Export cancelled" }
+                            }
+                        }
+                    }
+                    m4a.delete()
+                    if (format != AudioExportFormat.WAV) wave.delete()
+                    if (converted.isFailure) wave.delete()
+                    host.uiHandler.post {
+                        if (token == exportGeneration && !closed) completeExport(token, format, converted)
+                        else converted.getOrNull()?.delete()
+                        if (converted.isFailure) convertedFile?.delete()
+                    }
+                }
+            }
         }
+    }
+
+    private fun completeExport(token: Int, format: AudioExportFormat, result: Result<File>) {
+        if (token != exportGeneration || closed) { result.getOrNull()?.delete(); return }
+        working = false
+        exporting = false
+        progress = -1
+        result.fold(onSuccess = { file ->
+            readyFile?.delete()
+            readyFile = file
+            readyFormat = format
+            host.getSharedPreferences("audio_editor", 0).edit().putString("export", file.name).apply()
+            status = host.tr("${format.name} is ready to save", "${format.name} готов к сохранению")
+            render()
+            saveExport()
+        }, onFailure = {
+            status = host.tr("Export failed. Check source files and free space.",
+                "Не удалось экспортировать. Проверьте исходники и свободное место.")
+            render()
+        })
     }
 
     fun cancelExport() {
         if (!exporting) return
+        exportGeneration++
         exporter.close()
         working = false
         exporting = false
@@ -212,8 +256,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (!canSave) return
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            type = "audio/mp4"
-            putExtra(Intent.EXTRA_TITLE, "Voltune-${System.currentTimeMillis()}.m4a")
+            type = readyFormat.mimeType
+            putExtra(Intent.EXTRA_TITLE, "Voltune-${System.currentTimeMillis()}.${readyFormat.extension}")
         }
         try { host.startActivityForResult(intent, SAVE_AUDIO) } catch (_: Exception) {
             message(host.tr("File picker unavailable", "Выбор файла недоступен"))
@@ -242,8 +286,13 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             host.uiHandler.post {
                 if (closed) return@post
                 working = false
-                if (result.isSuccess) host.audioImportController.importExported(uri, data.flags)
-                if (result.isSuccess) preview.clearCache()
+                if (result.isSuccess) {
+                    host.audioImportController.importExported(uri, data.flags)
+                    preview.clearCache()
+                    if (readyFile === file) readyFile = null
+                    file.delete()
+                    host.getSharedPreferences("audio_editor", 0).edit().remove("export").apply()
+                }
                 status = if (result.isSuccess) host.tr("Audio saved", "Аудио сохранено")
                     else host.tr("Saving failed; export is available to retry",
                         "Не удалось сохранить; экспорт доступен для повторной попытки")

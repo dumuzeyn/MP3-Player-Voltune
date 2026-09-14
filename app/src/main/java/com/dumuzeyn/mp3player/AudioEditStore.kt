@@ -26,6 +26,8 @@ internal class AudioEditStore(context: Context) {
                 put("lane", clip.lane)
                 put("offset", clip.offsetMs)
                 put("gain", clip.gain.toDouble())
+                put("fadeIn", clip.fadeInMs)
+                put("fadeOut", clip.fadeOutMs)
             }) }
         }.toString()
 
@@ -36,7 +38,8 @@ internal class AudioEditStore(context: Context) {
                 val item = array.getJSONObject(index)
                 AudioEditClip(item.getString("id"), item.getString("uri"), item.getString("title"),
                     item.getLong("duration"), item.getLong("start"), item.getLong("end"),
-                    item.getInt("lane"), item.getLong("offset"), item.getDouble("gain").toFloat())
+                    item.getInt("lane"), item.getLong("offset"), item.getDouble("gain").toFloat(),
+                    item.optLong("fadeIn", 0), item.optLong("fadeOut", 0))
             })
         }
     }

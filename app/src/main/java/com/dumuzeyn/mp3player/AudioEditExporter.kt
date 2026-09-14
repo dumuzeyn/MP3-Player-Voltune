@@ -8,6 +8,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.audio.ChannelMixingAudioProcessor
 import androidx.media3.common.audio.ChannelMixingMatrix
+import androidx.media3.common.audio.DefaultGainProvider
+import androidx.media3.common.audio.GainProcessor
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
@@ -159,8 +161,20 @@ internal class AudioEditExporter(private val context: Context) : AutoCloseable {
                             },
                         ))
                     }
+                    val processors = mutableListOf<androidx.media3.common.audio.AudioProcessor>(volume)
+                    if (clip.fadeInMs > 0 || clip.fadeOutMs > 0) {
+                        val fadeIn = clip.fadeInMs.coerceAtMost(clip.durationMs / 2)
+                        val fadeOut = clip.fadeOutMs.coerceAtMost(clip.durationMs / 2)
+                        val gain = DefaultGainProvider.Builder(1f).apply {
+                            if (fadeIn > 0) addFadeAt(0, fadeIn * 1000,
+                                DefaultGainProvider.FADE_IN_EQUAL_POWER)
+                            if (fadeOut > 0) addFadeAt((clip.durationMs - fadeOut) * 1000,
+                                fadeOut * 1000, DefaultGainProvider.FADE_OUT_EQUAL_POWER)
+                        }.build()
+                        processors.add(GainProcessor(gain))
+                    }
                     builder.addItem(EditedMediaItem.Builder(item).setRemoveVideo(true)
-                        .setEffects(Effects(listOf(volume), emptyList())).build())
+                        .setEffects(Effects(processors, emptyList())).build())
                     cursor = clip.finishMs
                 }
                 builder.build()

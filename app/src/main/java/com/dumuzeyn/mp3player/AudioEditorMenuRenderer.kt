@@ -41,6 +41,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                     controller.mutedPreviewLanes,
                     controller::select,
                     controller::togglePreviewLane,
+                    controller::moveClip,
                 ),
                 LinearLayout.LayoutParams(-1, -2).apply {
                     setMargins(0, host.dp(4), 0, host.dp(8))
@@ -80,12 +81,13 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                     })
                 }
             }
-            host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(8)))
+            host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(12)))
             val nextLane = (0 until AudioEditClip.MAX_LANES).firstOrNull { lane ->
                 controller.project.clips.none { it.lane == lane }
             }
             host.list.addView(command(host.tr("Add lane", "Добавить дорожку"),
                 !controller.busy && nextLane != null) { dialogs.chooseTrack(nextLane ?: 0) })
+            host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(6)))
             host.list.addView(command(host.tr("Join in clip order", "Соединить по порядку фрагментов"),
                 !controller.busy) { controller.change { it.concatenate() } })
         }
@@ -112,8 +114,9 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         }
         if (processing.active) host.list.addView(command(host.tr("Cancel processing", "Отменить обработку"),
             true, processing::cancel))
-        host.list.addView(command(host.tr("Export M4A", "Экспорт M4A"),
-            !controller.busy && controller.project.clips.isNotEmpty(), controller::export).apply {
+        host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(12)))
+        host.list.addView(command(host.tr("Export", "Экспорт"),
+            !controller.busy && controller.project.clips.isNotEmpty(), dialogs::chooseExport).apply {
             host.uiFactory.applyPrimaryButtonStyle(this)
         })
         if (controller.exporting) host.list.addView(command(host.tr("Cancel export", "Отменить экспорт"), true,
@@ -149,7 +152,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
             EditorAction(host.tr("Remove range", "Удалить отрезок"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.REMOVE_RANGE)
             },
-            EditorAction(host.tr("Clean speech", "Очистить речь"), enabled) {
+            EditorAction(host.tr("Remove noise", "Убрать шумы"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.CLEAN_SPEECH)
             },
             EditorAction(host.tr("Separate stems", "Разделить дорожки"), enabled) {

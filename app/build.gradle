@@ -96,6 +96,7 @@ android {
 def audioLicenses = tasks.register("prepareAudioLicenses", Sync) {
     from(rootProject.file("third_party/rnnoise/COPYING")) { rename { "RNNoise.txt" } }
     from(rootProject.file("third_party/demucs/LICENSE")) { rename { "demucs.cpp.txt" } }
+    from(rootProject.file("third_party/LAME-COPYING")) { rename { "LAME.txt" } }
     from(rootProject.file("third_party/demucs/vendor/eigen")) { include "COPYING.*"; into "Eigen" }
     from({ configurations.debugRuntimeClasspath.findAll { it.name.startsWith("commons-math3-") }
             .collect { zipTree(it) } }) {

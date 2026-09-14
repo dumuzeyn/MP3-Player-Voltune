@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.Spinner
+import android.widget.Switch
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +30,28 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
     }
 
     private val controller get() = host.audioEditorController
+
+    fun chooseExport() {
+        if (controller.busy || controller.project.clips.isEmpty()) return
+        val shade = host.uiFactory.shade()
+        val panel = host.uiFactory.panelCard()
+        panel.addView(host.uiFactory.centeredDialogTitle(host.tr("Export", "Экспорт"), 18))
+        val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
+        content.addView(host.uiFactory.text(host.tr("Format", "Формат"), 14, false))
+        val format = Spinner(host).apply {
+            adapter = ArrayAdapter(host, android.R.layout.simple_spinner_dropdown_item,
+                AudioExportFormat.entries.map(AudioExportFormat::name))
+        }
+        content.addView(format, LinearLayout.LayoutParams(-1, host.dp(52)))
+        panel.addView(content)
+        panel.addView(action(host.tr("Choose save location", "Выбрать место сохранения")) {
+            host.overlayHost.removeView(shade)
+            controller.export(AudioExportFormat.entries[format.selectedItemPosition])
+        }.apply { host.uiFactory.applyPrimaryButtonStyle(this) })
+        panel.addView(action(host.tr("Cancel", "Отмена")) { host.overlayHost.removeView(shade) })
+        shade.addView(panel, host.centerParams(host.dp(340), -2))
+        host.overlayHost.addView(shade)
+    }
 
     fun chooseTrack(lane: Int) {
         if (controller.busy) return
@@ -95,10 +118,11 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         content.addView(host.uiFactory.text(clip.title, 15, true))
 
         fun close() = host.overlayHost.removeView(shade)
+        fun previewProject(value: () -> AudioEditProject) {
+            content.addView(AudioEditorPreviewControls(host, value, stopOnDetach = true))
+        }
         fun preview(selected: () -> AudioEditClip) {
-            content.addView(AudioEditorPreviewControls(host, {
-                AudioEditProject(listOf(selected().copy(offsetMs = 0, lane = 0)))
-            }, stopOnDetach = true))
+            previewProject { AudioEditProject(listOf(selected().copy(offsetMs = 0, lane = 0))) }
         }
         fun primary(label: String, run: () -> Unit) {
             panel.addView(action(label, run).apply { host.uiFactory.applyPrimaryButtonStyle(this) })
@@ -141,9 +165,15 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
             Focus.POSITION -> {
                 val offset = secondsField(content, host.tr("Timeline position, s", "Позиция на шкале, с"), clip.offsetMs)
                 val lane = lanePicker()
+                val snap = toggle(host.tr("Snap to nearest free space", "К ближайшему свободному месту"), false)
+                content.addView(snap, LinearLayout.LayoutParams(-1, host.dp(52)))
                 preview { clip }
                 primary(host.tr("Apply position", "Применить положение")) {
-                    runCatching { clip.copy(offsetMs = millis(offset), lane = lane.selectedItemPosition) }
+                    runCatching {
+                        val positioned = clip.copy(offsetMs = millis(offset), lane = lane.selectedItemPosition)
+                        if (snap.isChecked) positioned.copy(offsetMs = controller.project.nearestFreeOffset(
+                            clip.id, positioned.lane, positioned.offsetMs)) else positioned
+                    }
                         .onSuccess { if (controller.change { project -> project.replace(it) }) close() }
                         .onFailure { offset.error = host.tr("Check the position", "Проверьте положение") }
                 }
@@ -216,16 +246,24 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
             Focus.REMOVE_RANGE -> {
                 val waveform = waveform()
                 val (from, to) = range(waveform)
-                preview { clip.copy(startMs = millis(from), endMs = millis(to)) }
+                val closeGap = toggle(host.tr("Join remaining parts", "Соединить оставшиеся части"), true)
+                val smoothJoin = toggle(host.tr("Smooth join", "Плавное соединение"), true)
+                content.addView(closeGap, LinearLayout.LayoutParams(-1, host.dp(52)))
+                content.addView(smoothJoin, LinearLayout.LayoutParams(-1, host.dp(52)))
+                previewProject {
+                    AudioEditProject(listOf(clip.copy(offsetMs = 0, lane = 0))).removeRange(
+                        clip.id, millis(from), millis(to), closeGap.isChecked, smoothJoin.isChecked)
+                }
                 primary(host.tr("Remove selected range", "Удалить выделенный отрезок")) {
                     runCatching { millis(from) to millis(to) }.onSuccess { selected ->
-                        if (controller.change { it.removeRange(clip.id, selected.first, selected.second) }) close()
+                        if (controller.change { it.removeRange(clip.id, selected.first, selected.second,
+                                closeGap.isChecked, smoothJoin.isChecked) }) close()
                     }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
                 }
             }
             Focus.CLEAN_SPEECH -> {
                 preview { clip }
-                primary(host.tr("Clean speech", "Очистить речь")) {
+                primary(host.tr("Remove noise", "Убрать шумы")) {
                     if (controller.processing.cleanSpeech(clip)) close()
                 }
             }
@@ -251,7 +289,7 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         Focus.VOLUME -> host.tr("Clip volume", "Громкость фрагмента")
         Focus.SPLIT -> host.tr("Split audio", "Разделение аудио")
         Focus.REMOVE_RANGE -> host.tr("Remove a range", "Удаление отрезка")
-        Focus.CLEAN_SPEECH -> host.tr("Clean speech", "Очистка речи")
+        Focus.CLEAN_SPEECH -> host.tr("Remove noise", "Удаление шумов")
         Focus.SEPARATE_STEMS -> host.tr("Separate stems", "Разделение дорожек")
         Focus.REMOVE_VOCALS -> host.tr("Remove vocals", "Удаление вокала")
     }
@@ -286,6 +324,20 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) = change(progress)
         override fun onStartTrackingTouch(bar: SeekBar) = Unit
         override fun onStopTrackingTouch(bar: SeekBar) = Unit
+    }
+    @Suppress("UseSwitchCompatOrMaterialCode")
+    private fun toggle(label: String, checked: Boolean) = Switch(host).apply {
+        text = label
+        setTextColor(host.primaryText)
+        isChecked = checked
+        thumbTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(host.purple, host.secondaryText),
+        )
+        trackTintList = android.content.res.ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(host.purpleSoft, host.cardStroke),
+        )
     }
     private class TrackHolder(val label: TextView) : RecyclerView.ViewHolder(label)
 }

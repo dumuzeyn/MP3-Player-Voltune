@@ -61,6 +61,27 @@ class AudioEditorExportInstrumentedTest {
         assertTrue("Gain ratio ${quiet / loud}", quiet / loud in 0.20..0.30)
     }
 
+    @Test fun editorCreatesRealWaveAndMp3Exports() {
+        val clip = AudioEditClip(uri = Uri.fromFile(source("formats.wav")).toString(), title = "Formats",
+            sourceDurationMs = 6000, endMs = 2000)
+        val m4a = export(AudioEditProject(listOf(clip)))
+        val wave = File.createTempFile("editor-format-", ".wav", context.cacheDir).also(files::add)
+        WaveAudioConverter.convert(m4a, wave)
+        assertEquals("RIFF", wave.inputStream().use { String(it.readNBytes(4), Charsets.US_ASCII) })
+        assertTrue("WAV export is silent", ExportAudioProbe.rms(wave) > 10)
+
+        val mp3 = File.createTempFile("editor-format-", ".mp3", context.cacheDir).also(files::add)
+        Mp3AudioConverter.convert(wave, mp3)
+        assertTrue("MP3 export is empty", mp3.length() > 1000)
+        assertTrue("MP3 export is silent", ExportAudioProbe.rms(mp3) > 10)
+        val extractor = MediaExtractor()
+        try {
+            extractor.setDataSource(mp3.absolutePath)
+            assertEquals(1, extractor.trackCount)
+            assertEquals("audio/mpeg", extractor.getTrackFormat(0).getString(MediaFormat.KEY_MIME))
+        } finally { extractor.release() }
+    }
+
     private fun source(name: String): File = InstrumentedTestSupport.createTestWave(context, name, 6)
         .also(files::add)
 

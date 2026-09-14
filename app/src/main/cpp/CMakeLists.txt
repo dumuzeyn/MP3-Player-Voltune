@@ -17,6 +17,26 @@ if(CMAKE_HOST_WIN32)
 endif()
 target_link_libraries(voltune_audio m)
 
+set(LAME "${THIRD_PARTY}/lame/liblame/src/main/cpp/liblame")
+if(NOT EXISTS "${LAME}/lame.c")
+    message(FATAL_ERROR "Run git submodule update --init third_party/lame")
+endif()
+set(LAME_SOURCES
+    ${LAME}/bitstream.c ${LAME}/id3tag.c ${LAME}/presets.c
+    ${LAME}/reservoir.c ${LAME}/util.c ${LAME}/encoder.c ${LAME}/lame.c
+    ${LAME}/psymodel.c ${LAME}/set_get.c ${LAME}/vbrquantize.c
+    ${LAME}/fft.c ${LAME}/quantize.c ${LAME}/tables.c ${LAME}/VbrTag.c
+    ${LAME}/gain_analysis.c ${LAME}/newmdct.c ${LAME}/quantize_pvt.c
+    ${LAME}/takehiro.c ${LAME}/version.c ${LAME}/vector/xmm_quantize_sub.c)
+add_library(voltune_mp3 SHARED mp3_jni.cpp ${LAME_SOURCES})
+target_include_directories(voltune_mp3 PRIVATE ${LAME})
+target_compile_definitions(voltune_mp3 PRIVATE HAVE_CONFIG_H)
+target_compile_options(voltune_mp3 PRIVATE -O3)
+if(CMAKE_HOST_WIN32)
+    target_link_options(voltune_mp3 PRIVATE --driver-mode=g++)
+endif()
+target_link_libraries(voltune_mp3 m)
+
 set(DEMUCS "${THIRD_PARTY}/demucs")
 if(NOT EXISTS "${DEMUCS}/vendor/eigen/Eigen/Dense")
     message(FATAL_ERROR "Initialize third_party/demucs and its vendor/eigen submodule")

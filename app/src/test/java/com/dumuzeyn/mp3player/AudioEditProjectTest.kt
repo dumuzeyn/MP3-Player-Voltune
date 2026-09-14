@@ -27,6 +27,24 @@ class AudioEditProjectTest {
         assertEquals(0L, result.clips.first { it.id == "c" }.offsetMs)
     }
 
+    @Test fun removeRangeCanKeepSilenceOrSmoothAClosedJoin() {
+        val source = AudioEditProject(listOf(clip(), clip("b", offset = 8000)))
+        val open = source.removeRange("a", 3000, 6000, closeGap = false)
+        assertEquals(listOf(0L, 5000L, 8000L), open.clips.map { it.offsetMs })
+        assertTrue(open.clips.all { it.fadeInMs == 0L && it.fadeOutMs == 0L })
+
+        val smooth = source.removeRange("a", 3000, 6000, closeGap = true, smoothJoin = true)
+        assertEquals(listOf(0L, 2000L, 5000L), smooth.clips.map { it.offsetMs })
+        assertEquals(AudioEditClip.SMOOTH_JOIN_MS, smooth.clips[0].fadeOutMs)
+        assertEquals(AudioEditClip.SMOOTH_JOIN_MS, smooth.clips[1].fadeInMs)
+    }
+
+    @Test fun nearestFreeOffsetSnapsClipToNeighborWithoutOverlap() {
+        val source = AudioEditProject(listOf(clip("left"), clip("moving", offset = 12_000)))
+        assertEquals(8_000L, source.nearestFreeOffset("moving", 0, 12_000))
+        assertEquals(0L, source.nearestFreeOffset("moving", 1, 12_000))
+    }
+
     @Test fun removeEntireClipAndJoinRetainsOrder() {
         val source = AudioEditProject(listOf(clip(), clip("b", lane = 1, offset = 4000)))
         val result = source.removeRange("a", 1000, 9000).concatenate()
@@ -44,7 +62,8 @@ class AudioEditProjectTest {
     }
 
     @Test fun draftRoundTripPreservesAllEditingData() {
-        val source = AudioEditProject(listOf(clip(lane = 3, offset = 9000).copy(gain = 0.33f)))
+        val source = AudioEditProject(listOf(clip(lane = 3, offset = 9000).copy(
+            gain = 0.33f, fadeInMs = 20, fadeOutMs = 30)))
         assertEquals(source, AudioEditStore.decode(AudioEditStore.encode(source)))
     }
 
