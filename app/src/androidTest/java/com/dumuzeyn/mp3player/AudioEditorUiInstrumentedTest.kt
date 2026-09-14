@@ -98,9 +98,18 @@ class AudioEditorUiInstrumentedTest {
             assertNotNull(workspace)
             assertEquals(1, descendants(workspace).filterIsInstance<AudioEditorPreviewControls>().size)
             assertEquals(1, descendants(workspace).filterIsInstance<AudioEditorTimelineView>().size)
+            descendants(workspace).first { it.contentDescription == "Выключить звук дорожки 1" }.performClick()
+            assertTrue(host.audioEditorController.mutedPreviewLanes.contains(0))
+            assertEquals(0f, host.audioEditorController.previewProject().clips.single().gain)
+            val mutedWorkspace = host.list.findViewById<ViewGroup>(R.id.editor_workspace)
+            val mutedButton = descendants(mutedWorkspace).filterIsInstance<Button>()
+                .first { it.contentDescription == "Включить звук дорожки 1" }
+            assertTrue("Muted lane is not visibly marked", mutedButton.text.toString().contains("×"))
+            mutedButton.performClick()
+            assertFalse(host.audioEditorController.mutedPreviewLanes.contains(0))
             val clipRow = descendants(host.list).filterIsInstance<Button>()
                 .first { it.text.toString().startsWith(track.title) }
-            assertEquals("Clip row is not compact", host.dp(44), clipRow.height)
+            assertEquals("Clip row is not compact", host.dp(44), clipRow.layoutParams.height)
             val commands = descendants(host.list).filterIsInstance<Button>()
                 .map { it.text.toString() }.toSet()
             assertTrue(commands.containsAll(setOf(
@@ -269,17 +278,19 @@ class AudioEditorUiInstrumentedTest {
         capture("audio-editor-waveform.png")
         instrumentation.runOnMainSync {
             val scroll = descendants(host.overlayHost).filterIsInstance<android.widget.ScrollView>().single()
-            val time = android.os.SystemClock.uptimeMillis()
-            val startY = minOf(waveform.height, scroll.height) * 0.8f
-            for (index in 0..4) {
-                val action = when (index) { 0 -> MotionEvent.ACTION_DOWN; 4 -> MotionEvent.ACTION_UP
-                    else -> MotionEvent.ACTION_MOVE }
-                val event = MotionEvent.obtain(time, time + index * 30L, action,
-                    scroll.width / 2f, startY * (1f - index * 0.23f), 0)
-                scroll.dispatchTouchEvent(event)
-                event.recycle()
+            if (scroll.canScrollVertically(1)) {
+                val time = android.os.SystemClock.uptimeMillis()
+                val startY = minOf(waveform.height, scroll.height) * 0.8f
+                for (index in 0..4) {
+                    val action = when (index) { 0 -> MotionEvent.ACTION_DOWN; 4 -> MotionEvent.ACTION_UP
+                        else -> MotionEvent.ACTION_MOVE }
+                    val event = MotionEvent.obtain(time, time + index * 30L, action,
+                        scroll.width / 2f, startY * (1f - index * 0.23f), 0)
+                    scroll.dispatchTouchEvent(event)
+                    event.recycle()
+                }
+                assertTrue("Waveform prevents vertical scrolling", scroll.scrollY > 0)
             }
-            assertTrue("Waveform prevents vertical scrolling", scroll.scrollY > 0)
             descendants(host.overlayHost).filterIsInstance<TextView>()
                 .first { it.text.toString() == "Применить обрезку" }.performClick()
             val clip = host.audioEditorController.project.clips.single()
@@ -327,6 +338,18 @@ class AudioEditorUiInstrumentedTest {
             instrumentation.runOnMainSync { ready = host.audioEditorController.preview.positionMs == 1000L }
             ready
         }
+        instrumentation.runOnMainSync { host.audioEditorController.togglePreviewLane(0) }
+        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
+        InstrumentedTestSupport.waitFor("Muted preview did not resume at the same position", 5000) {
+            var resumed = false
+            instrumentation.runOnMainSync {
+                resumed = host.audioEditorController.mutedPreviewLanes.contains(0) &&
+                    host.audioEditorController.preview.positionMs >= 900
+            }
+            resumed
+        }
+        instrumentation.runOnMainSync { host.audioEditorController.togglePreviewLane(0) }
+        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
         capture("audio-editor-preview.png")
         instrumentation.runOnMainSync { host.audioEditorController.preview.stop() }
         awaitPreview(AudioEditorPreviewController.Phase.IDLE)

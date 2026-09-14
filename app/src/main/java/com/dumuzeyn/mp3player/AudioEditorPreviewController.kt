@@ -22,6 +22,7 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
     private var generation = 0
     private var closed = false
     private var token = ""
+    private var pendingStartPositionMs = 0L
     private val listeners = LinkedHashSet<() -> Unit>()
     var phase = Phase.IDLE
         private set
@@ -49,11 +50,12 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         return AutoCloseable { listeners.remove(listener) }
     }
 
-    fun start(project: AudioEditProject) {
+    fun start(project: AudioEditProject, startPositionMs: Long = 0) {
         if (closed || active || project.clips.isEmpty() || host.audioEditorController.busy) return
         generation++
         val expected = generation
         token = UUID.randomUUID().toString()
+        pendingStartPositionMs = startPositionMs.coerceAtLeast(0)
         failed = false
         positionMs = 0
         durationMs = project.durationMs
@@ -112,9 +114,17 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
             finish()
             return
         }
-        phase = if (state.getBoolean("playing")) Phase.PLAYING else Phase.PAUSED
         positionMs = state.getLong("position").coerceAtLeast(0)
         state.getLong("duration").takeIf { it > 0 }?.let { durationMs = it }
+        val requestedPosition = pendingStartPositionMs.coerceAtMost(durationMs).takeIf { it > 0 }
+        pendingStartPositionMs = 0
+        if (requestedPosition != null) {
+            phase = Phase.STARTING
+            request("seek", Bundle().apply { putLong("position", requestedPosition) }) { update(it) }
+            notifyChanged()
+            return
+        }
+        phase = if (state.getBoolean("playing")) Phase.PLAYING else Phase.PAUSED
         notifyChanged()
     }
 
@@ -131,6 +141,7 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         phase = Phase.IDLE
         progress = -1
         positionMs = 0
+        pendingStartPositionMs = 0
         notifyChanged(true)
     }
 

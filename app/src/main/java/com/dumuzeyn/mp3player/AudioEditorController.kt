@@ -26,6 +26,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         private set
     var selectedClipId: String? = null
         private set
+    private val previewMutedLanes = linkedSetOf<Int>()
+    val mutedPreviewLanes: Set<Int> get() = previewMutedLanes
     var editingMode = false
         private set
     private var loaded = false
@@ -66,6 +68,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             while (undo.size > 32) undo.removeFirst()
             redo.clear()
             project = next
+            previewMutedLanes.retainAll(next.clips.mapTo(HashSet(), AudioEditClip::lane))
             selectedClipId = selectedClipId?.takeIf { selected ->
                 next.clips.any { it.id == selected }
             } ?: next.clips.lastOrNull()?.id
@@ -99,6 +102,22 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (project.clips.none { it.id == clip.id } || selectedClipId == clip.id) return
         selectedClipId = clip.id
         render()
+    }
+
+    fun previewProject(): AudioEditProject = if (previewMutedLanes.isEmpty()) project else project.copy(
+        clips = project.clips.map { clip ->
+            if (clip.lane in previewMutedLanes) clip.copy(gain = 0f) else clip
+        },
+    )
+
+    fun togglePreviewLane(lane: Int) {
+        load()
+        if (project.clips.none { it.lane == lane }) return
+        val resume = if (previewController.isInitialized() && preview.active) preview.positionMs else null
+        if (resume != null) preview.stop()
+        if (!previewMutedLanes.add(lane)) previewMutedLanes.remove(lane)
+        render()
+        if (resume != null) preview.start(previewProject(), resume)
     }
 
     fun toggleEditingMode() {
@@ -142,6 +161,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (busy || from.isEmpty()) return
         to.addLast(project)
         project = from.removeLast()
+        previewMutedLanes.retainAll(project.clips.mapTo(HashSet(), AudioEditClip::lane))
         selectedClipId = selectedClipId?.takeIf { selected ->
             project.clips.any { it.id == selected }
         } ?: project.clips.lastOrNull()?.id

@@ -38,7 +38,9 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                     host,
                     controller.project,
                     controller.selectedClipId,
+                    controller.mutedPreviewLanes,
                     controller::select,
+                    controller::togglePreviewLane,
                 ),
                 LinearLayout.LayoutParams(-1, -2).apply {
                     setMargins(0, host.dp(4), 0, host.dp(8))
