@@ -115,7 +115,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         if (processing.active) host.list.addView(command(host.tr("Cancel processing", "Отменить обработку"),
             true, processing::cancel))
         host.list.addView(View(host), LinearLayout.LayoutParams(-1, host.dp(12)))
-        host.list.addView(command(host.tr("Export", "Экспорт"),
+        host.list.addView(command(host.tr("Export", "Экспортировать"),
             !controller.busy && controller.project.clips.isNotEmpty(), dialogs::chooseExport).apply {
             host.uiFactory.applyPrimaryButtonStyle(this)
         })
@@ -137,28 +137,19 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         ))
         val enabled = !controller.busy
         val actions = listOf(
-            EditorAction(host.tr("Position", "Положение"), enabled) {
-                dialogs.edit(clip, AudioEditorDialogs.Focus.POSITION)
+            EditorAction(host.tr("Cut", "Обрезать"), enabled) {
+                dialogs.edit(clip, AudioEditorDialogs.Focus.CUT)
             },
-            EditorAction(host.tr("Trim", "Обрезка"), enabled) {
-                dialogs.edit(clip, AudioEditorDialogs.Focus.TRIM)
-            },
-            EditorAction(host.tr("Volume", "Громкость"), enabled) {
+            EditorAction(host.tr("Change volume", "Изменить громкость"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.VOLUME)
-            },
-            EditorAction(host.tr("Split", "Разделить"), enabled) {
-                dialogs.edit(clip, AudioEditorDialogs.Focus.SPLIT)
-            },
-            EditorAction(host.tr("Remove range", "Удалить отрезок"), enabled) {
-                dialogs.edit(clip, AudioEditorDialogs.Focus.REMOVE_RANGE)
             },
             EditorAction(host.tr("Remove noise", "Убрать шумы"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.CLEAN_SPEECH)
             },
-            EditorAction(host.tr("Separate stems", "Разделить дорожки"), enabled) {
+            EditorAction(host.tr("Separate stems", "Разделить на дорожки"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.SEPARATE_STEMS)
             },
-            EditorAction(host.tr("Remove vocals", "Удалить вокал"), enabled) {
+            EditorAction(host.tr("Vocal work", "Работа с вокалом"), enabled) {
                 dialogs.edit(clip, AudioEditorDialogs.Focus.REMOVE_VOCALS)
             },
         )

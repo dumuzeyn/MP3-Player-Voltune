@@ -100,9 +100,12 @@ class AudioEditorUiInstrumentedTest {
             assertNotNull(workspace)
             assertEquals(1, descendants(workspace).filterIsInstance<AudioEditorPreviewControls>().size)
             assertEquals(1, descendants(workspace).filterIsInstance<AudioEditorTimelineView>().size)
+            assertTrue("Preview controls must be below all lanes",
+                workspace.indexOfChild(descendants(workspace).filterIsInstance<AudioEditorTimelineView>().single()) <
+                    workspace.indexOfChild(descendants(workspace).filterIsInstance<AudioEditorPreviewControls>().single()))
             descendants(workspace).first { it.contentDescription == "Выключить звук дорожки 1" }.performClick()
             assertTrue(host.audioEditorController.mutedPreviewLanes.contains(0))
-            assertEquals(0f, host.audioEditorController.previewProject().clips.single().gain)
+            assertTrue(host.audioEditorController.previewProject().clips.isEmpty())
             val mutedWorkspace = host.list.findViewById<ViewGroup>(R.id.editor_workspace)
             val mutedButton = descendants(mutedWorkspace).filterIsInstance<Button>()
                 .first { it.contentDescription == "Включить звук дорожки 1" }
@@ -115,14 +118,11 @@ class AudioEditorUiInstrumentedTest {
             val commands = descendants(host.list).filterIsInstance<Button>()
                 .map { it.text.toString() }.toSet()
             assertTrue(commands.containsAll(setOf(
-                "Положение",
-                "Обрезка",
-                "Громкость",
-                "Разделить",
-                "Удалить отрезок",
+                "Обрезать",
+                "Изменить громкость",
                 "Убрать шумы",
-                "Разделить дорожки",
-                "Удалить вокал",
+                "Разделить на дорожки",
+                "Работа с вокалом",
                 "Удалить выбранный фрагмент",
             )))
             AudioEditorDialogs(host).chooseExport()
@@ -131,7 +131,7 @@ class AudioEditorUiInstrumentedTest {
                 (0 until formats.adapter.count).map { formats.adapter.getItem(it).toString() })
             host.overlayHost.removeAllViews()
             descendants(host.list).filterIsInstance<Button>()
-                .first { it.text.toString() == "Громкость" }.performClick()
+                .first { it.text.toString() == "Изменить громкость" }.performClick()
             assertNotNull(descendants(host.overlayHost).filterIsInstance<TextView>()
                 .firstOrNull { it.text.toString() == "Громкость фрагмента" })
             val volumeButtons = descendants(host.overlayHost).filterIsInstance<Button>()
@@ -146,16 +146,15 @@ class AudioEditorUiInstrumentedTest {
             assertFalse("Volume menu contains split controls", volumeButtons.contains("Разделить"))
             assertFalse("Volume menu contains trim controls", volumeButtons.contains("Применить обрезку"))
             AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single(),
-                AudioEditorDialogs.Focus.POSITION)
-            assertNotNull(descendants(host.overlayHost).filterIsInstance<Switch>()
-                .firstOrNull { it.text.toString() == "К ближайшему свободному месту" })
-            host.overlayHost.removeAllViews()
-            AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single(),
-                AudioEditorDialogs.Focus.REMOVE_RANGE)
+                AudioEditorDialogs.Focus.CUT)
+            val cutMode = descendants(host.overlayHost).filterIsInstance<android.widget.Spinner>().single()
+            assertEquals(2, cutMode.selectedItemPosition)
+            assertNotNull(descendants(host.overlayHost).filterIsInstance<AudioEditorProjectBoundaryView>()
+                .singleOrNull())
             val rangeOptions = descendants(host.overlayHost).filterIsInstance<Switch>()
                 .associateBy { it.text.toString() }
             assertTrue(rangeOptions.getValue("Соединить оставшиеся части").isChecked)
-            assertTrue(rangeOptions.getValue("Плавное соединение").isChecked)
+            assertTrue(rangeOptions.getValue("Сделать плавное соединение").isChecked)
             host.overlayHost.removeAllViews()
         }
         assertEquals("Редактор", host.tabs[LibraryTabs.EDITOR])
@@ -169,21 +168,18 @@ class AudioEditorUiInstrumentedTest {
             assertEquals(1, controller.project.clips.size)
             controller.redo()
             assertEquals(2, controller.project.clips.size)
-            AudioEditorDialogs(host).edit(controller.project.clips.first(), AudioEditorDialogs.Focus.TRIM)
+            AudioEditorDialogs(host).edit(controller.project.clips.first(), AudioEditorDialogs.Focus.CUT)
+            descendants(host.overlayHost).filterIsInstance<android.widget.Spinner>().single().setSelection(0)
         }
         awaitLayout(host)
         capture("audio-editor-clip.png")
-        val slider = descendants(host.overlayHost).filterIsInstance<SeekBar>().first()
         instrumentation.runOnMainSync {
-            val time = android.os.SystemClock.uptimeMillis()
-            slider.dispatchTouchEvent(MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 10f, 15f, 0))
-            slider.dispatchTouchEvent(MotionEvent.obtain(time, time + 20, MotionEvent.ACTION_MOVE,
-                slider.width * 0.8f, 15f, 0))
-            slider.dispatchTouchEvent(MotionEvent.obtain(time, time + 30, MotionEvent.ACTION_UP,
-                slider.width * 0.8f, 15f, 0))
             assertEquals(LibraryTabs.EDITOR, host.navigationState.tabIndex)
-            descendants(host.overlayHost).filterIsInstance<TextView>()
-                .first { it.text.toString() == "Применить обрезку" }.performClick()
+            val fields = descendants(host.overlayHost).filterIsInstance<android.widget.EditText>()
+            assertEquals("0.000", fields.first { it.contentDescription == "Начало, с" }.text.toString())
+            assertEquals("3.000", fields.first { it.contentDescription == "Конец, с" }.text.toString())
+            descendants(host.overlayHost).filterIsInstance<Button>()
+                .first { it.text.toString() == "Обрезать" }.performClick()
         }
         awaitLayout(host)
         assertEquals(0, host.overlayHost.childCount)
@@ -361,10 +357,21 @@ class AudioEditorUiInstrumentedTest {
             host.switchTabAnimated(LibraryTabs.EDITOR, 1)
             host.audioEditorController.add(track, 0)
             AudioEditorDialogs(host).edit(host.audioEditorController.project.clips.single(),
-                AudioEditorDialogs.Focus.TRIM)
+                AudioEditorDialogs.Focus.CUT)
+            descendants(host.overlayHost).filterIsInstance<android.widget.Spinner>().single().setSelection(0)
         }
         awaitLayout(host)
-        val waveform = descendants(host.overlayHost).filterIsInstance<AudioEditorWaveformView>().single()
+        lateinit var waveform: AudioEditorWaveformView
+        InstrumentedTestSupport.waitFor("Trim mode did not finish rendering", 5000) {
+            var ready = false
+            instrumentation.runOnMainSync {
+                val waves = descendants(host.overlayHost).filterIsInstance<AudioEditorWaveformView>()
+                ready = descendants(host.overlayHost).filterIsInstance<android.widget.Spinner>()
+                    .single().selectedItemPosition == 0 && waves.size == 1 && waves.single().isAttachedToWindow
+                if (ready) waveform = waves.single()
+            }
+            ready
+        }
         InstrumentedTestSupport.waitFor("Waveform did not decode", 15000) {
             var ready = false
             instrumentation.runOnMainSync { ready = waveform.waveform != null }
@@ -410,8 +417,8 @@ class AudioEditorUiInstrumentedTest {
                 }
                 assertTrue("Waveform prevents vertical scrolling", scroll.scrollY > 0)
             }
-            descendants(host.overlayHost).filterIsInstance<TextView>()
-                .first { it.text.toString() == "Применить обрезку" }.performClick()
+            descendants(host.overlayHost).filterIsInstance<Button>()
+                .first { it.text.toString() == "Обрезать" }.performClick()
             val clip = host.audioEditorController.project.clips.single()
             assertEquals(1000, clip.startMs)
             assertEquals(5000, clip.endMs)
@@ -468,16 +475,13 @@ class AudioEditorUiInstrumentedTest {
             ready
         }
         instrumentation.runOnMainSync { host.audioEditorController.togglePreviewLane(0) }
-        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
-        InstrumentedTestSupport.waitFor("Muted preview did not resume at the same position", 5000) {
-            var resumed = false
-            instrumentation.runOnMainSync {
-                resumed = host.audioEditorController.mutedPreviewLanes.contains(0) &&
-                    host.audioEditorController.preview.positionMs >= 900
-            }
-            resumed
+        awaitPreview(AudioEditorPreviewController.Phase.IDLE)
+        instrumentation.runOnMainSync {
+            assertTrue(host.audioEditorController.mutedPreviewLanes.contains(0))
+            assertTrue(host.audioEditorController.previewProject().clips.isEmpty())
+            host.audioEditorController.togglePreviewLane(0)
+            descendants(host.list).first { it.contentDescription == "Прослушать аудио" }.performClick()
         }
-        instrumentation.runOnMainSync { host.audioEditorController.togglePreviewLane(0) }
         awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
         capture("audio-editor-preview.png")
         instrumentation.runOnMainSync { host.audioEditorController.preview.stop() }
@@ -531,11 +535,29 @@ class AudioEditorUiInstrumentedTest {
         }
         instrumentation.runOnMainSync {
             val editor = host.audioEditorController
-            editor.preview.start(mixedPreview)
+            editor.change { mixedPreview }
+            editor.preview.start(editor.project)
             assertEquals("Cached mixed preview was not reused", AudioEditorPreviewController.Phase.STARTING,
                 editor.preview.phase)
+        }
+        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
+        instrumentation.runOnMainSync {
+            val editor = host.audioEditorController
+            editor.togglePreviewLane(1)
+            assertEquals("Muting one of two lanes re-encoded the preview",
+                AudioEditorPreviewController.Phase.STARTING, editor.preview.phase)
+        }
+        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
+        instrumentation.runOnMainSync {
+            val editor = host.audioEditorController
+            editor.togglePreviewLane(1)
+            assertEquals("Unmuting did not reuse the cached mix",
+                AudioEditorPreviewController.Phase.STARTING, editor.preview.phase)
+        }
+        awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
+        instrumentation.runOnMainSync {
+            val editor = host.audioEditorController
             editor.preview.stop()
-            editor.change { it.replace(it.clips.single().copy(endMs = 4000)) }
             assertNotNull(AudioEditorPreviewCache(context).get(mixedPreview))
             val uncached = mixedPreview.copy(clips = mixedPreview.clips.map { it.copy(gain = 0.8f) })
             editor.preview.start(uncached)

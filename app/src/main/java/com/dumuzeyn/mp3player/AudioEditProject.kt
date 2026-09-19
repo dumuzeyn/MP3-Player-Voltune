@@ -61,9 +61,9 @@ internal data class AudioEditProject(val clips: List<AudioEditClip> = emptyList(
     fun split(id: String, sourcePositionMs: Long): AudioEditProject {
         val clip = clips.first { it.id == id }
         require(sourcePositionMs > clip.startMs && sourcePositionMs < clip.endMs)
-        val left = clip.copy(endMs = sourcePositionMs, fadeOutMs = 0)
+        val left = clip.copy(title = "${clip.title} (1)", endMs = sourcePositionMs, fadeOutMs = 0)
         val right = clip.copy(id = UUID.randomUUID().toString(), startMs = sourcePositionMs,
-            offsetMs = clip.offsetMs + left.durationMs, fadeInMs = 0)
+            title = "${clip.title} (2)", offsetMs = clip.offsetMs + left.durationMs, fadeInMs = 0)
         return copy(clips = clips.flatMap { if (it.id == id) listOf(left, right) else listOf(it) })
     }
 

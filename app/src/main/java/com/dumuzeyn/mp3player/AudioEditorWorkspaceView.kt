@@ -20,14 +20,6 @@ internal class AudioEditorWorkspaceView(
         setPadding(host.dp(10), host.dp(8), host.dp(10), host.dp(10))
         host.uiFactory.applyCardStyle(this)
 
-        addView(
-            AudioEditorPreviewControls(host, {
-                project.copy(clips = project.clips.map { clip ->
-                    if (clip.lane in mutedLanes) clip.copy(gain = 0f) else clip
-                })
-            }),
-            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
-        )
         val laneButtons = LinearLayout(host).apply { orientation = HORIZONTAL }
         project.clips.map(AudioEditClip::lane).distinct().sorted().forEach { lane ->
             val muted = lane in mutedLanes
@@ -64,6 +56,16 @@ internal class AudioEditorWorkspaceView(
         })
         addView(
             AudioEditorTimelineView(host, project, selectedClipId, select, moveClip),
+            LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
+        )
+        addView(host.uiFactory.lineView(), LayoutParams(LayoutParams.MATCH_PARENT, host.dp(1)).apply {
+            setMargins(0, host.dp(5), 0, host.dp(4))
+        })
+        addView(
+            AudioEditorPreviewControls(host, {
+                val audible = project.clips.filterNot { it.lane in mutedLanes }
+                project.copy(clips = audible)
+            }, displayDurationMs = { project.durationMs }),
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
         )
     }

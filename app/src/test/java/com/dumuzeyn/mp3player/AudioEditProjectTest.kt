@@ -15,6 +15,7 @@ class AudioEditProjectTest {
         assertEquals(listOf(1000L, 3500L), split.clips.map { it.startMs })
         assertEquals(listOf(3500L, 9000L), split.clips.map { it.endMs })
         assertEquals(listOf(2000L, 4500L), split.clips.map { it.offsetMs })
+        assertEquals(listOf("a (1)", "a (2)"), split.clips.map { it.title })
         assertEquals(1, source.clips.size)
     }
 

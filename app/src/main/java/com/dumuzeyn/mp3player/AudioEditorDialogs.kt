@@ -1,9 +1,7 @@
 package com.dumuzeyn.mp3player
 
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.EditText
@@ -11,19 +9,14 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.Spinner
-import android.widget.Switch
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import java.util.Locale
 
 internal class AudioEditorDialogs(private val host: MainActivityCore) {
     enum class Focus {
-        POSITION,
-        TRIM,
+        CUT,
         VOLUME,
-        SPLIT,
-        REMOVE_RANGE,
         CLEAN_SPEECH,
         SEPARATE_STEMS,
         REMOVE_VOCALS,
@@ -35,7 +28,7 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         if (controller.busy || controller.project.clips.isEmpty()) return
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
-        panel.addView(host.uiFactory.centeredDialogTitle(host.tr("Export", "Экспорт"), 18))
+        panel.addView(host.uiFactory.centeredDialogTitle(host.tr("Export", "Экспортировать"), 18))
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         content.addView(host.uiFactory.text(host.tr("Format", "Формат"), 14, false))
         val format = Spinner(host).apply {
@@ -107,8 +100,12 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
     }
 
     @JvmOverloads
-    fun edit(clip: AudioEditClip, focus: Focus = Focus.POSITION) {
+    fun edit(clip: AudioEditClip, focus: Focus = Focus.CUT) {
         if (controller.busy) return
+        if (focus == Focus.CUT) {
+            AudioEditorCutDialog(host, clip).show()
+            return
+        }
         val shade = host.uiFactory.shade()
         val panel = host.uiFactory.panelCard()
         panel.addView(host.uiFactory.centeredDialogTitle(focusTitle(focus), 18))
@@ -136,58 +133,8 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
                 content.addView(this, LinearLayout.LayoutParams(-1, host.dp(48)))
             }
         }
-        fun waveform(): AudioEditorWaveformView = AudioEditorWaveformView(host, clip).also {
-            content.addView(it, LinearLayout.LayoutParams(-1, minOf(host.dp(120), bodyHeight(390, 210))))
-        }
-        fun range(waveform: AudioEditorWaveformView): Pair<EditText, EditText> {
-            val from = secondsField(content, host.tr("Start, s", "Начало, с"), clip.startMs)
-            val to = secondsField(content, host.tr("End, s", "Конец, с"), clip.endMs)
-            var updating = false
-            waveform.onSelection = { start, end ->
-                updating = true
-                from.setText(seconds(start))
-                to.setText(seconds(end))
-                updating = false
-            }
-            val watcher = object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    if (!updating) runCatching { waveform.setSelection(millis(from), millis(to)) }
-                }
-                override fun afterTextChanged(s: Editable?) = Unit
-            }
-            from.addTextChangedListener(watcher)
-            to.addTextChangedListener(watcher)
-            return from to to
-        }
-
         when (focus) {
-            Focus.POSITION -> {
-                val offset = secondsField(content, host.tr("Timeline position, s", "Позиция на шкале, с"), clip.offsetMs)
-                val lane = lanePicker()
-                val snap = toggle(host.tr("Snap to nearest free space", "К ближайшему свободному месту"), false)
-                content.addView(snap, LinearLayout.LayoutParams(-1, host.dp(52)))
-                preview { clip }
-                primary(host.tr("Apply position", "Применить положение")) {
-                    runCatching {
-                        val positioned = clip.copy(offsetMs = millis(offset), lane = lane.selectedItemPosition)
-                        if (snap.isChecked) positioned.copy(offsetMs = controller.project.nearestFreeOffset(
-                            clip.id, positioned.lane, positioned.offsetMs)) else positioned
-                    }
-                        .onSuccess { if (controller.change { project -> project.replace(it) }) close() }
-                        .onFailure { offset.error = host.tr("Check the position", "Проверьте положение") }
-                }
-            }
-            Focus.TRIM -> {
-                val waveform = waveform()
-                val (from, to) = range(waveform)
-                preview { clip.copy(startMs = millis(from), endMs = millis(to)) }
-                primary(host.tr("Apply trim", "Применить обрезку")) {
-                    runCatching { clip.copy(startMs = millis(from), endMs = millis(to)) }
-                        .onSuccess { if (controller.change { project -> project.replace(it) }) close() }
-                        .onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
-                }
-            }
+            Focus.CUT -> Unit
             Focus.VOLUME -> {
                 val level = host.uiFactory.text(
                     "${host.tr("Volume", "Громкость")}: ${(clip.gain * 100).toInt()}%",
@@ -210,71 +157,38 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
                     if (controller.change { it.replace(clip.copy(gain = gain.progress / 100f)) }) close()
                 }
             }
-            Focus.SPLIT -> {
-                val waveform = waveform()
-                val cutLabel = host.uiFactory.text("", 14, false)
-                content.addView(cutLabel)
-                val cut = SeekBar(host).apply {
-                    max = 1000
-                    progress = 500
-                    contentDescription = host.tr("Split position", "Точка разделения")
-                }
-                fun updateCut() {
-                    cutLabel.text = host.tr("Split at ", "Разделить в ") + seconds(waveform.cursorMs) +
-                        host.tr(" s", " с")
-                }
-                host.uiFactory.applySeekBarColors(cut)
-                cut.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                    override fun onProgressChanged(bar: SeekBar, value: Int, fromUser: Boolean) {
-                        if (fromUser) waveform.setCursor(clip.startMs + clip.durationMs * value / 1000)
-                        updateCut()
-                    }
-                    override fun onStartTrackingTouch(bar: SeekBar) = Unit
-                    override fun onStopTrackingTouch(bar: SeekBar) = Unit
-                })
-                waveform.onCursor = { value ->
-                    cut.progress = ((value - clip.startMs) * 1000 / clip.durationMs).toInt()
-                    updateCut()
-                }
-                updateCut()
-                content.addView(cut, LinearLayout.LayoutParams(-1, host.dp(48)))
-                preview { clip }
-                primary(host.tr("Split", "Разделить")) {
-                    if (controller.change { it.split(clip.id, waveform.cursorMs) }) close()
-                }
-            }
-            Focus.REMOVE_RANGE -> {
-                val waveform = waveform()
-                val (from, to) = range(waveform)
-                val closeGap = toggle(host.tr("Join remaining parts", "Соединить оставшиеся части"), true)
-                val smoothJoin = toggle(host.tr("Smooth join", "Плавное соединение"), true)
-                content.addView(closeGap, LinearLayout.LayoutParams(-1, host.dp(52)))
-                content.addView(smoothJoin, LinearLayout.LayoutParams(-1, host.dp(52)))
-                previewProject {
-                    AudioEditProject(listOf(clip.copy(offsetMs = 0, lane = 0))).removeRange(
-                        clip.id, millis(from), millis(to), closeGap.isChecked, smoothJoin.isChecked)
-                }
-                primary(host.tr("Remove selected range", "Удалить выделенный отрезок")) {
-                    runCatching { millis(from) to millis(to) }.onSuccess { selected ->
-                        if (controller.change { it.removeRange(clip.id, selected.first, selected.second,
-                                closeGap.isChecked, smoothJoin.isChecked) }) close()
-                    }.onFailure { from.error = host.tr("Check the range", "Проверьте границы") }
-                }
-            }
             Focus.CLEAN_SPEECH -> {
                 preview { clip }
                 primary(host.tr("Remove noise", "Убрать шумы")) {
                     if (controller.processing.cleanSpeech(clip)) close()
                 }
             }
-            Focus.SEPARATE_STEMS, Focus.REMOVE_VOCALS -> {
+            Focus.SEPARATE_STEMS -> {
                 val lane = lanePicker()
                 preview { clip }
-                val instrumental = focus == Focus.REMOVE_VOCALS
-                primary(if (instrumental) host.tr("Remove vocals", "Удалить вокал")
-                    else host.tr("Separate into four stems", "Разделить на четыре дорожки")) {
+                primary(host.tr("Separate into four stems", "Разделить на четыре дорожки")) {
                     runCatching { clip.copy(lane = lane.selectedItemPosition) }
-                        .onSuccess { if (controller.processing.separate(it, instrumental)) close() }
+                        .onSuccess { if (controller.processing.separate(it, false)) close() }
+                }
+            }
+            Focus.REMOVE_VOCALS -> {
+                content.addView(host.uiFactory.text(host.tr(
+                    "The selected clip provides the vocal. In mix mode, all other clips provide the music.",
+                    "Выбранный фрагмент используется как вокал. В режиме совмещения музыка берётся из остальных фрагментов.",
+                ), 13, false))
+                val mode = Spinner(host).apply {
+                    adapter = ArrayAdapter(host, android.R.layout.simple_spinner_dropdown_item, listOf(
+                        host.tr("Remove vocals", "Удалить вокал"),
+                        host.tr("Combine vocal with other music", "Совместить вокал с остальной музыкой"),
+                    ))
+                    content.addView(this, LinearLayout.LayoutParams(-1, host.dp(52)))
+                }
+                preview { clip }
+                primary(host.tr("Process vocals", "Обработать вокал")) {
+                    val started = if (mode.selectedItemPosition == 0)
+                        controller.processing.separate(clip, true)
+                    else controller.processing.combineVocals(clip)
+                    if (started) close()
                 }
             }
         }
@@ -284,36 +198,13 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
     }
 
     private fun focusTitle(focus: Focus): String = when (focus) {
-        Focus.POSITION -> host.tr("Clip position", "Положение фрагмента")
-        Focus.TRIM -> host.tr("Trim audio", "Обрезка аудио")
         Focus.VOLUME -> host.tr("Clip volume", "Громкость фрагмента")
-        Focus.SPLIT -> host.tr("Split audio", "Разделение аудио")
-        Focus.REMOVE_RANGE -> host.tr("Remove a range", "Удаление отрезка")
         Focus.CLEAN_SPEECH -> host.tr("Remove noise", "Удаление шумов")
         Focus.SEPARATE_STEMS -> host.tr("Separate stems", "Разделение дорожек")
-        Focus.REMOVE_VOCALS -> host.tr("Remove vocals", "Удаление вокала")
+        Focus.REMOVE_VOCALS -> host.tr("Vocal work", "Работа с вокалом")
+        Focus.CUT -> host.tr("Cut audio", "Обрезать")
     }
 
-    private fun secondsField(parent: LinearLayout, label: String, value: Long): EditText {
-        parent.addView(host.uiFactory.text(label, 14, false))
-        val input = EditText(host).apply {
-            setText(seconds(value))
-            contentDescription = label
-            setTextColor(host.primaryText)
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-            isSingleLine = true
-        }
-        parent.addView(input, LinearLayout.LayoutParams(-1, host.dp(48)))
-        return input
-    }
-
-    private fun millis(input: EditText): Long {
-        val value = input.text.toString().replace(',', '.').toDoubleOrNull()
-        require(value != null && value.isFinite() && value >= 0 && value <= 86400)
-        return kotlin.math.round(value * 1000).toLong()
-    }
-
-    private fun seconds(value: Long) = String.format(Locale.ROOT, "%.3f", value / 1000.0)
     private fun bodyHeight(preferredDp: Int, chromeDp: Int): Int = minOf(host.dp(preferredDp),
         (host.overlayHost.height - host.dp(chromeDp)).coerceAtLeast(host.dp(64)))
     private fun action(label: String, run: () -> Unit) = host.uiFactory.button(label).apply {
@@ -324,20 +215,6 @@ internal class AudioEditorDialogs(private val host: MainActivityCore) {
         override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) = change(progress)
         override fun onStartTrackingTouch(bar: SeekBar) = Unit
         override fun onStopTrackingTouch(bar: SeekBar) = Unit
-    }
-    @Suppress("UseSwitchCompatOrMaterialCode")
-    private fun toggle(label: String, checked: Boolean) = Switch(host).apply {
-        text = label
-        setTextColor(host.primaryText)
-        isChecked = checked
-        thumbTintList = android.content.res.ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-            intArrayOf(host.purple, host.secondaryText),
-        )
-        trackTintList = android.content.res.ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-            intArrayOf(host.purpleSoft, host.cardStroke),
-        )
     }
     private class TrackHolder(val label: TextView) : RecyclerView.ViewHolder(label)
 }

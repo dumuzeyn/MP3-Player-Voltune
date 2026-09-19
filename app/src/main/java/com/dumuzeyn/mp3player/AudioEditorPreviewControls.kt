@@ -4,9 +4,14 @@ import android.os.Build
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Toast
+import java.util.Locale
 
 internal class AudioEditorPreviewControls(private val host: MainActivityCore,
-    private val project: () -> AudioEditProject, private val stopOnDetach: Boolean = false) : LinearLayout(host) {
+    private val project: () -> AudioEditProject,
+    private val startPositionMs: () -> Long = { 0L },
+    private val displayDurationMs: () -> Long = { project().durationMs },
+    private val stopOnDetach: Boolean = false,
+) : LinearLayout(host) {
     private val preview get() = host.audioEditorController.preview
     private var subscription: AutoCloseable? = null
     private var dragging = false
@@ -28,7 +33,8 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
         addView(row)
         host.uiFactory.applySeekBarColors(seek)
         play.setOnClickListener {
-            if (preview.active) preview.toggle() else runCatching { preview.start(project()) }.onFailure {
+            if (preview.active) preview.toggle()
+            else runCatching { preview.start(project(), startPositionMs()) }.onFailure {
                 Toast.makeText(host, host.tr("Check the clip range", "Проверьте границы фрагмента"), Toast.LENGTH_SHORT).show()
             }
         }
@@ -62,8 +68,8 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
             preview.failed -> host.tr("Preview unavailable", "Предпрослушивание недоступно")
             preparing -> host.tr("Preparing preview", "Подготовка предпрослушивания") +
                 if (preview.progress >= 0) " ${preview.progress}%" else ""
-            preview.active -> host.formatSeconds(preview.positionMs / 1000) + " / " + host.formatSeconds((preview.durationMs + 500) / 1000)
-            else -> host.tr("Preview", "Предпрослушивание")
+            preview.active -> precise(preview.positionMs) + " / " + precise(preview.durationMs)
+            else -> precise(0) + " / " + precise(displayDurationMs())
         }
         alpha = if (play.isEnabled || stop.isEnabled) 1f else 0.5f
     }
@@ -74,5 +80,11 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
         subscription = null
         if (stopOnDetach) preview.stop()
         super.onDetachedFromWindow()
+    }
+
+    private fun precise(valueMs: Long): String {
+        val safe = valueMs.coerceAtLeast(0)
+        return String.format(Locale.ROOT, "%d:%02d.%03d", safe / 60_000,
+            safe / 1000 % 60, safe % 1000)
     }
 }

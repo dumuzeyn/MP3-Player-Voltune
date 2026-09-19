@@ -128,11 +128,11 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         return moved
     }
 
-    fun previewProject(): AudioEditProject = if (previewMutedLanes.isEmpty()) project else project.copy(
-        clips = project.clips.map { clip ->
-            if (clip.lane in previewMutedLanes) clip.copy(gain = 0f) else clip
-        },
-    )
+    fun previewProject(): AudioEditProject {
+        if (previewMutedLanes.isEmpty()) return project
+        val audible = project.clips.filterNot { it.lane in previewMutedLanes }
+        return project.copy(clips = audible)
+    }
 
     fun togglePreviewLane(lane: Int) {
         load()
@@ -141,7 +141,7 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (resume != null) preview.stop()
         if (!previewMutedLanes.add(lane)) previewMutedLanes.remove(lane)
         render()
-        if (resume != null) preview.start(previewProject(), resume)
+        if (resume != null && previewProject().clips.isNotEmpty()) preview.start(previewProject(), resume)
     }
 
     fun toggleEditingMode() {
