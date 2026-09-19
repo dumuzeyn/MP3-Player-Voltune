@@ -52,7 +52,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         loaded = true
         project = store.load()
         selectedClipId = project.clips.firstOrNull()?.id
-        preview.retainCache(project)
+        preview.maintainCache(project)
+        preview.prepareCache(project)
         val saved = host.getSharedPreferences("audio_editor", 0).getString("export", null)
         readyFile = saved?.let { File(host.cacheDir, it) }?.takeIf {
             it.parentFile?.canonicalFile == host.cacheDir.canonicalFile && it.isFile
@@ -70,7 +71,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
             while (undo.size > 32) undo.removeFirst()
             redo.clear()
             project = next
-            preview.clearCache()
+            preview.maintainCache(next)
+            preview.prepareCache(next)
             previewMutedLanes.retainAll(next.clips.mapTo(HashSet(), AudioEditClip::lane))
             selectedClipId = selectedClipId?.takeIf { selected ->
                 next.clips.any { it.id == selected }
@@ -107,9 +109,23 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         render()
     }
 
-    fun moveClip(clip: AudioEditClip, lane: Int, nearMs: Long): Boolean = change { project ->
-        val offset = project.nearestFreeOffset(clip.id, lane, nearMs)
-        project.replace(clip.copy(lane = lane, offsetMs = offset))
+    fun moveClip(clip: AudioEditClip, target: AudioEditorDropTarget, nearMs: Long): Boolean {
+        val previousMutes = previewMutedLanes.toSet()
+        if (target !is AudioEditorDropTarget.Existing) previewMutedLanes.clear()
+        val moved = change { project ->
+            when (target) {
+                AudioEditorDropTarget.Above -> project.moveToNewEdgeLane(clip.id, true, nearMs)
+                AudioEditorDropTarget.Below -> project.moveToNewEdgeLane(clip.id, false, nearMs)
+                is AudioEditorDropTarget.Existing -> {
+                    val offset = project.nearestFreeOffset(clip.id, target.lane, nearMs)
+                    project.replace(clip.copy(lane = target.lane, offsetMs = offset))
+                }
+            }
+        }
+        if (!moved && target !is AudioEditorDropTarget.Existing) {
+            previewMutedLanes.addAll(previousMutes)
+        }
+        return moved
     }
 
     fun previewProject(): AudioEditProject = if (previewMutedLanes.isEmpty()) project else project.copy(
@@ -169,7 +185,8 @@ internal class AudioEditorController(private val host: MainActivityCore) : AutoC
         if (busy || from.isEmpty()) return
         to.addLast(project)
         project = from.removeLast()
-        preview.clearCache()
+        preview.maintainCache(project)
+        preview.prepareCache(project)
         previewMutedLanes.retainAll(project.clips.mapTo(HashSet(), AudioEditClip::lane))
         selectedClipId = selectedClipId?.takeIf { selected ->
             project.clips.any { it.id == selected }

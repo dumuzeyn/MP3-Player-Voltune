@@ -12,7 +12,7 @@ internal class AudioEditorWorkspaceView(
     mutedLanes: Set<Int>,
     select: (AudioEditClip) -> Unit,
     toggleLane: (Int) -> Unit,
-    moveClip: (AudioEditClip, Int, Long) -> Boolean,
+    moveClip: (AudioEditClip, AudioEditorDropTarget, Long) -> Boolean,
 ) : LinearLayout(host) {
     init {
         id = R.id.editor_workspace

@@ -30,6 +30,7 @@ class AudioEditorUiInstrumentedTest {
     @After fun cleanup() {
         activity?.let { InstrumentedTestSupport.finishActivity(instrumentation, it) }
         context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        AudioEditorPreviewCache(context).clear()
         wave?.delete()
         savedUri?.let { context.contentResolver.delete(it, null, null) }
     }
@@ -251,6 +252,45 @@ class AudioEditorUiInstrumentedTest {
         }
     }
 
+    @Test fun draggingBelowTimelineCreatesANewLane() {
+        context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
+        context.getSharedPreferences("mp3_player_ui", 0).edit()
+            .putBoolean("animations", false).putBoolean("particlesEnabled", false).commit()
+        wave = InstrumentedTestSupport.createTestWave(context, "editor-new-lane.wav", 6)
+        val track = Track(Uri.fromFile(wave).toString(), "Новая дорожка", "Voltune", "Test", "Test", 6000)
+        TrackStore.save(context, listOf(track))
+        val host = launch()
+        lateinit var moving: AudioEditClip
+        instrumentation.runOnMainSync {
+            host.switchTabAnimated(LibraryTabs.EDITOR, 1)
+            host.audioEditorController.add(track, 0)
+            moving = host.audioEditorController.project.clips.single()
+            host.audioEditorController.change { project ->
+                project.replace(moving.copy(endMs = 2000))
+                    .append(moving.copy(id = "remaining", startMs = 2000, offsetMs = 0), 0)
+            }
+        }
+        awaitLayout(host)
+        val timeline = descendants(host.list).filterIsInstance<AudioEditorTimelineView>().single()
+        val time = android.os.SystemClock.uptimeMillis()
+        instrumentation.runOnMainSync {
+            timeline.dispatchTouchEvent(MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN,
+                timeline.width / 10f, host.dp(58).toFloat(), 0))
+        }
+        Thread.sleep(750)
+        instrumentation.runOnMainSync {
+            val now = android.os.SystemClock.uptimeMillis()
+            val y = timeline.height - host.dp(8).toFloat()
+            timeline.dispatchTouchEvent(MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE,
+                timeline.width / 3f, y, 0))
+            timeline.dispatchTouchEvent(MotionEvent.obtain(now, now + 20, MotionEvent.ACTION_UP,
+                timeline.width / 3f, y, 0))
+            val clips = host.audioEditorController.project.clips
+            assertEquals(1, clips.first { it.id == moving.id }.lane)
+            assertEquals(listOf(0, 1), clips.map(AudioEditClip::lane).distinct().sorted())
+        }
+    }
+
     @Test fun songPropertiesOpenSelectedEditorAndLockBlocksNavigation() {
         context.getSharedPreferences("audio_editor", 0).edit().clear().commit()
         context.getSharedPreferences("mp3_player_ui", 0).edit()
@@ -402,6 +442,13 @@ class AudioEditorUiInstrumentedTest {
             }
             rendered
         }
+        InstrumentedTestSupport.waitFor("Preview was not prepared in background", 20000) {
+            var cached = false
+            instrumentation.runOnMainSync {
+                cached = AudioEditorPreviewCache(context).get(host.audioEditorController.project) != null
+            }
+            cached
+        }
         instrumentation.runOnMainSync {
             descendants(host.list).first { it.contentDescription == "Прослушать аудио" }.performClick()
         }
@@ -461,11 +508,11 @@ class AudioEditorUiInstrumentedTest {
             val editor = host.audioEditorController
             editor.preview.stop()
             editor.preview.start(originalPreview)
-            assertEquals("Earlier preview was evicted by another tool", AudioEditorPreviewController.Phase.STARTING,
+            assertEquals("Earlier preview was not reused", AudioEditorPreviewController.Phase.STARTING,
                 editor.preview.phase)
             editor.preview.stop()
             editor.change { it.replace(it.clips.single().copy(endMs = 4000)) }
-            assertNull(AudioEditorPreviewCache(context).get(originalPreview))
+            assertNotNull(AudioEditorPreviewCache(context).get(originalPreview))
             editor.preview.start(editor.project)
             editor.preview.stop()
         }

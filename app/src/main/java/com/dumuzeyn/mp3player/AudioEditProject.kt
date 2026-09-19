@@ -109,6 +109,23 @@ internal data class AudioEditProject(val clips: List<AudioEditClip> = emptyList(
             ?: throw IllegalArgumentException("No free space on lane")
     }
 
+    fun moveToNewEdgeLane(id: String, above: Boolean, nearMs: Long): AudioEditProject {
+        val moving = clips.first { it.id == id }
+        val others = clips.filterNot { it.id == id }
+        val used = others.map(AudioEditClip::lane).distinct().sorted()
+        require(used.size < AudioEditClip.MAX_LANES)
+        val laneMap = used.mapIndexed { index, lane ->
+            lane to if (above) index + 1 else index
+        }.toMap()
+        val targetLane = if (above) 0 else used.size
+        val remapped = others.map { it.copy(lane = laneMap.getValue(it.lane)) }
+        val maxOffset = AudioEditClip.MAX_TIME_MS - moving.durationMs
+        return AudioEditProject(remapped + moving.copy(
+            lane = targetLane,
+            offsetMs = nearMs.coerceIn(0, maxOffset),
+        ))
+    }
+
     fun concatenate(): AudioEditProject {
         var cursor = 0L
         return copy(clips = clips.sortedWith(compareBy<AudioEditClip> { it.lane }.thenBy { it.offsetMs }).map {

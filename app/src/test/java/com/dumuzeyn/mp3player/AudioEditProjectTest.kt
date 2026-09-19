@@ -96,4 +96,22 @@ class AudioEditProjectTest {
         assertEquals(8500L, result.clips.last().offsetMs)
         assertEquals(1, result.clips.last().lane)
     }
+
+    @Test fun movingToNewEdgeLaneCreatesAndOrdersLanes() {
+        val source = AudioEditProject(listOf(
+            clip("moving").copy(endMs = 3000),
+            clip("same", offset = 2000),
+            clip("second", lane = 4),
+        ))
+
+        val above = source.moveToNewEdgeLane("moving", above = true, nearMs = 5000)
+        assertEquals(0, above.clips.first { it.id == "moving" }.lane)
+        assertEquals(5000L, above.clips.first { it.id == "moving" }.offsetMs)
+        assertEquals(listOf(0, 1, 2), above.clips.map(AudioEditClip::lane).distinct().sorted())
+        assertEquals(1, above.clips.first { it.id == "same" }.lane)
+
+        val below = source.moveToNewEdgeLane("moving", above = false, nearMs = 7000)
+        assertEquals(2, below.clips.first { it.id == "moving" }.lane)
+        assertEquals(listOf(0, 1, 2), below.clips.map(AudioEditClip::lane).distinct().sorted())
+    }
 }
