@@ -47,8 +47,8 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
     }
 
     private fun refresh() {
-        val pending = preview.phase == AudioEditorPreviewController.Phase.PREPARING ||
-            preview.phase == AudioEditorPreviewController.Phase.STARTING
+        val preparing = preview.phase == AudioEditorPreviewController.Phase.PREPARING
+        val pending = preparing || preview.phase == AudioEditorPreviewController.Phase.STARTING
         play.text = if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) "Ⅱ" else "▶"
         play.contentDescription = if (preview.active) host.tr("Pause or resume preview", "Пауза или продолжение предпрослушивания")
             else host.tr("Preview audio", "Прослушать аудио")
@@ -60,7 +60,7 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
             (preview.positionMs * 1000 / preview.durationMs).toInt() else 0
         label.text = when {
             preview.failed -> host.tr("Preview unavailable", "Предпрослушивание недоступно")
-            pending -> host.tr("Preparing preview", "Подготовка предпрослушивания") +
+            preparing -> host.tr("Preparing preview", "Подготовка предпрослушивания") +
                 if (preview.progress >= 0) " ${preview.progress}%" else ""
             preview.active -> host.formatSeconds(preview.positionMs / 1000) + " / " + host.formatSeconds((preview.durationMs + 500) / 1000)
             else -> host.tr("Preview", "Предпрослушивание")

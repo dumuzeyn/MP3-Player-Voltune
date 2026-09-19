@@ -49,6 +49,7 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
 
     fun start(project: AudioEditProject, startPositionMs: Long = 0) {
         if (closed || active || project.clips.isEmpty() || host.audioEditorController.busy) return
+        val direct = directClips(project)
         generation++
         val expected = generation
         token = UUID.randomUUID().toString()
@@ -57,9 +58,14 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         positionMs = 0
         durationMs = project.durationMs
         progress = -1
-        phase = Phase.PREPARING
+        phase = if (direct == null) Phase.PREPARING else Phase.STARTING
         notifyChanged(true)
         handler.post(tick)
+        direct?.let {
+            cancelCachePreparation()
+            play(it)
+            return
+        }
         cache.get(project)?.let {
             play(it)
             return
@@ -79,7 +85,7 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         val expected = ++cacheGeneration
         cacheHandler.removeCallbacksAndMessages(null)
         cacheExporter.close()
-        if (closed || project.clips.isEmpty() || cache.get(project) != null) return
+        if (closed || project.clips.isEmpty() || directClips(project) != null || cache.get(project) != null) return
         cacheHandler.postDelayed({
             if (closed || expected != cacheGeneration || host.audioEditorController.busy ||
                 cache.get(project) != null) return@postDelayed
@@ -111,6 +117,33 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
             putString("title", host.tr("Preview", "Предпрослушивание"))
         }) { update(it) }
         notifyChanged()
+    }
+
+    private fun play(clips: List<AudioEditClip>) {
+        if (host.navigationState.tabIndex != LibraryTabs.EDITOR) { stop(); return }
+        phase = Phase.STARTING
+        request("start", Bundle().apply {
+            putStringArrayList("uris", ArrayList(clips.map(AudioEditClip::uri)))
+            putLongArray("starts", clips.map(AudioEditClip::startMs).toLongArray())
+            putLongArray("ends", clips.map(AudioEditClip::endMs).toLongArray())
+            putFloat("volume", clips.first().gain)
+            putString("token", token)
+            putString("title", host.tr("Preview", "Предпрослушивание"))
+        }) { update(it) }
+        notifyChanged()
+    }
+
+    private fun directClips(project: AudioEditProject): List<AudioEditClip>? {
+        val clips = project.clips.sortedBy(AudioEditClip::offsetMs)
+        if (clips.isEmpty() || clips.map(AudioEditClip::lane).distinct().size != 1) return null
+        val gain = clips.first().gain
+        if (gain > 1f || clips.any { it.gain != gain || it.fadeInMs > 0 || it.fadeOutMs > 0 }) return null
+        var cursor = 0L
+        clips.forEach { clip ->
+            if (clip.offsetMs != cursor) return null
+            cursor = clip.finishMs
+        }
+        return clips
     }
 
     fun toggle() {
@@ -188,5 +221,5 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         listeners.clear()
     }
 
-    companion object { private const val CACHE_DELAY_MS = 600L }
+    companion object { private const val CACHE_DELAY_MS = 150L }
 }

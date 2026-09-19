@@ -442,15 +442,11 @@ class AudioEditorUiInstrumentedTest {
             }
             rendered
         }
-        InstrumentedTestSupport.waitFor("Preview was not prepared in background", 20000) {
-            var cached = false
-            instrumentation.runOnMainSync {
-                cached = AudioEditorPreviewCache(context).get(host.audioEditorController.project) != null
-            }
-            cached
-        }
         instrumentation.runOnMainSync {
+            assertNull(AudioEditorPreviewCache(context).get(host.audioEditorController.project))
             descendants(host.list).first { it.contentDescription == "Прослушать аудио" }.performClick()
+            assertEquals("Direct preview did not start immediately",
+                AudioEditorPreviewController.Phase.STARTING, host.audioEditorController.preview.phase)
         }
         fun awaitPreview(phase: AudioEditorPreviewController.Phase) {
             InstrumentedTestSupport.waitFor("Preview did not reach $phase", 20000) {
@@ -493,27 +489,57 @@ class AudioEditorUiInstrumentedTest {
             }
             ready
         }
-        lateinit var originalPreview: AudioEditProject
+        lateinit var directSequence: AudioEditProject
         instrumentation.runOnMainSync {
             val editor = host.audioEditorController
-            originalPreview = editor.project
-            assertNotNull(AudioEditorPreviewCache(context).get(originalPreview))
-            editor.preview.start(editor.project)
-            assertEquals("Unchanged project was encoded again", AudioEditorPreviewController.Phase.STARTING, editor.preview.phase)
-            editor.preview.stop()
-            editor.preview.start(AudioEditProject(listOf(editor.project.clips.single().copy(gain = 0.9f))))
+            val clip = editor.project.clips.single()
+            directSequence = AudioEditProject(listOf(
+                clip.copy(endMs = 3000),
+                clip.copy(id = "direct-second", startMs = 3000, offsetMs = 3000),
+            ))
+            editor.preview.start(directSequence)
+            assertEquals("Sequential clips were encoded", AudioEditorPreviewController.Phase.STARTING,
+                editor.preview.phase)
         }
         awaitPreview(AudioEditorPreviewController.Phase.PLAYING)
+        instrumentation.runOnMainSync { host.audioEditorController.preview.seek(4000) }
+        InstrumentedTestSupport.waitFor("Direct sequence did not seek across clips", 5000) {
+            var ready = false
+            instrumentation.runOnMainSync {
+                ready = host.audioEditorController.preview.positionMs in 3900..4300
+            }
+            ready
+        }
+        instrumentation.runOnMainSync { host.audioEditorController.preview.stop() }
+        awaitPreview(AudioEditorPreviewController.Phase.IDLE)
+        lateinit var mixedPreview: AudioEditProject
         instrumentation.runOnMainSync {
             val editor = host.audioEditorController
+            editor.preview.start(editor.project)
+            assertEquals("Direct preview was encoded", AudioEditorPreviewController.Phase.STARTING,
+                editor.preview.phase)
             editor.preview.stop()
-            editor.preview.start(originalPreview)
-            assertEquals("Earlier preview was not reused", AudioEditorPreviewController.Phase.STARTING,
+            val clip = editor.project.clips.single()
+            mixedPreview = AudioEditProject(listOf(
+                clip.copy(endMs = 3000),
+                clip.copy(id = "mixed-preview", startMs = 3000, lane = 1),
+            ))
+            editor.preview.prepareCache(mixedPreview)
+        }
+        InstrumentedTestSupport.waitFor("Mixed preview was not cached in background", 20000) {
+            AudioEditorPreviewCache(context).get(mixedPreview) != null
+        }
+        instrumentation.runOnMainSync {
+            val editor = host.audioEditorController
+            editor.preview.start(mixedPreview)
+            assertEquals("Cached mixed preview was not reused", AudioEditorPreviewController.Phase.STARTING,
                 editor.preview.phase)
             editor.preview.stop()
             editor.change { it.replace(it.clips.single().copy(endMs = 4000)) }
-            assertNotNull(AudioEditorPreviewCache(context).get(originalPreview))
-            editor.preview.start(editor.project)
+            assertNotNull(AudioEditorPreviewCache(context).get(mixedPreview))
+            val uncached = mixedPreview.copy(clips = mixedPreview.clips.map { it.copy(gain = 0.8f) })
+            editor.preview.start(uncached)
+            assertEquals(AudioEditorPreviewController.Phase.PREPARING, editor.preview.phase)
             editor.preview.stop()
         }
         Thread.sleep(500)
