@@ -26,7 +26,7 @@ internal class FullPlayerPlaybackPage(
         host,
         state,
         { refresh(true) },
-        { timer?.text = host.timerButtonText() },
+        { timer?.let { host.uiFactory.setLabeledIcon(it, StrictIcon.TIMER, host.timerButtonText(), true) } },
     )
     private var root: ScrollView? = null
     private var cover: ImageView? = null
@@ -86,20 +86,31 @@ internal class FullPlayerPlaybackPage(
         subtitle?.text = track.artist + " · " + (state.queueIndex(track) + 1) + " " +
             host.tr3("of", "из", "/") + " " + state.activeQueue().size
         timer?.let {
-            it.text = host.timerButtonText()
+            host.uiFactory.setLabeledIcon(it, StrictIcon.TIMER, host.timerButtonText(), true)
             host.uiFactory.applyPlayerToolStyle(it, host.playbackUiState.sleepTimerEndsAt > 0)
         }
         save?.let {
-            it.text = saveText(track)
+            host.uiFactory.setLabeledIcon(
+                it,
+                if (tools.isSaved(track)) StrictIcon.HEART else StrictIcon.HEART_OUTLINE,
+                saveText(track),
+                true,
+            )
             host.uiFactory.applyPlayerToolStyle(it, tools.isSaved(track))
         }
         repeat?.let {
-            it.text = host.loopLabel()
+            host.uiFactory.setLabeledIcon(it, repeatIcon(), host.loopLabel(), true)
             host.uiFactory.applyPlayerToolStyle(it, state.repeatMode() != 0)
         }
-        play?.text = if (state.isPlaying()) "Ⅱ" else "▶"
+        play?.let {
+            host.uiFactory.setIcon(it, if (state.isPlaying()) StrictIcon.PAUSE else StrictIcon.PLAY)
+            host.uiFactory.applyPlainIconStyle(
+                it,
+                if (state.isPlaying()) host.yellow else host.primaryText,
+            )
+        }
         speed?.let {
-            it.text = tools.speedText()
+            host.uiFactory.setLabeledIcon(it, StrictIcon.SPEED, tools.speedText(), true)
             host.uiFactory.applyPlayerToolStyle(it, host.playbackController.playbackSpeed() != 1f)
         }
         rotatingCover()?.updatePlaybackState()
@@ -138,10 +149,17 @@ internal class FullPlayerPlaybackPage(
     private fun addActionRow(content: LinearLayout, track: Track) {
         val row = host.uiFactory.row()
         timer = host.uiFactory.button(host.timerButtonText()).apply {
+            host.uiFactory.setLabeledIcon(this, StrictIcon.TIMER, host.timerButtonText(), true)
             setOnClickListener { tools.toggleTimer(); refresh(false) }
             setOnLongClickListener { host.sleepTimerController.openDialog(); true }
         }.also { row.addView(it, toolParams()) }
         save = host.uiFactory.button(saveText(track)).apply {
+            host.uiFactory.setLabeledIcon(
+                this,
+                if (tools.isSaved(track)) StrictIcon.HEART else StrictIcon.HEART_OUTLINE,
+                saveText(track),
+                true,
+            )
             setOnClickListener {
                 state.currentTrack()?.let(tools::toggleSaved)
                 refresh(false)
@@ -154,6 +172,7 @@ internal class FullPlayerPlaybackPage(
             }
         }.also { row.addView(it, toolParams()) }
         repeat = host.uiFactory.button(host.loopLabel()).apply {
+            host.uiFactory.setLabeledIcon(this, repeatIcon(), host.loopLabel(), true)
             setOnClickListener {
                 actions.cycleRepeatMode()
                 refresh(false)
@@ -168,6 +187,7 @@ internal class FullPlayerPlaybackPage(
         row.addView(host.equalizerController.createPlayerButton(), toolParams())
         row.addView(host.volumeLevelingController.createPlayerButton(), toolParams())
         speed = host.uiFactory.button(tools.speedText()).apply {
+            host.uiFactory.setLabeledIcon(this, StrictIcon.SPEED, tools.speedText(), true)
             contentDescription = host.tr("Playback speed", "Скорость воспроизведения")
             setOnClickListener { tools.toggleSpeed(); refresh(false) }
             setOnLongClickListener { tools.chooseSpeed(); true }
@@ -234,20 +254,24 @@ internal class FullPlayerPlaybackPage(
 
     private fun addTransport(content: LinearLayout) {
         val row = host.uiFactory.row().apply { gravity = Gravity.CENTER }
-        val previous = host.uiFactory.icon("⏮").apply {
+        val previous = host.uiFactory.icon(StrictIcon.PREVIOUS).apply {
             setOnClickListener {
                 actions.previous()
                 refresh(true)
             }
         }
         row.addView(previous, host.uiFactory.square(68))
-        play = host.uiFactory.icon(if (state.isPlaying()) "Ⅱ" else "▶").apply {
+        play = host.uiFactory.icon(if (state.isPlaying()) StrictIcon.PAUSE else StrictIcon.PLAY).apply {
+            host.uiFactory.applyPlainIconStyle(
+                this,
+                if (state.isPlaying()) host.yellow else host.primaryText,
+            )
             setOnClickListener {
                 actions.togglePlayPause()
                 refresh(false)
             }
         }.also { row.addView(it, host.uiFactory.square(84)) }
-        val next = host.uiFactory.icon("⏭").apply {
+        val next = host.uiFactory.icon(StrictIcon.NEXT).apply {
             setOnClickListener {
                 actions.next()
                 refresh(true)
@@ -268,12 +292,17 @@ internal class FullPlayerPlaybackPage(
         Color.rgb(235, 235, 235)
     }
 
-    private fun saveText(track: Track): String =
-        if (tools.isSaved(track)) {
-            host.tr("Saved ♥︎", "Добавлено ♥︎")
-        } else {
-            host.tr("Save ♡︎", "Добавить ♡︎")
-        }
+    private fun saveText(track: Track): String = if (tools.isSaved(track)) {
+        host.tr("Saved", "Добавлено")
+    } else {
+        host.tr("Save", "Добавить")
+    }
+
+    private fun repeatIcon(): StrictIcon = when (state.repeatMode()) {
+        1 -> StrictIcon.REPEAT_ONE
+        2 -> StrictIcon.REPEAT_LIST
+        else -> StrictIcon.REPEAT
+    }
 
     private fun rotatingCover(): RotatingCoverImageView? = cover as? RotatingCoverImageView
 

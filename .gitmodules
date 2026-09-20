@@ -4,3 +4,6 @@
 [submodule "third_party/demucs"]
 	path = third_party/demucs
 	url = https://github.com/sevagh/demucs.cpp.git
+[submodule "third_party/lame"]
+	path = third_party/lame
+	url = https://github.com/huzongyao/AndroidLameEncoder.git

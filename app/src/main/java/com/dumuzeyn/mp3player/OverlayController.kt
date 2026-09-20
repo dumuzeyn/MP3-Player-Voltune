@@ -36,7 +36,11 @@ internal class OverlayController(private val host: MainActivityCore) : AutoClose
             LinearLayout.LayoutParams(0, host.dp(58), 1f),
         )
         val play = host.uiFactory.icon(
-            if (host.playbackQueueController.isPlayingSource(tracks)) "Ⅱ" else "▶",
+            if (host.playbackQueueController.isPlayingSource(tracks)) StrictIcon.PAUSE else StrictIcon.PLAY,
+        )
+        host.uiFactory.applyPlainIconStyle(
+            play,
+            if (host.playbackQueueController.isPlayingSource(tracks)) host.yellow else host.purple,
         )
         play.setOnClickListener {
             if (host.playbackQueueController.isPlayingSource(tracks)) {
@@ -50,14 +54,14 @@ internal class OverlayController(private val host: MainActivityCore) : AutoClose
         header.addView(shuffle, host.uiFactory.square(52))
         header.addView(play, host.uiFactory.square(52))
         if (playlist != null) {
-            val add = host.uiFactory.icon("+")
+            val add = host.uiFactory.icon(StrictIcon.LIST_ADD)
             add.setOnClickListener {
                 host.overlayHost.removeView(shade)
                 openAddToPlaylist(playlist)
             }
             header.addView(add, host.uiFactory.square(52))
         }
-        val close = host.uiFactory.icon("×")
+        val close = host.uiFactory.icon(StrictIcon.CLOSE)
         close.setOnClickListener { close(shade) }
         header.addView(close, host.uiFactory.square(52))
         panel.addView(header)
@@ -178,6 +182,10 @@ internal class OverlayController(private val host: MainActivityCore) : AutoClose
         addCompactPanelButton(panel, host.tr("Edit metadata", "Изменить метаданные")) {
             close(shade)
             host.metadataEditorController.open(track)
+        }
+        addCompactPanelButton(panel, host.tr("Edit audio", "Редактировать аудио")) {
+            close(shade)
+            host.audioEditorController.openTrack(track)
         }
         if (sourcePlaylist != null) {
             addCompactPanelButton(

@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 #include <omp.h>
@@ -20,7 +21,8 @@ Java_com_dumuzeyn_mp3player_DemucsSeparator_create(JNIEnv* env, jobject, jstring
     std::string filename(chars);
     env->ReleaseStringUTFChars(path, chars);
     try {
-        omp_set_num_threads(2);
+        omp_set_dynamic(0);
+        omp_set_num_threads(std::max(2, std::min(4, omp_get_num_procs())));
         // Parallelize independent tiles, not every small GEMM inside each tile.
         Eigen::setNbThreads(1);
         auto model = std::make_unique<demucscpp::demucs_model>();

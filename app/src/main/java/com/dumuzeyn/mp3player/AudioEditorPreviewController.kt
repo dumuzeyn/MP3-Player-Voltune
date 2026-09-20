@@ -11,12 +11,15 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
     private val render: () -> Unit) : AutoCloseable {
     enum class Phase { IDLE, PREPARING, STARTING, PLAYING, PAUSED }
     private val exporter = AudioEditExporter(host)
+    private val cacheExporter = AudioEditExporter(host)
+    private val cache = AudioEditorPreviewCache(host)
     private val handler = Handler(Looper.getMainLooper())
-    private var cachedProject: AudioEditProject? = null
-    private var cachedFile: File? = null
+    private val cacheHandler = Handler(Looper.getMainLooper())
     private var generation = 0
+    private var cacheGeneration = 0
     private var closed = false
     private var token = ""
+    private var pendingStartPositionMs = 0L
     private val listeners = LinkedHashSet<() -> Unit>()
     var phase = Phase.IDLE
         private set
@@ -44,31 +47,65 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         return AutoCloseable { listeners.remove(listener) }
     }
 
-    fun start(project: AudioEditProject) {
+    fun start(project: AudioEditProject, startPositionMs: Long = 0) {
         if (closed || active || project.clips.isEmpty() || host.audioEditorController.busy) return
+        val direct = directClips(project)
         generation++
         val expected = generation
         token = UUID.randomUUID().toString()
+        pendingStartPositionMs = startPositionMs.coerceAtLeast(0)
         failed = false
         positionMs = 0
         durationMs = project.durationMs
         progress = -1
-        phase = Phase.PREPARING
+        phase = if (direct == null) Phase.PREPARING else Phase.STARTING
         notifyChanged(true)
         handler.post(tick)
-        if (cachedProject == project && cachedFile?.isFile == true) {
-            play(checkNotNull(cachedFile))
+        direct?.let {
+            cancelCachePreparation()
+            play(it)
             return
         }
+        cache.get(project)?.let {
+            play(it)
+            return
+        }
+        cancelCachePreparation()
         exporter.export(project, { progress = it; notifyChanged() }) { result ->
             if (closed || generation != expected) { result.getOrNull()?.delete(); return@export }
             result.fold(onSuccess = { file ->
-                cachedFile?.delete()
-                cachedFile = file
-                cachedProject = project
-                play(file)
+                runCatching { cache.put(project, file) }
+                    .fold(onSuccess = ::play, onFailure = { file.delete(); fail() })
             }, onFailure = { fail() })
         }
+    }
+
+    fun maintainCache(project: AudioEditProject) = cache.maintain(project)
+    fun prepareCache(project: AudioEditProject) {
+        val expected = ++cacheGeneration
+        cacheHandler.removeCallbacksAndMessages(null)
+        cacheExporter.close()
+        if (closed || project.clips.isEmpty() || directClips(project) != null || cache.get(project) != null) return
+        cacheHandler.postDelayed({
+            if (closed || expected != cacheGeneration || host.audioEditorController.busy ||
+                cache.get(project) != null) return@postDelayed
+            cacheExporter.export(project, {}, { result ->
+                val file = result.getOrNull()
+                if (closed || expected != cacheGeneration) file?.delete()
+                else file?.let { runCatching { cache.put(project, it) }.onFailure { _ -> it.delete() } }
+            })
+        }, CACHE_DELAY_MS)
+    }
+
+    fun clearCache() {
+        cancelCachePreparation()
+        cache.clear()
+    }
+
+    private fun cancelCachePreparation() {
+        cacheGeneration++
+        cacheHandler.removeCallbacksAndMessages(null)
+        cacheExporter.close()
     }
 
     private fun play(file: File) {
@@ -80,6 +117,33 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
             putString("title", host.tr("Preview", "Предпрослушивание"))
         }) { update(it) }
         notifyChanged()
+    }
+
+    private fun play(clips: List<AudioEditClip>) {
+        if (host.navigationState.tabIndex != LibraryTabs.EDITOR) { stop(); return }
+        phase = Phase.STARTING
+        request("start", Bundle().apply {
+            putStringArrayList("uris", ArrayList(clips.map(AudioEditClip::uri)))
+            putLongArray("starts", clips.map(AudioEditClip::startMs).toLongArray())
+            putLongArray("ends", clips.map(AudioEditClip::endMs).toLongArray())
+            putFloat("volume", clips.first().gain)
+            putString("token", token)
+            putString("title", host.tr("Preview", "Предпрослушивание"))
+        }) { update(it) }
+        notifyChanged()
+    }
+
+    private fun directClips(project: AudioEditProject): List<AudioEditClip>? {
+        val clips = project.clips.sortedBy(AudioEditClip::offsetMs)
+        if (clips.isEmpty() || clips.map(AudioEditClip::lane).distinct().size != 1) return null
+        val gain = clips.first().gain
+        if (gain > 1f || clips.any { it.gain != gain || it.fadeInMs > 0 || it.fadeOutMs > 0 }) return null
+        var cursor = 0L
+        clips.forEach { clip ->
+            if (clip.offsetMs != cursor) return null
+            cursor = clip.finishMs
+        }
+        return clips
     }
 
     fun toggle() {
@@ -109,9 +173,17 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
             finish()
             return
         }
-        phase = if (state.getBoolean("playing")) Phase.PLAYING else Phase.PAUSED
         positionMs = state.getLong("position").coerceAtLeast(0)
         state.getLong("duration").takeIf { it > 0 }?.let { durationMs = it }
+        val requestedPosition = pendingStartPositionMs.coerceAtMost(durationMs).takeIf { it > 0 }
+        pendingStartPositionMs = 0
+        if (requestedPosition != null) {
+            phase = Phase.STARTING
+            request("seek", Bundle().apply { putLong("position", requestedPosition) }) { update(it) }
+            notifyChanged()
+            return
+        }
+        phase = if (state.getBoolean("playing")) Phase.PLAYING else Phase.PAUSED
         notifyChanged()
     }
 
@@ -128,6 +200,7 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         phase = Phase.IDLE
         progress = -1
         positionMs = 0
+        pendingStartPositionMs = 0
         notifyChanged(true)
     }
 
@@ -142,8 +215,11 @@ internal class AudioEditorPreviewController(private val host: MainActivityCore,
         closed = true
         stop()
         handler.removeCallbacksAndMessages(null)
+        cacheHandler.removeCallbacksAndMessages(null)
         exporter.close()
-        cachedFile?.delete()
+        cacheExporter.close()
         listeners.clear()
     }
+
+    companion object { private const val CACHE_DELAY_MS = 150L }
 }

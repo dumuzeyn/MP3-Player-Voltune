@@ -44,7 +44,7 @@ internal class GlobalSearchOverlayController(
             host.uiFactory.text(host.tr("Search", "Поиск"), 22, true),
             LinearLayout.LayoutParams(0, host.dp(52), 1f),
         )
-        val close = host.uiFactory.icon("×").apply {
+        val close = host.uiFactory.icon(StrictIcon.CLOSE).apply {
             contentDescription = host.tr("Close", "Закрыть")
             setOnClickListener { close(shade) }
         }

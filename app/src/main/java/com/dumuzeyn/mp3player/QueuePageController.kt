@@ -24,8 +24,13 @@ internal class QueuePageController(
         root?.let { return it }
         val createdRoot = LinearLayout(host).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(host.dp(6), host.dp(4), host.dp(6), host.dp(8))
-            addView(actionsRow(), LinearLayout.LayoutParams(-1, host.dp(58)))
+            setPadding(host.dp(6), host.dp(18), host.dp(6), host.dp(8))
+            addView(
+                actionsRow(),
+                LinearLayout.LayoutParams(-1, host.dp(58)).apply {
+                    setMargins(0, 0, 0, host.dp(12))
+                },
+            )
         }
         val createdAdapter = QueueAdapter(host, state.activeQueue(), listener())
         adapter = createdAdapter
@@ -56,28 +61,28 @@ internal class QueuePageController(
     private fun actionsRow(): LinearLayout = host.uiFactory.row().apply {
         gravity = Gravity.CENTER
         addView(
-            actionButton("▣", host.tr("Save queue as playlist", "Сохранить очередь как плейлист")) {
+            actionButton(StrictIcon.LIST, host.tr("Save queue as playlist", "Сохранить очередь как плейлист")) {
                 saveQueue()
             },
             host.uiFactory.square(52),
         )
         addView(
-            actionButton("⌫", host.tr("Clear queue", "Очистить очередь")) {
+            actionButton(StrictIcon.CLEAR_LIST, host.tr("Clear queue", "Очистить очередь")) {
                 host.playbackQueueController.clear()
                 refresh()
             },
             host.uiFactory.square(52),
         )
         addView(
-            actionButton("+", host.tr("Add to queue", "Добавить в очередь")) {
+            actionButton(StrictIcon.LIST_ADD, host.tr("Add to queue", "Добавить в очередь")) {
                 chooseTracks()
             },
             host.uiFactory.square(52),
         )
     }
 
-    private fun actionButton(symbol: String, description: String, action: () -> Unit): Button =
-        host.uiFactory.icon(symbol).apply {
+    private fun actionButton(icon: StrictIcon, description: String, action: () -> Unit): Button =
+        host.uiFactory.icon(icon).apply {
             contentDescription = description
             setOnClickListener { action() }
         }

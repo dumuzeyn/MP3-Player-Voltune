@@ -21,12 +21,14 @@ internal class EditorPreviewSession(
     private val changed: (Boolean) -> Unit,
 ) : Player.Listener, AutoCloseable {
     private data class Saved(val items: List<MediaItem>, val index: Int, val position: Long,
-        val playing: Boolean, val repeat: Int, val shuffle: Boolean, val speed: PlaybackParameters)
+        val playing: Boolean, val repeat: Int, val shuffle: Boolean, val speed: PlaybackParameters,
+        val volume: Float)
     private val handler = Handler(player.applicationLooper)
     private var saved: Saved? = null
     private var owner: MediaSession.ControllerInfo? = null
     private var token = ""
     private var error = false
+    private var segmentDurations = emptyList<Long>()
     val active get() = saved != null
 
     init { player.addListener(this) }
@@ -37,7 +39,7 @@ internal class EditorPreviewSession(
                 "start" -> start(controller, args)
                 "stop" -> if (owner == controller) stop()
                 "toggle" -> if (owner == controller && active) player.playWhenReady = !player.playWhenReady
-                "seek" -> if (owner == controller && active) player.seekTo(args.getLong("position").coerceAtLeast(0))
+                "seek" -> if (owner == controller && active) seek(args.getLong("position").coerceAtLeast(0))
                 "state" -> Unit
                 else -> return SessionResult(androidx.media3.session.SessionError.ERROR_BAD_VALUE)
             }
@@ -46,8 +48,8 @@ internal class EditorPreviewSession(
                 putBoolean("playing", active && player.playWhenReady)
                 putBoolean("error", error)
                 putString("token", token)
-                putLong("position", if (active) player.currentPosition.coerceAtLeast(0) else 0)
-                putLong("duration", if (active) player.duration.coerceAtLeast(0) else 0)
+                putLong("position", if (active) previewPosition() else 0)
+                putLong("duration", if (active) previewDuration() else 0)
             })
         } catch (_: Exception) {
             if (owner == controller) stop()
@@ -56,15 +58,13 @@ internal class EditorPreviewSession(
     }
 
     private fun start(controller: MediaSession.ControllerInfo, args: Bundle) {
-        val file = File(checkNotNull(args.getString("path"))).canonicalFile
-        require(file.parentFile == context.cacheDir.canonicalFile &&
-            file.name.startsWith("voltune-edit-") && file.extension == "m4a" && file.isFile)
         val requestedToken = checkNotNull(args.getString("token")).also { require(it.isNotBlank()) }
         stop()
+        val previewItems = directItems(args, requestedToken) ?: listOf(cachedItem(args, requestedToken))
         val items = (0 until player.mediaItemCount).map(player::getMediaItemAt)
         val backup = Saved(items, player.currentMediaItemIndex.coerceAtLeast(0),
             player.currentPosition.coerceAtLeast(0), player.playWhenReady, player.repeatMode,
-            player.shuffleModeEnabled, player.playbackParameters)
+            player.shuffleModeEnabled, player.playbackParameters, player.volume)
         val state = PlaybackStateManager(context)
         if (items.isEmpty()) state.clear() else state.save(PlaybackStateManager.Snapshot(
             player.currentMediaItem?.localConfiguration?.uri?.toString().orEmpty(),
@@ -80,11 +80,65 @@ internal class EditorPreviewSession(
         player.repeatMode = Player.REPEAT_MODE_OFF
         player.shuffleModeEnabled = false
         player.playbackParameters = PlaybackParameters.DEFAULT
-        player.setMediaItem(MediaItem.Builder().setUri(Uri.fromFile(file)).setMediaId(PREFIX + token)
-            .setMediaMetadata(MediaMetadata.Builder().setTitle("Voltune: " +
-                args.getString("title", "Preview")).build()).build())
+        player.volume = args.getFloat("volume", 1f).coerceIn(0f, 1f)
+        player.setMediaItems(previewItems)
         player.prepare()
         player.play()
+    }
+
+    private fun cachedItem(args: Bundle, requestedToken: String): MediaItem {
+        val file = File(checkNotNull(args.getString("path"))).canonicalFile
+        val temporary = file.parentFile == context.cacheDir.canonicalFile && file.name.startsWith("voltune-edit-")
+        val persistent = file.parentFile == File(context.filesDir, "editor-preview").canonicalFile &&
+            file.nameWithoutExtension.matches(Regex("[0-9a-f]{64}"))
+        require((temporary || persistent) && file.extension == "m4a" && file.isFile)
+        segmentDurations = emptyList()
+        return item(Uri.fromFile(file), requestedToken, args.getString("title", "Preview"))
+    }
+
+    private fun directItems(args: Bundle, requestedToken: String): List<MediaItem>? {
+        val uris = args.getStringArrayList("uris") ?: return null
+        val starts = checkNotNull(args.getLongArray("starts"))
+        val ends = checkNotNull(args.getLongArray("ends"))
+        require(uris.isNotEmpty() && uris.size == starts.size && uris.size == ends.size && uris.size <= 200)
+        segmentDurations = uris.indices.map { index ->
+            require(starts[index] >= 0 && ends[index] > starts[index])
+            ends[index] - starts[index]
+        }
+        return uris.indices.map { index ->
+            val uri = Uri.parse(uris[index])
+            require(uri.scheme == "content" || uri.scheme == "file")
+            item(uri, "$requestedToken:$index", args.getString("title", "Preview"), starts[index], ends[index])
+        }
+    }
+
+    private fun item(uri: Uri, id: String, title: String, startMs: Long = 0,
+        endMs: Long = Long.MIN_VALUE): MediaItem = MediaItem.Builder().setUri(uri).setMediaId(PREFIX + id)
+        .setClippingConfiguration(MediaItem.ClippingConfiguration.Builder().setStartPositionMs(startMs).apply {
+            if (endMs != Long.MIN_VALUE) setEndPositionMs(endMs)
+        }.build()).setMediaMetadata(MediaMetadata.Builder().setTitle("Voltune: $title").build()).build()
+
+    private fun previewPosition(): Long {
+        if (segmentDurations.isEmpty()) return player.currentPosition.coerceAtLeast(0)
+        val index = player.currentMediaItemIndex.coerceIn(0, segmentDurations.lastIndex)
+        return segmentDurations.take(index).sum() +
+            player.currentPosition.coerceIn(0, segmentDurations[index])
+    }
+
+    private fun previewDuration(): Long = if (segmentDurations.isEmpty()) player.duration.coerceAtLeast(0)
+        else segmentDurations.sum()
+
+    private fun seek(position: Long) {
+        if (segmentDurations.isEmpty()) { player.seekTo(position); return }
+        val target = position.coerceIn(0, segmentDurations.sum())
+        var preceding = 0L
+        var index = segmentDurations.lastIndex
+        for ((candidate, duration) in segmentDurations.withIndex()) {
+            if (target < preceding + duration) { index = candidate; break }
+            preceding += duration
+        }
+        if (index == segmentDurations.lastIndex) preceding = segmentDurations.dropLast(1).sum()
+        player.seekTo(index, (target - preceding).coerceIn(0, segmentDurations[index]))
     }
 
     fun stop(resume: Boolean = true) {
@@ -98,12 +152,14 @@ internal class EditorPreviewSession(
         player.repeatMode = backup.repeat
         player.shuffleModeEnabled = backup.shuffle
         player.playbackParameters = backup.speed
+        player.volume = backup.volume
         if (backup.items.isNotEmpty()) {
             player.prepare()
             player.playWhenReady = resume && backup.playing
         }
         saved = null
         owner = null
+        segmentDurations = emptyList()
         changed(false)
     }
 

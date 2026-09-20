@@ -132,6 +132,8 @@ internal class PlaylistController(private val host: MainActivityCore) {
             SongRowStateRegistry.applyPlayState(
                 playButton,
                 host.playbackQueueController.isPlayingCollection(tracks),
+                host.yellow,
+                host.purple,
             )
             cover?.updatePlaybackState()
         }

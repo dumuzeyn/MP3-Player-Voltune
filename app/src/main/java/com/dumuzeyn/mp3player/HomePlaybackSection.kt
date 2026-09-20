@@ -78,7 +78,7 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
         SafeLongPress.bind(cover, properties)
         row.setOnClickListener { TrackTapController.handle(host, boundTrack, cover) }
 
-        play = host.uiFactory.icon("").apply {
+        play = host.uiFactory.icon(StrictIcon.PLAY).apply {
             host.uiFactory.applyPlainIconStyle(this, host.purple)
             setOnClickListener {
                 val track = boundTrack ?: return@setOnClickListener
@@ -133,7 +133,12 @@ internal class HomePlaybackSection(private val host: MainActivityCore) : LinearL
             }
         }
         waveform.setState(host.purple, host.yellow, host.isPlaybackPlaying())
-        SongRowStateRegistry.applyPlayState(play, host.isPlaybackPlaying())
+        SongRowStateRegistry.applyPlayState(
+            play,
+            host.isPlaybackPlaying(),
+            host.yellow,
+            host.purple,
+        )
         if (cover is RotatingCoverImageView) cover.updatePlaybackState()
     }
 

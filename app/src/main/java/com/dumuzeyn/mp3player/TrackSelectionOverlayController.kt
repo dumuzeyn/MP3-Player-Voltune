@@ -74,7 +74,7 @@ internal class TrackSelectionOverlayController(private val host: MainActivityCor
             host.uiFactory.text(title, 20, true),
             LinearLayout.LayoutParams(0, host.dp(58), 1f),
         )
-        val complete = host.uiFactory.icon("✔").apply {
+        val complete = host.uiFactory.icon(StrictIcon.CHECK).apply {
             setOnClickListener {
                 host.trackSearchController.cancel(owner)
                 host.overlayHost.removeView(shade)
@@ -83,7 +83,7 @@ internal class TrackSelectionOverlayController(private val host: MainActivityCor
             }
         }
         addView(complete, host.uiFactory.square(52))
-        val close = host.uiFactory.icon("×").apply {
+        val close = host.uiFactory.icon(StrictIcon.CLOSE).apply {
             setOnClickListener { close(shade, owner) }
         }
         addView(close, host.uiFactory.square(52))
@@ -109,10 +109,10 @@ internal class TrackSelectionOverlayController(private val host: MainActivityCor
                 setPadding(host.dp(12), 0, host.dp(8), 0)
             }
             row.addView(title, LinearLayout.LayoutParams(0, host.dp(70), 1f))
-            val mark = host.uiFactory.icon("")
+            val mark = host.uiFactory.icon(StrictIcon.ADD)
             row.addView(mark, host.uiFactory.square(48))
             val play = host.uiFactory.icon(
-                if (host.isCurrent(track) && host.isPlaybackPlaying()) "Ⅱ" else "▶",
+                if (host.isCurrent(track) && host.isPlaybackPlaying()) StrictIcon.PAUSE else StrictIcon.PLAY,
             ).apply {
                 setOnClickListener {
                     if (host.isCurrent(track)) {
@@ -149,9 +149,18 @@ internal class TrackSelectionOverlayController(private val host: MainActivityCor
         host.uiFactory.setSurface(row, if (selected) selectedSurface else host.panel, false)
         cover.setBackgroundColor(if (selected) selectedSurface else fallbackColor())
         title.setTextColor(if (selected) selectedContent else host.fg)
-        mark.text = if (selected) "✔" else "+"
+        host.uiFactory.setIcon(mark, if (selected) StrictIcon.CHECK else StrictIcon.ADD)
         host.uiFactory.applyPlainIconStyle(mark, if (selected) selectedContent else host.purple)
-        host.uiFactory.applyPlainIconStyle(play, if (selected) selectedContent else host.purple)
+        host.uiFactory.applyPlainIconStyle(
+            play,
+            if (host.isPlaybackPlaying() && play.getTag(R.id.strict_button_icon) == StrictIcon.PAUSE) {
+                host.yellow
+            } else if (selected) {
+                selectedContent
+            } else {
+                host.purple
+            },
+        )
     }
 
     private fun searchField(): EditText = EditText(host).apply {

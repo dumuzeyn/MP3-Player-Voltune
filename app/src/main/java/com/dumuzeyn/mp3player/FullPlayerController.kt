@@ -84,7 +84,7 @@ internal class FullPlayerController(
 
     private fun addHeader(content: LinearLayout, sheet: FrameLayout) {
         val row = host.uiFactory.row()
-        val back = host.uiFactory.icon("←").apply {
+        val back = host.uiFactory.icon(StrictIcon.BACK).apply {
             textSize = 34f
             typeface = Typeface.DEFAULT_BOLD
             contentDescription = host.tr("Close player", "Закрыть плеер")

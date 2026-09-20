@@ -123,9 +123,9 @@ class PlaybackQueueController(
     fun seekIndex(index: Int) = playback.seekQueueItem(index)
 
     fun loopLabel(): String = when (host.repeatMode()) {
-        1 -> host.tr("Song ↻", "Песня ↻")
-        2 -> host.tr("List ↻", "Список ↻")
-        else -> host.tr("Repeat ↻", "Повтор ↻")
+        1 -> host.tr("Song", "Песня")
+        2 -> host.tr("List", "Список")
+        else -> host.tr("Repeat", "Повтор")
     }
 
     fun activeQueue(): ArrayList<Track> =

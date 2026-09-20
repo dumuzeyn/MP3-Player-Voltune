@@ -54,24 +54,29 @@ internal class StemSeparationProcessor(private val context: Context) {
                             !cancelled() && !Thread.currentThread().isInterrupted
                         }
                         val start = ((offset - from) * 2).toInt()
-                        val selected = Array(4) { stems[it].copyOfRange(start, start + length * 2) }
-                        tail?.let { previous ->
-                            repeat(minOf(length, OVERLAP)) { frame ->
-                                val weight = frame / OVERLAP.toFloat()
-                                repeat(4) { stem -> repeat(2) { channel ->
-                                    val i = frame * 2 + channel
-                                    selected[stem][i] = previous[stem][i] * (1 - weight) + selected[stem][i] * weight
-                                } }
-                            }
-                        }
                         val last = offset + length >= total
                         val writeFrames = if (last) length else length - OVERLAP
-                        repeat(writeFrames * 2) { i ->
-                            if (writers.size == 1) writers[0].sample(selected[0][i] + selected[1][i] + selected[2][i])
-                            else repeat(4) { stem -> writers[stem].sample(selected[stem][i]) }
+                        val blendFrames = minOf(length, OVERLAP).takeIf { tail != null } ?: 0
+                        repeat(writeFrames) { frame ->
+                            repeat(2) { channel ->
+                                val local = frame * 2 + channel
+                                val source = start + local
+                                val weight = frame / OVERLAP.toFloat()
+                                fun sample(stem: Int): Float = if (frame < blendFrames) {
+                                    checkNotNull(tail)[stem][local] * (1 - weight) + stems[stem][source] * weight
+                                } else stems[stem][source]
+                                if (writers.size == 1) {
+                                    writers[0].sample(sample(0) + sample(1) + sample(2))
+                                } else {
+                                    repeat(4) { stem -> writers[stem].sample(sample(stem)) }
+                                }
+                            }
                         }
                         if (last) break
-                        tail = Array(4) { selected[it].copyOfRange(writeFrames * 2, length * 2) }
+                        tail = Array(4) { stems[it].copyOfRange(
+                            start + writeFrames * 2,
+                            start + length * 2,
+                        ) }
                         offset += CORE - OVERLAP
                     }
                 }
@@ -92,7 +97,7 @@ internal class StemSeparationProcessor(private val context: Context) {
 
     companion object {
         private const val RATE = 44100
-        private const val CORE = RATE * 6
+        private const val CORE = RATE * 8
         private const val OVERLAP = RATE
         private const val CONTEXT = RATE
         private val gate = Semaphore(1)

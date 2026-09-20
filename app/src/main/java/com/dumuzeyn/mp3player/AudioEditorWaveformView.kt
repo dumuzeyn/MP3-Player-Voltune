@@ -11,6 +11,7 @@ import kotlin.math.roundToLong
 internal class AudioEditorWaveformView(
     private val host: MainActivityCore,
     private val clip: AudioEditClip,
+    private val cursorOnly: Boolean = false,
 ) : View(host) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var subscription: AutoCloseable? = null
@@ -29,10 +30,13 @@ internal class AudioEditorWaveformView(
     private val margin get() = host.dp(16).toFloat()
     private val span get() = (width - margin * 2).coerceAtLeast(1f)
 
-    init { contentDescription = host.tr("Audio waveform selection", "Выделение на звуковой волне") }
+    init {
+        contentDescription = if (cursorOnly) host.tr("Audio split position", "Позиция разделения")
+        else host.tr("Audio waveform selection", "Выделение на звуковой волне")
+    }
 
     fun setSelection(startMs: Long, endMs: Long) {
-        if (startMs < 0 || endMs <= startMs || endMs > clip.sourceDurationMs) return
+        if (startMs < clip.startMs || endMs <= startMs || endMs > clip.endMs) return
         selection = AudioWaveformSelection(clip.sourceDurationMs, startMs, endMs)
         invalidate()
     }
@@ -64,10 +68,12 @@ internal class AudioEditorWaveformView(
         val center = (top + bottom) / 2
         val left = xAt(selection.startMs)
         val right = xAt(selection.endMs)
-        paint.color = host.purple
-        paint.alpha = 28
-        canvas.drawRect(left, top, right, bottom, paint)
-        paint.alpha = 255
+        if (!cursorOnly) {
+            paint.color = host.purple
+            paint.alpha = 28
+            canvas.drawRect(left, top, right, bottom, paint)
+            paint.alpha = 255
+        }
         val data = waveform
         if (data != null) {
             paint.strokeWidth = host.dp(1).toFloat().coerceAtLeast(1f)
@@ -77,7 +83,7 @@ internal class AudioEditorWaveformView(
                 val from = timeAt(x) * 1000
                 val to = timeAt(x + step) * 1000
                 val amplitude = data.peakBetween(from, to) * (bottom - top) * 0.46f
-                paint.color = if (x in left..right) host.purple else host.secondaryText
+                paint.color = if (!cursorOnly && x in left..right) host.purple else host.secondaryText
                 canvas.drawLine(x, center - amplitude, x, center + amplitude, paint)
                 x += step
             }
@@ -91,16 +97,18 @@ internal class AudioEditorWaveformView(
         paint.color = host.yellowDark
         paint.strokeWidth = host.dp(2).toFloat()
         canvas.drawLine(xAt(cursorMs), top, xAt(cursorMs), bottom, paint)
-        paint.color = host.purple
-        for (x in floatArrayOf(left, right)) {
-            canvas.drawLine(x, top, x, bottom, paint)
-            canvas.drawRoundRect(x - host.dp(4), center - host.dp(12), x + host.dp(4),
-                center + host.dp(12), host.dp(3).toFloat(), host.dp(3).toFloat(), paint)
+        if (!cursorOnly) {
+            paint.color = host.purple
+            for (x in floatArrayOf(left, right)) {
+                canvas.drawLine(x, top, x, bottom, paint)
+                canvas.drawRoundRect(x - host.dp(4), center - host.dp(12), x + host.dp(4),
+                    center + host.dp(12), host.dp(3).toFloat(), host.dp(3).toFloat(), paint)
+            }
         }
         paint.color = host.secondaryText
         paint.textSize = host.dp(11).toFloat()
         canvas.drawText("0:00", margin, height - host.dp(5).toFloat(), paint)
-        val end = host.formatSeconds(clip.sourceDurationMs / 1000)
+        val end = host.formatSeconds(clip.durationMs / 1000)
         canvas.drawText(end, width - margin - paint.measureText(end), height - host.dp(5).toFloat(), paint)
     }
 
@@ -111,7 +119,7 @@ internal class AudioEditorWaveformView(
                 downY = event.y
                 val startDistance = abs(event.x - xAt(selection.startMs))
                 val endDistance = abs(event.x - xAt(selection.endMs))
-                drag = if (minOf(startDistance, endDistance) <= host.dp(24)) {
+                drag = if (!cursorOnly && minOf(startDistance, endDistance) <= host.dp(24)) {
                     if (startDistance <= endDistance) 1 else 2
                 } else 3
                 parent?.requestDisallowInterceptTouchEvent(true)
@@ -149,8 +157,8 @@ internal class AudioEditorWaveformView(
         invalidate()
     }
 
-    private fun timeAt(x: Float) = (((x - margin) / span).coerceIn(0f, 1f) *
-        clip.sourceDurationMs.toDouble()).roundToLong()
-    private fun xAt(timeMs: Long) = margin + span * timeMs / clip.sourceDurationMs
+    private fun timeAt(x: Float) = clip.startMs + (((x - margin) / span).coerceIn(0f, 1f) *
+        clip.durationMs.toDouble()).roundToLong()
+    private fun xAt(timeMs: Long) = margin + span * (timeMs - clip.startMs) / clip.durationMs
     override fun performClick(): Boolean { super.performClick(); return true }
 }

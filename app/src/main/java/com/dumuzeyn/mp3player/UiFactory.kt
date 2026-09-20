@@ -65,6 +65,20 @@ internal class UiFactory(private val host: MainActivityCore) {
 
     fun icon(symbol: String): Button = buttons.icon(symbol)
 
+    fun icon(icon: StrictIcon): Button = buttons.icon(icon)
+
+    fun setIcon(button: Button, icon: StrictIcon) {
+        buttons.setIcon(button, icon)
+    }
+
+    fun setLabeledIcon(button: Button, icon: StrictIcon, label: String, above: Boolean = false) {
+        buttons.setLabeledIcon(button, icon, label, above)
+    }
+
+    fun setIconOnBackground(button: Button, icon: StrictIcon, background: GradientDrawable) {
+        buttons.setIconOnBackground(button, icon, background)
+    }
+
     fun shuffleButton(): Button = buttons.shuffleButton()
 
     fun applyPlainIconStyle(button: Button, color: Int) {

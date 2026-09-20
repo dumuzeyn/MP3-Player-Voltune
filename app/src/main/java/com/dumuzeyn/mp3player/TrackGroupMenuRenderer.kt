@@ -65,9 +65,9 @@ internal abstract class TrackGroupMenuRenderer(
         row.addView(labels, LinearLayout.LayoutParams(0, host.dp(56), 1.0f))
 
         val playing = host.playbackQueueController.isPlayingCollection(tracks)
-        val play = host.uiFactory.icon(if (playing) "Ⅱ" else "▶")
+        val play = host.uiFactory.icon(if (playing) StrictIcon.PAUSE else StrictIcon.PLAY)
         host.uiFactory.applyPlainIconStyle(play, host.purple)
-        SongRowStateRegistry.applyPlayState(play, playing)
+        SongRowStateRegistry.applyPlayState(play, playing, host.yellow, host.purple)
         play.setOnClickListener {
             if (host.playbackQueueController.isCurrentCollection(tracks)) {
                 host.playbackQueueController.toggleOrStart()

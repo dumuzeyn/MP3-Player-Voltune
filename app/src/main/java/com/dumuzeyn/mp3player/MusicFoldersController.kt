@@ -75,7 +75,7 @@ internal class MusicFoldersController(private val host: MainActivityCore) {
         name.contentDescription = source.displayName
         row.addView(name, LinearLayout.LayoutParams(0, -1, 1f))
 
-        val remove = host.uiFactory.icon("×")
+        val remove = host.uiFactory.icon(StrictIcon.DELETE)
         remove.contentDescription = host.tr(
             "Remove folder from Voltune: ",
             "Убрать папку из Voltune: ",

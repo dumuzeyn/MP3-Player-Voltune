@@ -11,7 +11,6 @@ class OutlinedButton(context: Context) : Button(context) {
     private var outlineEnabled = false
     private var outlineColor = 0
     private var outlineWidth = 0f
-
     fun setTextOutline(enabled: Boolean, color: Int, width: Float) {
         outlineEnabled = enabled
         outlineColor = color

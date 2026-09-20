@@ -45,12 +45,20 @@ internal class MainActivityViewController(
         host.songsView?.refreshPlayback()
         host.playlistController.refreshPlaybackState()
         host.overlayController.refreshPlayback()
-        host.sourcePlayButton?.text = if (
-            host.playbackQueueController.isPlayingSource(host.currentVisibleTracks())
-        ) {
-            "Ⅱ"
-        } else {
-            "▶"
+        host.sourcePlayButton?.let {
+            val playing = host.playbackQueueController.isPlayingSource(host.currentVisibleTracks())
+            host.uiFactory.setIcon(
+                it,
+                if (playing) {
+                    StrictIcon.PAUSE
+                } else {
+                    StrictIcon.PLAY
+                },
+            )
+            host.uiFactory.applyPlainIconStyle(
+                it,
+                if (playing) host.yellow else host.primaryText,
+            )
         }
         host.playerUiController.updateMini()
     }

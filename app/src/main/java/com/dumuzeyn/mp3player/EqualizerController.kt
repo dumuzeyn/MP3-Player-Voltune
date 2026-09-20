@@ -9,7 +9,9 @@ internal class EqualizerController(private val host: MainActivityCore) {
     private var playerButton: Button? = null
 
     fun createPlayerButton(): Button {
-        val button = host.uiFactory.button(host.tr("Equalizer ≋", "Эквалайзер ≋")).apply {
+        val label = host.tr("Equalizer", "Эквалайзер")
+        val button = host.uiFactory.button(label).apply {
+            host.uiFactory.setLabeledIcon(this, StrictIcon.EQUALIZER, label, true)
             setSingleLine(false)
             maxLines = 2
             textSize = 14f

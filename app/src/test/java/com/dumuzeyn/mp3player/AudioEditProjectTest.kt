@@ -15,6 +15,7 @@ class AudioEditProjectTest {
         assertEquals(listOf(1000L, 3500L), split.clips.map { it.startMs })
         assertEquals(listOf(3500L, 9000L), split.clips.map { it.endMs })
         assertEquals(listOf(2000L, 4500L), split.clips.map { it.offsetMs })
+        assertEquals(listOf("a (1)", "a (2)"), split.clips.map { it.title })
         assertEquals(1, source.clips.size)
     }
 
@@ -25,6 +26,24 @@ class AudioEditProjectTest {
         assertEquals(listOf(0L, 2000L), result.clips.take(2).map { it.offsetMs })
         assertEquals(5000L, result.clips.first { it.id == "b" }.offsetMs)
         assertEquals(0L, result.clips.first { it.id == "c" }.offsetMs)
+    }
+
+    @Test fun removeRangeCanKeepSilenceOrSmoothAClosedJoin() {
+        val source = AudioEditProject(listOf(clip(), clip("b", offset = 8000)))
+        val open = source.removeRange("a", 3000, 6000, closeGap = false)
+        assertEquals(listOf(0L, 5000L, 8000L), open.clips.map { it.offsetMs })
+        assertTrue(open.clips.all { it.fadeInMs == 0L && it.fadeOutMs == 0L })
+
+        val smooth = source.removeRange("a", 3000, 6000, closeGap = true, smoothJoin = true)
+        assertEquals(listOf(0L, 2000L, 5000L), smooth.clips.map { it.offsetMs })
+        assertEquals(AudioEditClip.SMOOTH_JOIN_MS, smooth.clips[0].fadeOutMs)
+        assertEquals(AudioEditClip.SMOOTH_JOIN_MS, smooth.clips[1].fadeInMs)
+    }
+
+    @Test fun nearestFreeOffsetSnapsClipToNeighborWithoutOverlap() {
+        val source = AudioEditProject(listOf(clip("left"), clip("moving", offset = 12_000)))
+        assertEquals(8_000L, source.nearestFreeOffset("moving", 0, 12_000))
+        assertEquals(0L, source.nearestFreeOffset("moving", 1, 12_000))
     }
 
     @Test fun removeEntireClipAndJoinRetainsOrder() {
@@ -44,7 +63,8 @@ class AudioEditProjectTest {
     }
 
     @Test fun draftRoundTripPreservesAllEditingData() {
-        val source = AudioEditProject(listOf(clip(lane = 3, offset = 9000).copy(gain = 0.33f)))
+        val source = AudioEditProject(listOf(clip(lane = 3, offset = 9000).copy(
+            gain = 0.33f, fadeInMs = 20, fadeOutMs = 30)))
         assertEquals(source, AudioEditStore.decode(AudioEditStore.encode(source)))
     }
 
@@ -62,6 +82,13 @@ class AudioEditProjectTest {
         }
         assertThrows(IllegalArgumentException::class.java) { clip().copy(endMs = 10001) }
         assertThrows(IllegalArgumentException::class.java) { clip().copy(gain = Float.NaN) }
+        assertThrows(IllegalArgumentException::class.java) { clip().copy(gain = 2.01f) }
+    }
+
+    @Test fun supportsTwoHundredPercentGain() {
+        val project = AudioEditProject(listOf(clip().copy(gain = AudioEditClip.MAX_GAIN)))
+
+        assertEquals(2f, AudioEditStore.decode(AudioEditStore.encode(project)).clips.single().gain)
     }
 
     @Test fun appendUsesEndOfChosenLane() {
@@ -69,5 +96,23 @@ class AudioEditProjectTest {
         val result = source.append(clip("c"), 1)
         assertEquals(8500L, result.clips.last().offsetMs)
         assertEquals(1, result.clips.last().lane)
+    }
+
+    @Test fun movingToNewEdgeLaneCreatesAndOrdersLanes() {
+        val source = AudioEditProject(listOf(
+            clip("moving").copy(endMs = 3000),
+            clip("same", offset = 2000),
+            clip("second", lane = 4),
+        ))
+
+        val above = source.moveToNewEdgeLane("moving", above = true, nearMs = 5000)
+        assertEquals(0, above.clips.first { it.id == "moving" }.lane)
+        assertEquals(5000L, above.clips.first { it.id == "moving" }.offsetMs)
+        assertEquals(listOf(0, 1, 2), above.clips.map(AudioEditClip::lane).distinct().sorted())
+        assertEquals(1, above.clips.first { it.id == "same" }.lane)
+
+        val below = source.moveToNewEdgeLane("moving", above = false, nearMs = 7000)
+        assertEquals(2, below.clips.first { it.id == "moving" }.lane)
+        assertEquals(listOf(0, 1, 2), below.clips.map(AudioEditClip::lane).distinct().sorted())
     }
 }

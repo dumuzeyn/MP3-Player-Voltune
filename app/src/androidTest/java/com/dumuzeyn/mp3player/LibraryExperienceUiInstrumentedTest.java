@@ -225,6 +225,9 @@ public class LibraryExperienceUiInstrumentedTest {
     public void songPropertiesRequireDeliberateStationaryHold() {
         MainActivityCore host = launchWithLibrary();
         openTabByClick(host, LibraryTabs.SONGS);
+        InstrumentedTestSupport.waitFor("Song row was not laid out", 5000L,
+                () -> findDescription(host.songsView,
+                        "Открыть или включить песню UI song 0") != null);
         View song = findDescription(host.songsView,
                 "Открыть или включить песню UI song 0");
         assertNotNull(song);
@@ -272,7 +275,7 @@ public class LibraryExperienceUiInstrumentedTest {
         View groupMarker = groupContainer.getChildAt(1);
         assertEquals(View.VISIBLE, groupMarker.getVisibility());
         assertEquals(255, groupMarker.getBackground().getAlpha());
-        assertNotNull(findText(groupContainer, Button.class, "Ⅱ"));
+        assertNotNull(findStrictIcon(groupContainer, StrictIcon.PAUSE));
         RotatingCoverImageView groupCover = find(groupContainer, RotatingCoverImageView.class);
         assertNotNull(groupCover);
         assertPlayingCoverRotates("Playing group cover did not rotate", groupCover);
@@ -288,7 +291,7 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(playlistCard);
         ViewGroup playlistContainer = (ViewGroup) playlistCard.getParent();
         assertEquals(View.VISIBLE, playlistContainer.getChildAt(1).getVisibility());
-        assertNotNull(findText(playlistContainer, Button.class, "Ⅱ"));
+        assertNotNull(findStrictIcon(playlistContainer, StrictIcon.PAUSE));
         RotatingCoverImageView playlistCover = find(
                 playlistContainer, RotatingCoverImageView.class);
         assertNotNull(playlistCover);
@@ -549,6 +552,8 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Group cards did not open: " + tab, 5000L,
                 () -> host.navigationState.tabIndex == tab
                         && host.list.findViewById(R.id.group_card) != null
+                        && host.list.findViewById(R.id.group_card).getWidth() > 0
+                        && host.list.findViewById(R.id.group_card).getHeight() > 0
                         && !host.navigationState.tabAnimating);
         assertLibraryCardSize(host.list.findViewById(R.id.group_card), width, height);
         int inset = host.responsiveLayoutController.contentScrollbarClearance();
@@ -558,6 +563,8 @@ public class LibraryExperienceUiInstrumentedTest {
 
     private static void assertLibraryCardSize(View card, int width, int height) {
         assertNotNull(card);
+        InstrumentedTestSupport.waitFor("Library card was not laid out", 5000L,
+                () -> card.getWidth() > 0 && card.getHeight() > 0);
         assertEquals("Library cards must share one width", width, card.getWidth());
         assertEquals("Library cards must share one height", height, card.getHeight());
     }
@@ -595,6 +602,20 @@ public class LibraryExperienceUiInstrumentedTest {
             ViewGroup group = (ViewGroup) view;
             for (int index = 0; index < group.getChildCount(); index++) {
                 T found = find(group.getChildAt(index), type);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static Button findStrictIcon(View view, StrictIcon icon) {
+        if (view instanceof Button && icon == view.getTag(R.id.strict_button_icon)) {
+            return (Button) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                Button found = findStrictIcon(group.getChildAt(index), icon);
                 if (found != null) return found;
             }
         }

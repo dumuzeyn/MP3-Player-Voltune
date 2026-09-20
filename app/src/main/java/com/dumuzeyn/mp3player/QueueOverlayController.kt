@@ -41,32 +41,32 @@ internal class QueueOverlayController(
             LinearLayout.LayoutParams(0, host.dp(58), 1f),
         )
         addView(
-            iconButton("▣", host.tr("Save queue as playlist", "Сохранить очередь как плейлист")) {
+            iconButton(StrictIcon.LIST, host.tr("Save queue as playlist", "Сохранить очередь как плейлист")) {
                 saveQueue(shade)
             },
             host.uiFactory.square(48),
         )
         addView(
-            iconButton("⌫", host.tr("Clear queue", "Очистить очередь")) {
+            iconButton(StrictIcon.CLEAR_LIST, host.tr("Clear queue", "Очистить очередь")) {
                 host.playbackQueueController.clear()
                 close(shade)
             },
             host.uiFactory.square(48),
         )
         addView(
-            iconButton("+", host.tr("Add to queue", "Добавить в очередь")) {
+            iconButton(StrictIcon.LIST_ADD, host.tr("Add to queue", "Добавить в очередь")) {
                 chooseTracks(shade)
             },
             host.uiFactory.square(48),
         )
         addView(
-            iconButton("×", host.tr("Close", "Закрыть")) { close(shade) },
+            iconButton(StrictIcon.CLOSE, host.tr("Close", "Закрыть")) { close(shade) },
             host.uiFactory.square(48),
         )
     }
 
-    private fun iconButton(symbol: String, description: String, action: () -> Unit): Button =
-        host.uiFactory.icon(symbol).apply {
+    private fun iconButton(icon: StrictIcon, description: String, action: () -> Unit): Button =
+        host.uiFactory.icon(icon).apply {
             contentDescription = description
             setOnClickListener { action() }
         }

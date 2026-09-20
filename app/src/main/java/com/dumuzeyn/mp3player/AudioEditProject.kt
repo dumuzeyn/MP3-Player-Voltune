@@ -12,6 +12,8 @@ internal data class AudioEditClip(
     val lane: Int = 0,
     val offsetMs: Long = 0,
     val gain: Float = 1f,
+    val fadeInMs: Long = 0,
+    val fadeOutMs: Long = 0,
 ) {
     val durationMs: Long get() = endMs - startMs
     val finishMs: Long get() = offsetMs + durationMs
@@ -20,12 +22,16 @@ internal data class AudioEditClip(
         require(uri.isNotBlank() && sourceDurationMs in 1..MAX_TIME_MS)
         require(startMs >= 0 && endMs > startMs && endMs <= sourceDurationMs)
         require(lane in 0 until MAX_LANES && offsetMs >= 0 && finishMs <= MAX_TIME_MS)
-        require(gain.isFinite() && gain in 0f..1f)
+        require(gain.isFinite() && gain in 0f..MAX_GAIN)
+        require(fadeInMs in 0..MAX_FADE_MS && fadeOutMs in 0..MAX_FADE_MS)
     }
 
     companion object {
         const val MAX_LANES = 8
         const val MAX_TIME_MS = 86_400_000L
+        const val MAX_GAIN = 2f
+        const val MAX_FADE_MS = 1_000L
+        const val SMOOTH_JOIN_MS = 24L
     }
 }
 
@@ -55,21 +61,26 @@ internal data class AudioEditProject(val clips: List<AudioEditClip> = emptyList(
     fun split(id: String, sourcePositionMs: Long): AudioEditProject {
         val clip = clips.first { it.id == id }
         require(sourcePositionMs > clip.startMs && sourcePositionMs < clip.endMs)
-        val left = clip.copy(endMs = sourcePositionMs)
+        val left = clip.copy(title = "${clip.title} (1)", endMs = sourcePositionMs, fadeOutMs = 0)
         val right = clip.copy(id = UUID.randomUUID().toString(), startMs = sourcePositionMs,
-            offsetMs = clip.offsetMs + left.durationMs)
+            title = "${clip.title} (2)", offsetMs = clip.offsetMs + left.durationMs, fadeInMs = 0)
         return copy(clips = clips.flatMap { if (it.id == id) listOf(left, right) else listOf(it) })
     }
 
-    fun removeRange(id: String, fromMs: Long, toMs: Long): AudioEditProject {
+    fun removeRange(id: String, fromMs: Long, toMs: Long, closeGap: Boolean = true,
+        smoothJoin: Boolean = false): AudioEditProject {
         val clip = clips.first { it.id == id }
         require(fromMs >= clip.startMs && toMs <= clip.endMs && fromMs < toMs)
+        val hasLeft = fromMs > clip.startMs
+        val hasRight = toMs < clip.endMs
+        val joinFade = if (smoothJoin && hasLeft && hasRight) AudioEditClip.SMOOTH_JOIN_MS else 0L
+        val rightOffset = clip.offsetMs + if (closeGap) fromMs - clip.startMs else toMs - clip.startMs
         val parts = buildList {
-            if (fromMs > clip.startMs) add(clip.copy(endMs = fromMs))
-            if (toMs < clip.endMs) add(clip.copy(id = UUID.randomUUID().toString(), startMs = toMs,
-                offsetMs = clip.offsetMs + fromMs - clip.startMs))
+            if (hasLeft) add(clip.copy(endMs = fromMs, fadeOutMs = joinFade))
+            if (hasRight) add(clip.copy(id = UUID.randomUUID().toString(), startMs = toMs,
+                offsetMs = rightOffset, fadeInMs = joinFade))
         }
-        val removed = toMs - fromMs
+        val removed = if (closeGap) toMs - fromMs else 0
         return copy(clips = clips.flatMap {
             when {
                 it.id == id -> parts
@@ -78,6 +89,41 @@ internal data class AudioEditProject(val clips: List<AudioEditClip> = emptyList(
                 else -> listOf(it)
             }
         })
+    }
+
+    fun nearestFreeOffset(id: String, lane: Int, nearMs: Long): Long {
+        val moving = clips.first { it.id == id }
+        require(lane in 0 until AudioEditClip.MAX_LANES && nearMs >= 0)
+        val occupied = clips.filter { it.id != id && it.lane == lane }
+        val candidates = buildSet {
+            add(0L)
+            occupied.forEach { clip ->
+                add(clip.finishMs)
+                add(clip.offsetMs - moving.durationMs)
+            }
+        }.filter { start ->
+            start >= 0 && start + moving.durationMs <= AudioEditClip.MAX_TIME_MS &&
+                occupied.none { other -> start < other.finishMs && start + moving.durationMs > other.offsetMs }
+        }
+        return candidates.minByOrNull { kotlin.math.abs(it - nearMs) }
+            ?: throw IllegalArgumentException("No free space on lane")
+    }
+
+    fun moveToNewEdgeLane(id: String, above: Boolean, nearMs: Long): AudioEditProject {
+        val moving = clips.first { it.id == id }
+        val others = clips.filterNot { it.id == id }
+        val used = others.map(AudioEditClip::lane).distinct().sorted()
+        require(used.size < AudioEditClip.MAX_LANES)
+        val laneMap = used.mapIndexed { index, lane ->
+            lane to if (above) index + 1 else index
+        }.toMap()
+        val targetLane = if (above) 0 else used.size
+        val remapped = others.map { it.copy(lane = laneMap.getValue(it.lane)) }
+        val maxOffset = AudioEditClip.MAX_TIME_MS - moving.durationMs
+        return AudioEditProject(remapped + moving.copy(
+            lane = targetLane,
+            offsetMs = nearMs.coerceIn(0, maxOffset),
+        ))
     }
 
     fun concatenate(): AudioEditProject {

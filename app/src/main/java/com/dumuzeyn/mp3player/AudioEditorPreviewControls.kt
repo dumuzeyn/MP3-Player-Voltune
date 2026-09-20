@@ -4,15 +4,20 @@ import android.os.Build
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Toast
+import java.util.Locale
 
 internal class AudioEditorPreviewControls(private val host: MainActivityCore,
-    private val project: () -> AudioEditProject, private val stopOnDetach: Boolean = false) : LinearLayout(host) {
+    private val project: () -> AudioEditProject,
+    private val startPositionMs: () -> Long = { 0L },
+    private val displayDurationMs: () -> Long = { project().durationMs },
+    private val stopOnDetach: Boolean = false,
+) : LinearLayout(host) {
     private val preview get() = host.audioEditorController.preview
     private var subscription: AutoCloseable? = null
     private var dragging = false
     private val label = host.uiFactory.text("", 14, false)
-    private val play = host.uiFactory.icon("▶")
-    private val stop = host.uiFactory.icon("■")
+    private val play = host.uiFactory.icon(StrictIcon.PLAY)
+    private val stop = host.uiFactory.icon(StrictIcon.STOP)
     private val seek = SeekBar(host).apply {
         max = 1000
         contentDescription = host.tr("Preview position", "Позиция предпрослушивания")
@@ -28,7 +33,8 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
         addView(row)
         host.uiFactory.applySeekBarColors(seek)
         play.setOnClickListener {
-            if (preview.active) preview.toggle() else runCatching { preview.start(project()) }.onFailure {
+            if (preview.active) preview.toggle()
+            else runCatching { preview.start(project(), startPositionMs()) }.onFailure {
                 Toast.makeText(host, host.tr("Check the clip range", "Проверьте границы фрагмента"), Toast.LENGTH_SHORT).show()
             }
         }
@@ -47,9 +53,16 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
     }
 
     private fun refresh() {
-        val pending = preview.phase == AudioEditorPreviewController.Phase.PREPARING ||
-            preview.phase == AudioEditorPreviewController.Phase.STARTING
-        play.text = if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) "Ⅱ" else "▶"
+        val preparing = preview.phase == AudioEditorPreviewController.Phase.PREPARING
+        val pending = preparing || preview.phase == AudioEditorPreviewController.Phase.STARTING
+        host.uiFactory.setIcon(
+            play,
+            if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) StrictIcon.PAUSE else StrictIcon.PLAY,
+        )
+        host.uiFactory.applyPlainIconStyle(
+            play,
+            if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) host.yellow else host.purple,
+        )
         play.contentDescription = if (preview.active) host.tr("Pause or resume preview", "Пауза или продолжение предпрослушивания")
             else host.tr("Preview audio", "Прослушать аудио")
         if (Build.VERSION.SDK_INT >= 26) play.tooltipText = play.contentDescription
@@ -60,10 +73,10 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
             (preview.positionMs * 1000 / preview.durationMs).toInt() else 0
         label.text = when {
             preview.failed -> host.tr("Preview unavailable", "Предпрослушивание недоступно")
-            pending -> host.tr("Preparing preview", "Подготовка предпрослушивания") +
+            preparing -> host.tr("Preparing preview", "Подготовка предпрослушивания") +
                 if (preview.progress >= 0) " ${preview.progress}%" else ""
-            preview.active -> host.formatSeconds(preview.positionMs / 1000) + " / " + host.formatSeconds((preview.durationMs + 500) / 1000)
-            else -> host.tr("Preview", "Предпрослушивание")
+            preview.active -> precise(preview.positionMs) + " / " + precise(preview.durationMs)
+            else -> precise(0) + " / " + precise(displayDurationMs())
         }
         alpha = if (play.isEnabled || stop.isEnabled) 1f else 0.5f
     }
@@ -74,5 +87,11 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
         subscription = null
         if (stopOnDetach) preview.stop()
         super.onDetachedFromWindow()
+    }
+
+    private fun precise(valueMs: Long): String {
+        val safe = valueMs.coerceAtLeast(0)
+        return String.format(Locale.ROOT, "%d:%02d.%03d", safe / 60_000,
+            safe / 1000 % 60, safe % 1000)
     }
 }

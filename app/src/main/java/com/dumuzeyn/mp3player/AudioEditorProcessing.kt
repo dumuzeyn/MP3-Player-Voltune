@@ -30,6 +30,89 @@ internal class AudioEditorProcessing(private val host: MainActivityCore, private
     fun separate(clip: AudioEditClip, instrumental: Boolean) = start(clip,
         if (instrumental) Operation.INSTRUMENTAL else Operation.STEMS)
 
+    fun combineVocals(vocal: AudioEditClip): Boolean {
+        val controller = host.audioEditorController
+        if (closed || controller.busy) return false
+        val original = controller.project
+        val backing = original.clips.filterNot { it.id == vocal.id }
+        val backingLanes = backing.map(AudioEditClip::lane).distinct().sorted()
+        fun reject(message: String): Boolean {
+            status = message
+            Toast.makeText(host, message, Toast.LENGTH_LONG).show()
+            render()
+            return false
+        }
+        if (backing.isEmpty()) return reject(host.tr("Add music for the selected vocal first",
+            "Сначала добавьте музыку для выбранного вокала"))
+        if (backingLanes.size >= AudioEditClip.MAX_LANES) return reject(host.tr(
+            "Too many music lanes", "Слишком много музыкальных дорожек"))
+        val memory = ActivityManager.MemoryInfo()
+        (host.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(memory)
+        if (memory.lowMemory || memory.availMem < 768L * 1024 * 1024) return reject(host.tr(
+            "Not enough free memory for vocal processing",
+            "Недостаточно свободной памяти для работы с вокалом"))
+        val targetDuration = backing.maxOf(AudioEditClip::finishMs)
+        val speed = vocal.durationMs.toFloat() / targetDuration
+        if (speed !in 0.25f..4f) return reject(host.tr(
+            "The vocal and music durations differ too much",
+            "Длительность вокала и музыки отличается слишком сильно"))
+        val directory = File(host.filesDir, "editor-audio")
+        val required = (vocal.durationMs + backing.sumOf(AudioEditClip::durationMs)) * 1060 +
+            256L * 1024 * 1024
+        if ((!directory.isDirectory && !directory.mkdirs()) || directory.usableSpace < required)
+            return reject(host.tr("Not enough free space", "Недостаточно свободного места"))
+        val token = ++generation
+        active = true
+        progress = 0
+        status = host.tr("Adapting vocals to music", "Адаптация вокала к музыке")
+        render()
+        job = executor.submit {
+            val result = runCatching {
+                VocalCompositionProcessor(host.applicationContext).process(vocal, backing, directory,
+                    { Thread.currentThread().isInterrupted }) { value ->
+                    host.uiHandler.post {
+                        if (generation == token && !closed) { progress = value; onProgress?.invoke() }
+                    }
+                }
+            }
+            host.uiHandler.post {
+                val composition = result.getOrNull()
+                if (closed || token != generation) {
+                    composition?.let(::deleteComposition)
+                    return@post
+                }
+                result.exceptionOrNull()?.let { VoltuneLog.failure("editor_vocal_mix_failed", it) }
+                active = false
+                job = null
+                val changed = composition != null && controller.project == original && controller.change {
+                    val laneMap = backingLanes.mapIndexed { index, lane -> lane to index + 1 }.toMap()
+                    val vocalClip = vocal.copy(uri = Uri.fromFile(composition.vocal).toString(),
+                        title = "${vocal.title} (${host.tr("adapted vocal", "адаптированный вокал")})",
+                        sourceDurationMs = composition.vocalDurationMs, startMs = 0,
+                        endMs = composition.vocalDurationMs, lane = 0, offsetMs = 0,
+                        gain = 1f, fadeInMs = 0, fadeOutMs = 0)
+                    val music = backing.zip(composition.instrumentals).map { (clip, file) ->
+                        clip.copy(uri = Uri.fromFile(file).toString(),
+                            title = "${clip.title} (${host.tr("music", "музыка")})",
+                            sourceDurationMs = clip.durationMs, startMs = 0, endMs = clip.durationMs,
+                            lane = laneMap.getValue(clip.lane), gain = 1f, fadeInMs = 0, fadeOutMs = 0)
+                    }
+                    AudioEditProject(listOf(vocalClip) + music)
+                }
+                if (!changed && composition != null) deleteComposition(composition)
+                status = if (changed) host.tr("Vocal mix is ready", "Вокал совмещён с музыкой")
+                    else host.tr("Vocal processing failed", "Не удалось обработать вокал")
+                render()
+            }
+        }
+        return true
+    }
+
+    private fun deleteComposition(value: VocalCompositionResult) {
+        value.vocal.delete()
+        value.instrumentals.forEach(File::delete)
+    }
+
     private fun start(clip: AudioEditClip, operation: Operation): Boolean {
         val controller = host.audioEditorController
         if (closed || controller.busy) return false
@@ -65,7 +148,7 @@ internal class AudioEditorProcessing(private val host: MainActivityCore, private
         val token = ++generation
         active = true
         progress = 0
-        status = if (operation == Operation.SPEECH) host.tr("Cleaning speech", "Очистка речи")
+        status = if (operation == Operation.SPEECH) host.tr("Removing noise", "Удаление шумов")
             else host.tr("Separating audio", "Разделение аудио")
         render()
         job = executor.submit {
@@ -91,7 +174,7 @@ internal class AudioEditorProcessing(private val host: MainActivityCore, private
                 job = null
                 val changed = result.isSuccess && controller.project == original && controller.change { project ->
                     val names = when (operation) {
-                        Operation.SPEECH -> listOf(host.tr("speech", "речь"))
+                        Operation.SPEECH -> listOf(host.tr("noise reduced", "без шумов"))
                         Operation.INSTRUMENTAL -> listOf(host.tr("instrumental", "без вокала"))
                         Operation.STEMS -> listOf(host.tr("drums", "ударные"), host.tr("bass", "бас"),
                             host.tr("other", "остальное"), host.tr("vocals", "вокал"))

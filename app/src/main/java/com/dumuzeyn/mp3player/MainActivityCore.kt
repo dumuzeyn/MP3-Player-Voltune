@@ -218,6 +218,7 @@ open class MainActivityCore : Activity() {
     }
 
     fun restoreTabFromBack(targetIndex: Int, previousSearch: String) {
+        if (isEditorNavigationLocked() && targetIndex != LibraryTabs.EDITOR) return
         swipeController.animateToTab(
             targetIndex,
             tabsController.directionTo(targetIndex),
@@ -283,9 +284,13 @@ open class MainActivityCore : Activity() {
 
     fun refreshMenuConfiguration() = tabsController.rebuildTabs()
 
+    fun isEditorNavigationLocked(): Boolean =
+        navigationState.tabIndex == LibraryTabs.EDITOR && audioEditorController.editingMode
+
     fun switchTabAnimated(targetIndex: Int, direction: Int) {
         if (
             !::tabs.isInitialized ||
+            isEditorNavigationLocked() && targetIndex != LibraryTabs.EDITOR ||
             !menuConfigurationController.isVisible(targetIndex) ||
             targetIndex == navigationState.tabIndex ||
             navigationState.tabAnimating

@@ -25,11 +25,11 @@ internal class HeaderController(private val host: MainActivityCore) {
             LibraryTabs.PLAYLISTS -> {
                 val actions = host.uiFactory.row().apply {
                     addView(
-                        actionButton("+") { host.overlayController.createPlaylist() },
+                        actionButton(StrictIcon.ADD) { host.overlayController.createPlaylist() },
                         host.uiFactory.square(52),
                     )
                     addView(
-                        actionButton("⌕") { host.overlayController.openSearch() },
+                        actionButton(StrictIcon.SEARCH) { host.overlayController.openSearch() },
                         host.uiFactory.square(52),
                     )
                 }
@@ -48,26 +48,37 @@ internal class HeaderController(private val host: MainActivityCore) {
     fun refreshSongsSectionHeader(section: View?) {
         if (section == null) return
         val play = section.findViewById<Button>(R.id.section_play) ?: return
-        play.text = if (host.playbackQueueController.isPlayingSource(host.currentVisibleTracks())) {
-            "Ⅱ"
-        } else {
-            "▶"
-        }
+        host.uiFactory.setIcon(
+            play,
+            if (host.playbackQueueController.isPlayingSource(host.currentVisibleTracks())) {
+                StrictIcon.PAUSE
+            } else {
+                StrictIcon.PLAY
+            },
+        )
+        host.uiFactory.applyPlainIconStyle(
+            play,
+            if (host.playbackQueueController.isPlayingSource(host.currentVisibleTracks())) {
+                host.yellow
+            } else {
+                host.primaryText
+            },
+        )
         host.sourcePlayButton = play
     }
 
     private fun libraryActions(tabIndex: Int): LinearLayout = host.uiFactory.row().apply {
         if (tabIndex == LibraryTabs.SONGS) {
-            addView(actionButton("+") { host.audioImportController.openFiles() }, host.uiFactory.square(52))
-            addView(actionButton("▣") { host.audioImportController.openFolder() }, host.uiFactory.square(52))
+            addView(actionButton(StrictIcon.ADD) { host.audioImportController.openFiles() }, host.uiFactory.square(52))
+            addView(actionButton(StrictIcon.FOLDER) { host.audioImportController.openFolder() }, host.uiFactory.square(52))
         } else {
-            addView(actionButton("+") { host.overlayController.openAddFavorites() }, host.uiFactory.square(52))
+            addView(actionButton(StrictIcon.ADD) { host.overlayController.openAddFavorites() }, host.uiFactory.square(52))
         }
-        addView(actionButton("⌕") { host.overlayController.openSearch() }, host.uiFactory.square(52))
+        addView(actionButton(StrictIcon.SEARCH) { host.overlayController.openSearch() }, host.uiFactory.square(52))
 
         val visible = host.currentVisibleTracks()
         val play = actionButton(
-            if (host.playbackQueueController.isPlayingSource(visible)) "Ⅱ" else "▶",
+            if (host.playbackQueueController.isPlayingSource(visible)) StrictIcon.PAUSE else StrictIcon.PLAY,
         ) {
             val currentVisible = host.currentVisibleTracks()
             if (host.playbackQueueController.isPlayingSource(currentVisible)) {
@@ -75,7 +86,17 @@ internal class HeaderController(private val host: MainActivityCore) {
             } else {
                 host.playbackQueueController.playList(currentVisible, false)
             }
-        }.apply { id = R.id.section_play }
+        }.apply {
+            id = R.id.section_play
+            host.uiFactory.applyPlainIconStyle(
+                this,
+                if (host.playbackQueueController.isPlayingSource(visible)) {
+                    host.yellow
+                } else {
+                    host.primaryText
+                },
+            )
+        }
         host.sourcePlayButton = play
 
         val shuffle = host.uiFactory.shuffleButton().apply {
@@ -87,6 +108,6 @@ internal class HeaderController(private val host: MainActivityCore) {
         addView(play, host.uiFactory.square(52))
     }
 
-    private fun actionButton(symbol: String, listener: (View) -> Unit): Button =
-        host.uiFactory.icon(symbol).apply { setOnClickListener(listener) }
+    private fun actionButton(icon: StrictIcon, listener: (View) -> Unit): Button =
+        host.uiFactory.icon(icon).apply { setOnClickListener(listener) }
 }

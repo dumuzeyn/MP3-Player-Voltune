@@ -17,6 +17,7 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
 
     fun createPlayerButton(): Button {
         val button = host.uiFactory.button(buttonText()).apply {
+            host.uiFactory.setLabeledIcon(this, StrictIcon.LEVEL, buttonText(), true)
             setSingleLine(false)
             maxLines = 2
             textSize = 13f
@@ -207,14 +208,11 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
 
     private fun enabled(): Boolean = prefs().getBoolean(ENABLED, false)
 
-    private fun buttonText(): String = host.tr(
-        if (enabled()) "Level ●" else "Level ○",
-        if (enabled()) "Уровень ●" else "Уровень ○",
-    )
+    private fun buttonText(): String = host.tr("Level", "Уровень")
 
     private fun refreshButton() {
         val button = playerButton ?: return
-        button.text = buttonText()
+        host.uiFactory.setLabeledIcon(button, StrictIcon.LEVEL, buttonText(), true)
         host.uiFactory.applyPlayerToolStyle(button, enabled())
     }
 
