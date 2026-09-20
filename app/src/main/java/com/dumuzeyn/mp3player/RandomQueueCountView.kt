@@ -7,6 +7,7 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.FrameLayout
 import android.widget.TextView
 import kotlin.math.abs
 
@@ -14,9 +15,15 @@ import kotlin.math.abs
 internal class RandomQueueCountView(
     private val host: MainActivityCore,
     maximum: Int,
-) : TextView(host) {
+) : FrameLayout(host) {
     private val maximum = maximum.coerceAtLeast(1)
     private val stepDistance = host.dp(12).toFloat()
+    private val label = TextView(host).apply {
+        gravity = android.view.Gravity.CENTER
+        textSize = 18f
+        setTypeface(null, Typeface.BOLD)
+        setTextColor(host.primaryText)
+    }
     private var lastY = 0f
     private var accumulatedDrag = 0f
     private var dragged = false
@@ -26,12 +33,9 @@ internal class RandomQueueCountView(
 
     init {
         id = R.id.random_queue_count
-        gravity = android.view.Gravity.CENTER
-        textSize = 18f
-        setTypeface(null, Typeface.BOLD)
-        setTextColor(host.primaryText)
         background = host.uiFactory.cardBackground(host.appearanceState.cardOpacity)
         TextOutlinePolicy.markCardSurface(this, true)
+        addView(label, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         isClickable = true
         isFocusable = true
         importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
@@ -117,18 +121,32 @@ internal class RandomQueueCountView(
     private fun changeBy(delta: Int): Boolean {
         val next = (value + delta).coerceIn(1, maximum)
         if (next == value) return false
+        val direction = if (next > value) 1f else -1f
         value = next
         updateLabel()
+        animateLabel(direction)
         performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
         return true
     }
 
     private fun updateLabel() {
-        text = value.toString()
+        label.text = value.toString()
         contentDescription = host.tr(
             "Random queue size: $value of $maximum. Swipe up or down to change it.",
             "Размер случайной очереди: $value из $maximum. Проведите вверх или вниз для изменения.",
         )
+    }
+
+    private fun animateLabel(direction: Float) {
+        if (!host.appearanceState.animations) return
+        label.animate().cancel()
+        label.translationY = direction * host.dp(10)
+        label.alpha = 0.25f
+        label.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(140L)
+            .start()
     }
 
     private companion object {
