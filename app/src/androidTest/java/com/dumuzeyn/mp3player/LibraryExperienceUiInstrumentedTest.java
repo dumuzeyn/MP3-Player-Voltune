@@ -313,6 +313,9 @@ public class LibraryExperienceUiInstrumentedTest {
     public void tabSwipeCancelsPendingSongProperties() {
         MainActivityCore host = launchWithLibrary();
         openTabByClick(host, LibraryTabs.SONGS);
+        InstrumentedTestSupport.waitFor("Song row did not render before swipe", 5000L,
+                () -> findDescription(host.songsView,
+                        "Открыть или включить песню UI song 0") != null);
         View song = findDescription(host.songsView,
                 "Открыть или включить песню UI song 0");
         assertNotNull(song);
