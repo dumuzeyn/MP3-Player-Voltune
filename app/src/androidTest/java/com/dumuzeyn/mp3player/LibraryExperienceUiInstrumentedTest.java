@@ -98,6 +98,17 @@ public class LibraryExperienceUiInstrumentedTest {
         int libraryCardHeight = host.uiFactory.libraryCardHeight();
         assertLibraryCardSize(homeSongCard, libraryCardWidth, libraryCardHeight);
 
+        Button randomQueue = host.list.findViewById(R.id.random_queue_button);
+        RandomQueueCountView randomCount = host.list.findViewById(R.id.random_queue_count);
+        assertNotNull(randomQueue);
+        assertNotNull(randomCount);
+        assertEquals(host.libraryState.tracks.size(), randomCount.getValue());
+        instrumentation.runOnMainSync(randomCount::performClick);
+        assertEquals(1, randomCount.getValue());
+        instrumentation.runOnMainSync(randomQueue::performClick);
+        InstrumentedTestSupport.waitFor("Random queue has the wrong size", 5000L,
+                () -> host.playbackUiState.queue.size() == randomCount.getValue());
+
         assertOverlayOpens(host, host.overlayController::openSearch);
         assertOverlayOpens(host, host.overlayController::openQueue);
         assertFullPlayerPages(host, track);

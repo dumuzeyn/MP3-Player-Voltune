@@ -23,6 +23,11 @@ class PlaybackQueueController(
         playback.submitQueue(queue, 0, 0, host.repeatMode(), true)
     }
 
+    fun playRandom(count: Int) {
+        val queue = QueueTransformations.randomSubset(host.libraryState.tracks, count)
+        if (queue.isNotEmpty()) playback.submitQueue(queue, 0, 0, host.repeatMode(), true)
+    }
+
     fun toggleOrStart() {
         if (playback.hasPlaybackSession()) {
             playback.toggle()

@@ -25,6 +25,7 @@ internal class HomeMenuRenderer(private val host: MainActivityCore) : MenuRender
         val section = HomePlaybackSection(host)
         playbackSection = section
         host.list.addView(section)
+        host.list.addView(RandomQueueSection(host))
         val content = host.libraryState.homeContent
         addTracks(host.tr("Recently played", "Недавно слушали"), content.recentlyPlayed, shownTracks)
         addTracks(host.tr("Recently added", "Недавно добавленные"), content.recentlyAdded, shownTracks)
