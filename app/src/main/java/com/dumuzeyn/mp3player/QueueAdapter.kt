@@ -29,7 +29,9 @@ internal class QueueAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val container = FrameLayout(host).apply {
-            layoutParams = RecyclerView.LayoutParams(-1, -2)
+            layoutParams = RecyclerView.LayoutParams(-1, -2).apply {
+                setMargins(0, host.dp(2), 0, host.dp(2))
+            }
         }
         return Holder(container)
     }

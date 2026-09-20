@@ -17,12 +17,12 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         controller.load()
         val dialogs = AudioEditorDialogs(host)
         val toolbar = host.uiFactory.row().apply { gravity = Gravity.CENTER }
-        toolbar.addView(tool("+", host.tr("Add audio", "Добавить аудио"), !controller.busy) {
+        toolbar.addView(tool(StrictIcon.ADD, host.tr("Add audio", "Добавить аудио"), !controller.busy) {
             dialogs.chooseTrack(0)
         })
-        toolbar.addView(tool("↶", host.tr("Undo", "Отменить"), controller.canUndo, controller::undo))
-        toolbar.addView(tool("↷", host.tr("Redo", "Повторить"), controller.canRedo, controller::redo))
-        toolbar.addView(tool("×", host.tr("Clear project", "Очистить проект"),
+        toolbar.addView(tool(StrictIcon.UNDO, host.tr("Undo", "Отменить"), controller.canUndo, controller::undo))
+        toolbar.addView(tool(StrictIcon.REDO, host.tr("Redo", "Повторить"), controller.canRedo, controller::redo))
+        toolbar.addView(tool(StrictIcon.DELETE, host.tr("Clear project", "Очистить проект"),
             !controller.busy && controller.project.clips.isNotEmpty()) {
             host.showConfirmPanel(host.tr("Clear project?", "Очистить проект?"),
                 host.tr("Remove all clips from the draft?", "Удалить все фрагменты из черновика?"),
@@ -55,7 +55,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                 val header = host.uiFactory.row()
                 header.addView(host.uiFactory.text("${host.tr("Lane", "Дорожка")} ${lane + 1}", 16, true),
                     LinearLayout.LayoutParams(0, -2, 1f))
-                header.addView(tool("+", host.tr("Append audio", "Добавить аудио в конец"), !controller.busy) {
+                header.addView(tool(StrictIcon.ADD, host.tr("Append audio", "Добавить аудио в конец"), !controller.busy) {
                     dialogs.chooseTrack(lane)
                 })
                 host.list.addView(header)
@@ -172,8 +172,8 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
         })
     }
 
-    private fun tool(symbol: String, label: String, enabled: Boolean, run: () -> Unit): Button =
-        host.uiFactory.icon(symbol).apply {
+    private fun tool(icon: StrictIcon, label: String, enabled: Boolean, run: () -> Unit): Button =
+        host.uiFactory.icon(icon).apply {
             contentDescription = label
             if (Build.VERSION.SDK_INT >= 26) tooltipText = label
             isEnabled = enabled
@@ -184,7 +184,7 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
 
     private fun editorModeTool(active: Boolean, run: () -> Unit): Button =
         tool(
-            "⌖",
+            StrictIcon.LOCK,
             if (active) host.tr("Exit editing mode", "Выйти из режима редактирования")
             else host.tr("Lock editing mode", "Зафиксировать режим редактирования"),
             true,
@@ -195,10 +195,11 @@ internal class AudioEditorMenuRenderer(private val host: MainActivityCore) : Men
                 val blackContrast = ThemeContrastPolicy.contrastRatio(Color.BLACK, host.yellow)
                 val whiteContrast = ThemeContrastPolicy.contrastRatio(Color.WHITE, host.yellow)
                 setTextColor(if (blackContrast >= whiteContrast) Color.BLACK else Color.WHITE)
-                background = GradientDrawable().apply {
+                val activeBackground = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(host.yellow)
                 }
+                host.uiFactory.setIconOnBackground(this, StrictIcon.LOCK, activeBackground)
                 elevation = host.dp(2).toFloat()
             } else {
                 host.uiFactory.applyPlainIconStyle(this)

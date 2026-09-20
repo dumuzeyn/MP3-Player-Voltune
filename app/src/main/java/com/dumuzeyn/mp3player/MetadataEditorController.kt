@@ -26,7 +26,7 @@ internal class MetadataEditorController(private val host: MainActivityCore) : Au
             host.uiFactory.text(host.tr("Metadata", "Метаданные"), 21, true),
             LinearLayout.LayoutParams(0, host.dp(54), 1f),
         )
-        val close = host.uiFactory.icon("×").apply {
+        val close = host.uiFactory.icon(StrictIcon.CLOSE).apply {
             contentDescription = host.tr("Close", "Закрыть")
             setOnClickListener { close(shade) }
         }
@@ -166,7 +166,7 @@ internal class MetadataEditorController(private val host: MainActivityCore) : Au
             host.uiFactory.text(host.tr("Batch metadata", "Массовые метаданные"), 20, true),
             LinearLayout.LayoutParams(0, host.dp(54), 1f),
         )
-        val close = host.uiFactory.icon("×").apply {
+        val close = host.uiFactory.icon(StrictIcon.CLOSE).apply {
             setOnClickListener { close(shade) }
         }
         header.addView(close, host.uiFactory.square(50))

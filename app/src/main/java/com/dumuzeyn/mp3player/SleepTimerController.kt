@@ -91,7 +91,7 @@ internal class SleepTimerController(private val host: MainActivityCore) {
         ) {
             syncFromService()
         }
-        if (host.playbackUiState.sleepTimerEndsAt <= 0L) return host.tr("Timer ◷", "Таймер ◷")
+        if (host.playbackUiState.sleepTimerEndsAt <= 0L) return host.tr("Timer", "Таймер")
         val remainingMs = max(
             0L,
             host.playbackUiState.sleepTimerEndsAt - System.currentTimeMillis(),

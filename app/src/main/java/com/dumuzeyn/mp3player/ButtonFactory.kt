@@ -2,7 +2,6 @@ package com.dumuzeyn.mp3player
 
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.util.TypedValue
@@ -44,31 +43,62 @@ internal class ButtonFactory(private val host: MainActivityCore) {
         host.themeController.applyTextOutline(this)
     }
 
-    fun icon(symbol: String): Button = button(symbol).apply {
+    fun icon(symbol: String): Button = button("").apply {
         TextViewCompat.setAutoSizeTextTypeWithDefaults(
             this,
             TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE,
         )
         setSingleLine(true)
-        textSize = 24f
+        textSize = 14f
+        setBackgroundColor(Color.TRANSPARENT)
+        TextOutlinePolicy.markCardSurface(this, false)
+        val mapped = StrictIcon.fromLegacy(symbol)
+        if (mapped == null) {
+            text = symbol
+        } else {
+            StrictIconButtonStyler.apply(this, mapped)
+        }
     }
 
-    fun shuffleButton(): Button = icon("⇄").apply {
-        textSize = 27f
-        typeface = Typeface.DEFAULT_BOLD
+    fun icon(icon: StrictIcon): Button = button("").apply {
+        TextViewCompat.setAutoSizeTextTypeWithDefaults(this, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE)
+        setSingleLine(true)
+        setBackgroundColor(Color.TRANSPARENT)
+        TextOutlinePolicy.markCardSurface(this, false)
+        StrictIconButtonStyler.apply(this, icon)
     }
+
+    fun setIcon(button: Button, icon: StrictIcon) {
+        StrictIconButtonStyler.apply(button, icon)
+    }
+
+    fun setLabeledIcon(button: Button, icon: StrictIcon, label: String, above: Boolean = false) {
+        StrictIconButtonStyler.applyLabeled(button, icon, label, above)
+    }
+
+    fun setIconOnBackground(button: Button, icon: StrictIcon, background: GradientDrawable) {
+        StrictIconButtonStyler.applyOnBackground(button, icon, background)
+    }
+
+    fun shuffleButton(): Button = icon(StrictIcon.SHUFFLE)
 
     fun applyPlainIcon(button: Button, color: Int) {
         button.setTextColor(color)
         button.setBackgroundColor(Color.TRANSPARENT)
         TextOutlinePolicy.markCardSurface(button, false)
+        StrictIconButtonStyler.refreshTint(button)
         button.elevation = 0f
         button.translationZ = 0f
     }
 
     fun applyPrimary(button: Button) {
+        if (button.getTag(R.id.strict_button_icon) is StrictIcon && button.text.isNullOrEmpty()) {
+            applyPlainIcon(button, host.purple)
+            return
+        }
         button.setTextColor(Color.WHITE)
         button.background = background(host.purple, false)
+        StrictIconButtonStyler.refreshTint(button)
         TextOutlinePolicy.markCardSurface(button, true)
     }
 
@@ -77,19 +107,31 @@ internal class ButtonFactory(private val host: MainActivityCore) {
     }
 
     fun applySecondary(button: Button, opacity: Int) {
+        if (button.getTag(R.id.strict_button_icon) is StrictIcon && button.text.isNullOrEmpty()) {
+            applyPlainIcon(button, host.primaryText)
+            return
+        }
         button.setTextColor(host.primaryText)
         val drawable = background(host.cardSurfaceColor(host.card, opacity), true).apply {
             setStroke(host.dp(1), host.cardStroke)
         }
         button.background = drawable
+        StrictIconButtonStyler.refreshTint(button)
         TextOutlinePolicy.markCardSurface(button, true)
     }
 
     fun applyPlayerTool(button: Button, active: Boolean) {
-        button.setSingleLine(false)
-        button.maxLines = 2
+        button.setSingleLine(true)
+        button.maxLines = 1
         button.ellipsize = null
         button.textSize = 14f
+        TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+            button,
+            10,
+            14,
+            1,
+            TypedValue.COMPLEX_UNIT_SP,
+        )
         button.setTextColor(if (active) host.yellow else host.primaryText)
         val drawable = background(
             host.cardSurfaceColor(host.card, host.appearanceState.cardOpacity.coerceAtLeast(68)),
@@ -98,18 +140,19 @@ internal class ButtonFactory(private val host: MainActivityCore) {
             setStroke(host.dp(1), if (active) host.purple else host.cardStroke)
         }
         button.background = drawable
+        StrictIconButtonStyler.refreshTint(button)
         TextOutlinePolicy.markCardSurface(button, true)
     }
 
     private fun background(color: Int, outlined: Boolean): GradientDrawable =
         GradientDrawable().apply {
             setColor(color)
-            cornerRadius = host.dp(16).toFloat()
+            cornerRadius = host.dp(8).toFloat()
             if (outlined) setStroke(host.dp(1), host.cardStroke)
         }
 
     private fun rippleMask(): GradientDrawable = GradientDrawable().apply {
         setColor(Color.WHITE)
-        cornerRadius = host.dp(16).toFloat()
+        cornerRadius = host.dp(8).toFloat()
     }
 }

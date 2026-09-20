@@ -42,7 +42,7 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
         }
         row.addView(labels, LinearLayout.LayoutParams(0, host.dp(54), 1.0f))
 
-        val add = host.uiFactory.icon("+").apply {
+        val add = host.uiFactory.icon(StrictIcon.LIST_ADD).apply {
             contentDescription = host.tr("Add folder to queue", "Добавить папку в очередь")
             setOnClickListener { host.playbackQueueController.addAll(tracks) }
         }
@@ -52,9 +52,15 @@ class FoldersMenuRenderer(private val host: MainActivityCore) : MenuRenderer {
             setOnClickListener { host.playbackQueueController.playList(tracks, true) }
         }
         row.addView(shuffle, host.uiFactory.square(44))
-        val play = host.uiFactory.icon("▶").apply {
+        val play = host.uiFactory.icon(StrictIcon.PLAY).apply {
             contentDescription = host.tr("Play folder", "Воспроизвести папку")
-            setOnClickListener { host.playbackQueueController.playList(tracks, false) }
+            setOnClickListener {
+                if (host.playbackQueueController.isCurrentCollection(tracks)) {
+                    host.playbackQueueController.toggleOrStart()
+                } else {
+                    host.playbackQueueController.playList(tracks, false)
+                }
+            }
         }
         row.addView(play, host.uiFactory.square(44))
         row.setOnClickListener { host.overlayController.openGroup(name, tracks) }

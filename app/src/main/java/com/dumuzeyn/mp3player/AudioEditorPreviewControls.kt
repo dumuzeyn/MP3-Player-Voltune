@@ -16,8 +16,8 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
     private var subscription: AutoCloseable? = null
     private var dragging = false
     private val label = host.uiFactory.text("", 14, false)
-    private val play = host.uiFactory.icon("▶")
-    private val stop = host.uiFactory.icon("■")
+    private val play = host.uiFactory.icon(StrictIcon.PLAY)
+    private val stop = host.uiFactory.icon(StrictIcon.STOP)
     private val seek = SeekBar(host).apply {
         max = 1000
         contentDescription = host.tr("Preview position", "Позиция предпрослушивания")
@@ -55,7 +55,14 @@ internal class AudioEditorPreviewControls(private val host: MainActivityCore,
     private fun refresh() {
         val preparing = preview.phase == AudioEditorPreviewController.Phase.PREPARING
         val pending = preparing || preview.phase == AudioEditorPreviewController.Phase.STARTING
-        play.text = if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) "Ⅱ" else "▶"
+        host.uiFactory.setIcon(
+            play,
+            if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) StrictIcon.PAUSE else StrictIcon.PLAY,
+        )
+        host.uiFactory.applyPlainIconStyle(
+            play,
+            if (preview.phase == AudioEditorPreviewController.Phase.PLAYING) host.yellow else host.purple,
+        )
         play.contentDescription = if (preview.active) host.tr("Pause or resume preview", "Пауза или продолжение предпрослушивания")
             else host.tr("Preview audio", "Прослушать аудио")
         if (Build.VERSION.SDK_INT >= 26) play.tooltipText = play.contentDescription

@@ -9,4 +9,6 @@
     <item name="editor_mode_lock" type="id" />
     <item name="editor_mode_bounds" type="id" />
     <item name="editor_workspace" type="id" />
+    <item name="strict_button_icon" type="id" />
+    <item name="strict_button_icon_above" type="id" />
 </resources>

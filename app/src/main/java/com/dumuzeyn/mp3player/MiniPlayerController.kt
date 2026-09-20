@@ -47,7 +47,7 @@ internal class MiniPlayerController(
         textColumn.addView(host.miniSub)
         host.miniPlayer.addView(textColumn, LinearLayout.LayoutParams(0, -2, 1f))
 
-        host.miniButton = host.uiFactory.icon("▶")
+        host.miniButton = host.uiFactory.icon(StrictIcon.PLAY)
         host.uiFactory.applyPrimaryButtonStyle(host.miniButton)
         host.miniButton.setOnClickListener { playbackActions.togglePlayPause() }
         host.miniPlayer.addView(host.miniButton, host.uiFactory.square(52))
@@ -103,7 +103,14 @@ internal class MiniPlayerController(
     private fun bindMiniPlayer(track: Track) {
         host.miniTitle.text = track.title
         host.miniSub.text = track.artist
-        host.miniButton.text = if (playbackState.isPlaying()) "Ⅱ" else "▶"
+        host.uiFactory.setIcon(
+            host.miniButton,
+            if (playbackState.isPlaying()) StrictIcon.PAUSE else StrictIcon.PLAY,
+        )
+        host.uiFactory.applyPlainIconStyle(
+            host.miniButton,
+            if (playbackState.isPlaying()) host.yellow else host.purple,
+        )
     }
 
     private fun hideMiniPlayer() {

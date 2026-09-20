@@ -219,7 +219,12 @@ internal class SongAdapter(private val host: MainActivityCore) :
             val track = boundTrack
             val current = track != null && track.trackId == currentTrackId
             marker.visibility = if (current) View.VISIBLE else View.INVISIBLE
-            SongRowStateRegistry.applyPlayState(play, current && playing)
+            SongRowStateRegistry.applyPlayState(
+                play,
+                current && playing,
+                host.yellow,
+                host.purple,
+            )
             waveform.setState(
                 if (current) host.purple else host.purpleSoft,
                 host.yellow,

@@ -62,7 +62,7 @@ internal class MenuConfigurationDialog(private val host: MainActivityCore) {
             LinearLayout.LayoutParams(0, host.dp(58), 1f),
         )
         addView(
-            host.uiFactory.icon("×").apply {
+            host.uiFactory.icon(StrictIcon.CLOSE).apply {
                 contentDescription = host.tr("Close", "Закрыть")
                 setOnClickListener {
                     if (shade.parent != null) host.overlayHost.removeView(shade)
@@ -90,7 +90,7 @@ internal class MenuConfigurationDialog(private val host: MainActivityCore) {
                     setMargins(0, host.dp(2), 0, host.dp(2))
                 }
             }
-            val drag = host.uiFactory.icon("≡").apply {
+            val drag = host.uiFactory.icon(StrictIcon.DRAG).apply {
                 contentDescription = host.tr("Move section", "Переместить раздел")
             }
             val label = host.uiFactory.text("", 17, true).apply {

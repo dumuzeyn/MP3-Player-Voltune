@@ -60,19 +60,19 @@ internal class PlaylistsMenuRenderer(private val host: MainActivityCore) : MenuR
 
         val actions = host.uiFactory.row()
         val actionSize = host.resources.getDimensionPixelSize(R.dimen.playlist_action_size)
-        val delete = host.uiFactory.icon("×")
+        val delete = host.uiFactory.icon(StrictIcon.DELETE)
         host.uiFactory.applyPlainIconStyle(delete, Color.rgb(190, 45, 45))
         delete.setOnClickListener { host.overlayController.confirmDeletePlaylist(playlist) }
         actions.addView(delete, LinearLayout.LayoutParams(actionSize, actionSize))
-        val rename = host.uiFactory.icon("✎")
+        val rename = host.uiFactory.icon(StrictIcon.EDIT)
         host.uiFactory.applyPlainIconStyle(rename)
         rename.setOnClickListener { host.overlayController.renamePlaylist(playlist) }
         actions.addView(rename, LinearLayout.LayoutParams(actionSize, actionSize))
 
         val playing = host.playbackQueueController.isPlayingCollection(tracks)
-        val play = host.uiFactory.icon(if (playing) "Ⅱ" else "▶")
+        val play = host.uiFactory.icon(if (playing) StrictIcon.PAUSE else StrictIcon.PLAY)
         host.uiFactory.applyPlainIconStyle(play, host.purple)
-        SongRowStateRegistry.applyPlayState(play, playing)
+        SongRowStateRegistry.applyPlayState(play, playing, host.yellow, host.purple)
         play.setOnClickListener {
             if (host.playbackQueueController.isCurrentCollection(tracks)) {
                 host.playbackQueueController.toggleOrStart()

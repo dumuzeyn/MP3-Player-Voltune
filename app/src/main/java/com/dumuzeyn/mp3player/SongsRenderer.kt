@@ -182,8 +182,12 @@ internal class SongsRenderer(private val host: MainActivityCore) {
 
         if (host.navigationState.tabIndex == LibraryTabs.FAVORITES) {
             val favorite = host.uiFactory.icon(
-                if (host.libraryState.favorites.contains(track.uri)) "♥︎" else "♡︎",
-            ).apply { textSize = 14f }
+                if (host.libraryState.favorites.contains(track.uri)) {
+                    StrictIcon.HEART
+                } else {
+                    StrictIcon.HEART_OUTLINE
+                },
+            )
             host.uiFactory.applyPlainIconStyle(
                 favorite,
                 if (host.libraryState.favorites.contains(track.uri)) {
@@ -210,11 +214,13 @@ internal class SongsRenderer(private val host: MainActivityCore) {
             SafeLongPress.bind(cover, properties)
         }
 
-        val play = host.uiFactory.icon("")
+        val play = host.uiFactory.icon(StrictIcon.PLAY)
         host.uiFactory.applyPlainIconStyle(play, host.purple)
         SongRowStateRegistry.applyPlayState(
             play,
             host.isCurrent(track) && host.isPlaybackPlaying(),
+            host.yellow,
+            host.purple,
         )
         play.setOnClickListener {
             if (host.isCurrent(track)) {
@@ -238,10 +244,8 @@ internal class SongsRenderer(private val host: MainActivityCore) {
             gravity = Gravity.CENTER_VERTICAL
             setPadding(host.dp(8), host.dp(4), host.dp(8), host.dp(4))
         }
-        host.uiFactory.setSurface(
+        host.uiFactory.applyCardStyle(
             row,
-            host.panel,
-            false,
             host.appearanceState.songCardOpacity,
         )
 
@@ -264,16 +268,18 @@ internal class SongsRenderer(private val host: MainActivityCore) {
         }
         row.addView(title, LinearLayout.LayoutParams(0, host.dp(56), 1f))
 
-        val remove = host.uiFactory.icon("−")
+        val remove = host.uiFactory.icon(StrictIcon.REMOVE)
         host.uiFactory.applyPlainIconStyle(remove, Color.rgb(190, 45, 45))
         remove.setOnClickListener { removeAction.run() }
         row.addView(remove, host.uiFactory.square(44))
 
-        val play = host.uiFactory.icon("")
+        val play = host.uiFactory.icon(StrictIcon.PLAY)
         host.uiFactory.applyPlainIconStyle(play, host.purple)
         SongRowStateRegistry.applyPlayState(
             play,
             host.isCurrent(track) && host.isPlaybackPlaying(),
+            host.yellow,
+            host.purple,
         )
         play.setOnClickListener { playAction.run() }
         row.addView(play, host.uiFactory.square(44))

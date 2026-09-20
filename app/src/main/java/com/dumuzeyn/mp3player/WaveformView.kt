@@ -6,7 +6,6 @@ import android.graphics.Paint
 import android.os.Trace
 import android.view.View
 import kotlin.math.abs
-import kotlin.math.roundToInt
 import kotlin.math.sin
 
 class WaveformView(
@@ -21,6 +20,7 @@ class WaveformView(
         strokeCap = Paint.Cap.ROUND
     }
     private var seed = abs(key.hashCode())
+    private val accentBars = IntArray(3)
     private var transitionPausedState = false
     private var frameScheduled = false
     private var progress = 0f
@@ -28,6 +28,10 @@ class WaveformView(
     private val nextFrame = Runnable {
         frameScheduled = false
         if (shouldAnimate()) invalidate()
+    }
+
+    init {
+        updateAccentBars()
     }
 
     fun setActive(active: Boolean) {
@@ -41,6 +45,7 @@ class WaveformView(
         val nextSeed = abs(key.orEmpty().hashCode())
         if (seed != nextSeed) {
             seed = nextSeed
+            updateAccentBars()
             startedAt = System.currentTimeMillis()
             progress = 0f
             invalidate()
@@ -91,8 +96,8 @@ class WaveformView(
                 if (waveformActive) 180f else 520f
 
             for (index in 0 until bars) {
-                val played = waveformActive && index <= (progress * (bars - 1)).roundToInt()
-                paint.color = if (played) accentColor else color
+                val highlighted = waveformActive && accentBars.contains(index)
+                paint.color = if (highlighted) accentColor else color
                 val x = gap + index * gap * 1.48f
                 val base = 0.24f + ((seed shr (index % 12)) and 15) / 22f
                 val pulse = if (waveformActive) sin(time + index * 0.7f) * 0.22f else 0f
@@ -151,5 +156,24 @@ class WaveformView(
         if (!frameScheduled) return
         removeCallbacks(nextFrame)
         frameScheduled = false
+    }
+
+    private fun updateAccentBars() {
+        var value = seed
+        var count = 0
+        var attempts = 0
+        while (count < accentBars.size && attempts < 128) {
+            value = value * 1_103_515_245 + 12_345
+            val candidate = Math.floorMod(value, 24)
+            if ((0 until count).none { abs(accentBars[it] - candidate) <= 2 }) {
+                accentBars[count++] = candidate
+            }
+            attempts++
+        }
+        if (count < accentBars.size) {
+            accentBars[0] = 3
+            accentBars[1] = 11
+            accentBars[2] = 20
+        }
     }
 }

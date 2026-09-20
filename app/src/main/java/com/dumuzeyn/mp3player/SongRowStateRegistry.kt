@@ -4,7 +4,6 @@ import android.os.Trace
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import kotlin.math.roundToInt
 
 internal class SongRowStateRegistry {
     interface StateResolver {
@@ -85,7 +84,12 @@ internal class SongRowStateRegistry {
             val currentUri = current?.uri.orEmpty()
             val playing = resolver.isPlaying()
             playButtons.forEach { (uri, button) ->
-                applyPlayState(button, uri == currentUri && playing)
+                applyPlayState(
+                    button,
+                    uri == currentUri && playing,
+                    resolver.secondaryActiveColor(),
+                    resolver.activeColor(),
+                )
             }
             currentMarkers.forEach { (uri, marker) ->
                 val visibility = if (uri == currentUri) View.VISIBLE else View.INVISIBLE
@@ -115,16 +119,19 @@ internal class SongRowStateRegistry {
 
     companion object {
         @JvmStatic
-        fun applyPlayState(button: Button, playing: Boolean) {
-            val symbol = if (playing) "Ⅱ" else "▶"
-            if (symbol.contentEquals(button.text)) return
-            button.text = symbol
-            val opticalOffset = if (playing) {
-                0
+        fun applyPlayState(
+            button: Button,
+            playing: Boolean,
+            playingColor: Int,
+            idleColor: Int,
+        ) {
+            val icon = if (playing) StrictIcon.PAUSE else StrictIcon.PLAY
+            button.setTextColor(if (playing) playingColor else idleColor)
+            if (button.getTag(R.id.strict_button_icon) == icon) {
+                StrictIconButtonStyler.refreshTint(button)
             } else {
-                (button.resources.displayMetrics.density * 2f).roundToInt()
+                StrictIconButtonStyler.apply(button, icon)
             }
-            button.setPadding(opticalOffset, 0, 0, 0)
         }
     }
 }

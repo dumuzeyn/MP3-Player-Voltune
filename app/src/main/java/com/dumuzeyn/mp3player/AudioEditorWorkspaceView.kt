@@ -23,7 +23,12 @@ internal class AudioEditorWorkspaceView(
         val laneButtons = LinearLayout(host).apply { orientation = HORIZONTAL }
         project.clips.map(AudioEditClip::lane).distinct().sorted().forEach { lane ->
             val muted = lane in mutedLanes
-            laneButtons.addView(host.uiFactory.button("${lane + 1} ${if (muted) "×" else "♪"}").apply {
+            laneButtons.addView(host.uiFactory.button("${lane + 1}").apply {
+                host.uiFactory.setLabeledIcon(
+                    this,
+                    if (muted) StrictIcon.MUTE else StrictIcon.VOLUME,
+                    "${lane + 1}",
+                )
                 minHeight = 0
                 minimumWidth = 0
                 textSize = 13f
