@@ -563,6 +563,8 @@ public class LibraryExperienceUiInstrumentedTest {
 
     private static void assertLibraryCardSize(View card, int width, int height) {
         assertNotNull(card);
+        InstrumentedTestSupport.waitFor("Library card was not laid out", 5000L,
+                () -> card.getWidth() > 0 && card.getHeight() > 0);
         assertEquals("Library cards must share one width", width, card.getWidth());
         assertEquals("Library cards must share one height", height, card.getHeight());
     }
