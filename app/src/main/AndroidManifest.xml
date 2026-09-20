@@ -19,7 +19,6 @@
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
-        <profileable android:shell="true" />
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
@@ -969,6 +968,11 @@
                 <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
             </intent-filter>
         </service>
+        <provider
+            android:name=".MediaArtworkContentProvider"
+            android:authorities="${applicationId}.artwork"
+            android:exported="true"
+            android:grantUriPermissions="false" />
         <receiver
             android:name=".ThemeConfigurationReceiver"
             android:exported="false">

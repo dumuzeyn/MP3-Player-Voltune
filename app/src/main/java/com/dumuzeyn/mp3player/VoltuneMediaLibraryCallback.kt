@@ -10,7 +10,6 @@ import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
-import androidx.media3.session.SessionCommands
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
@@ -28,10 +27,16 @@ internal class VoltuneMediaLibraryCallback(
     private val database: LibraryDatabase,
     private val mapper: MediaItemMapper,
     private val commands: CommandDelegate,
+    private val controllerAccess: Media3ControllerAccess,
+    private val artworkAuthority: String,
 ) : MediaLibrarySession.Callback, AutoCloseable {
 
     interface CommandDelegate {
-        fun handle(command: SessionCommand, args: Bundle): ListenableFuture<SessionResult>
+        fun handle(
+            controller: MediaSession.ControllerInfo,
+            command: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult>
 
         fun onCommand(action: String)
         fun preview(controller: MediaSession.ControllerInfo, args: Bundle): SessionResult =
@@ -51,17 +56,9 @@ internal class VoltuneMediaLibraryCallback(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
-        val available: SessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS
-            .buildUpon()
-            .add(Media3Commands.TIMER_START_COMMAND)
-            .add(Media3Commands.TIMER_CANCEL_COMMAND)
-            .add(Media3Commands.AUDIO_EFFECTS_COMMAND)
-            .add(Media3Commands.CLEAR_QUEUE_COMMAND)
-            .add(Media3Commands.DIAGNOSTIC_SNAPSHOT_COMMAND)
-            .apply { if (controller.uid == android.os.Process.myUid()) add(Media3Commands.EDITOR_PREVIEW_COMMAND) }
-            .build()
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
-            .setAvailableSessionCommands(available)
+            .setAvailableSessionCommands(controllerAccess.sessionCommands(controller))
+            .setAvailablePlayerCommands(controllerAccess.playerCommands(controller))
             .build()
     }
 
@@ -70,14 +67,50 @@ internal class VoltuneMediaLibraryCallback(
         controller: MediaSession.ControllerInfo,
         customCommand: SessionCommand,
         args: Bundle,
+    ): ListenableFuture<SessionResult> = handleCustomCommand(controller, customCommand, args)
+
+    fun handleCustomCommand(
+        controller: MediaSession.ControllerInfo,
+        customCommand: SessionCommand,
+        args: Bundle,
     ): ListenableFuture<SessionResult> {
         val action = customCommand.customAction
+        if (action !in Media3Commands.internalActions) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
+        }
+        if (!controllerAccess.canUseInternalCommand(controller, action)) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+        }
         if (action == Media3Commands.EDITOR_PREVIEW) {
-            return Futures.immediateFuture(if (controller.uid == android.os.Process.myUid())
-                commands.preview(controller, args) else SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+            return Futures.immediateFuture(commands.preview(controller, args))
         }
         commands.onCommand(action)
-        return commands.handle(customCommand, args)
+        return commands.handle(controller, customCommand, args)
+    }
+
+    override fun onAddMediaItems(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        mediaItems: List<MediaItem>,
+    ): ListenableFuture<List<MediaItem>> = resolveMediaItems(controller, mediaItems)
+
+    fun resolveMediaItems(
+        controller: MediaSession.ControllerInfo,
+        mediaItems: List<MediaItem>,
+    ): ListenableFuture<List<MediaItem>> = executor.submit<List<MediaItem>> {
+        val tracks = database.loadTracks()
+        mediaItems.mapNotNullTo(ArrayList()) { item ->
+            if (controllerAccess.isOwn(controller) && item.localConfiguration != null) {
+                item
+            } else {
+                val track = tracks.firstOrNull { MediaItemMapper.matchesMediaId(it, item.mediaId) }
+                    ?: item.requestMetadata.searchQuery
+                        ?.let(Track::normalizeSearchText)
+                        ?.takeIf(String::isNotEmpty)
+                        ?.let { query -> tracks.firstOrNull { query in it.normalizedSearchText } }
+                track?.let(mapper::toMediaItem)
+            }
+        }
     }
 
     @Suppress("OVERRIDE_DEPRECATION")
@@ -246,7 +279,7 @@ internal class VoltuneMediaLibraryCallback(
         }
         children(ROOT)?.firstOrNull { it.mediaId == mediaId }?.let { return it }
         database.loadTracks().firstOrNull { MediaItemMapper.matchesMediaId(it, mediaId) }
-            ?.let { return mapper.toMediaItem(it) }
+            ?.let { return mapper.toLibraryItem(it, artworkAuthority) }
         for (category in listOf(ARTISTS, ALBUMS, PLAYLISTS, SMART)) {
             children(category)?.firstOrNull { it.mediaId == mediaId }?.let { return it }
         }
@@ -258,7 +291,7 @@ internal class VoltuneMediaLibraryCallback(
         if (query.isEmpty()) return emptyList()
         return database.loadTracks()
             .filter { query in it.normalizedSearchText }
-            .mapTo(ArrayList(), mapper::toMediaItem)
+            .mapTo(ArrayList()) { mapper.toLibraryItem(it, artworkAuthority) }
     }
 
     private fun smartItems(tracks: List<Track>, name: String): List<MediaItem> {
@@ -283,7 +316,7 @@ internal class VoltuneMediaLibraryCallback(
     }
 
     private fun mediaItems(tracks: List<Track>): List<MediaItem> =
-        tracks.mapTo(ArrayList(), mapper::toMediaItem)
+        tracks.mapTo(ArrayList()) { mapper.toLibraryItem(it, artworkAuthority) }
 
     companion object {
         private const val ROOT = "voltune.root"

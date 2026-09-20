@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
+import android.os.Process
 import android.os.Trace
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -64,6 +65,7 @@ class Media3PlayerService : MediaLibraryService() {
         artworkProvider = MediaArtworkProvider(this)
         eventLogger = PlaybackEventLogger(this)
         historyRecorder = PlaybackHistoryRecorder(this)
+        val controllerAccess = Media3ControllerAccess(Process.myUid(), packageName)
 
         val uninterrupted = getSharedPreferences(UninterruptedPlaybackController.PREFS, MODE_PRIVATE)
             .getBoolean(UninterruptedPlaybackController.ENABLED, false)
@@ -79,7 +81,7 @@ class Media3PlayerService : MediaLibraryService() {
             .build()
         playbackState = PlaybackServiceState(player, mapper, stateManager)
         fadeController = PlaybackFadeController(this, player)
-        editorPreview = EditorPreviewSession(this, player) { active ->
+        editorPreview = EditorPreviewSession(this, player, controllerAccess) { active ->
             playbackState.persistenceSuspended = active
             stopPositionSaver()
             historyRecorder.playing(false)
@@ -100,17 +102,19 @@ class Media3PlayerService : MediaLibraryService() {
             ::applyAudioEffects,
             { playbackState.stopReason = StopReason.USER },
             playbackState::snapshotBundle,
+            controllerAccess,
         )
         libraryCallback = VoltuneMediaLibraryCallback(
             LibraryDatabase(this),
             mapper,
             object : VoltuneMediaLibraryCallback.CommandDelegate {
                 override fun handle(
+                    controller: MediaSession.ControllerInfo,
                     command: SessionCommand,
                     args: Bundle,
                 ): ListenableFuture<SessionResult> {
                     if (command.customAction == Media3Commands.CLEAR_QUEUE) editorPreview.stop(false)
-                    return commandHandler.handle(command, args)
+                    return commandHandler.handle(controller, command, args)
                 }
 
                 override fun preview(controller: MediaSession.ControllerInfo, args: Bundle) =
@@ -124,6 +128,8 @@ class Media3PlayerService : MediaLibraryService() {
                     logEvent("command_${action.substring(separator + 1).lowercase()}", "none")
                 }
             },
+            controllerAccess,
+            "$packageName.artwork",
         )
         mediaSession = MediaLibrarySession.Builder(this, player, libraryCallback)
             .setBitmapLoader(artworkProvider)

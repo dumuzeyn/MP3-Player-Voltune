@@ -18,6 +18,7 @@ import java.io.File
 internal class EditorPreviewSession(
     private val context: Context,
     private val player: Player,
+    private val controllerAccess: Media3ControllerAccess,
     private val changed: (Boolean) -> Unit,
 ) : Player.Listener, AutoCloseable {
     private data class Saved(val items: List<MediaItem>, val index: Int, val position: Long,
@@ -34,6 +35,9 @@ internal class EditorPreviewSession(
     init { player.addListener(this) }
 
     fun command(controller: MediaSession.ControllerInfo, args: Bundle): SessionResult {
+        if (!controllerAccess.canUseInternalCommand(controller, Media3Commands.EDITOR_PREVIEW)) {
+            return SessionResult(androidx.media3.session.SessionError.ERROR_PERMISSION_DENIED)
+        }
         return try {
             when (args.getString("action")) {
                 "start" -> start(controller, args)

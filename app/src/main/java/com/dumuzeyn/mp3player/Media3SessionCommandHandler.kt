@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.media3.common.Player
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
+import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionResult
 import com.dumuzeyn.mp3player.data.playback.PlaybackStateManager
 import com.dumuzeyn.mp3player.playback.service.PlaybackSleepTimer
@@ -13,16 +14,27 @@ import com.google.common.util.concurrent.ListenableFuture
 
 /** Handles Voltune-specific commands which are not part of the standard Player API. */
 @SuppressLint("UnsafeOptInUsageError")
-class Media3SessionCommandHandler(
+internal class Media3SessionCommandHandler(
     private val player: Player,
     private val sleepTimer: PlaybackSleepTimer,
     private val stateManager: PlaybackStateManager,
     private val applyAudioEffects: () -> Unit,
     private val onQueueCleared: () -> Unit,
     private val snapshotProvider: () -> Bundle,
+    private val controllerAccess: Media3ControllerAccess,
 ) {
-    fun handle(command: SessionCommand, args: Bundle): ListenableFuture<SessionResult> =
-        when (command.customAction) {
+    fun handle(
+        controller: MediaSession.ControllerInfo,
+        command: SessionCommand,
+        args: Bundle,
+    ): ListenableFuture<SessionResult> {
+        if (command.customAction !in Media3Commands.internalActions) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
+        }
+        if (!controllerAccess.canUseInternalCommand(controller, command.customAction)) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+        }
+        return when (command.customAction) {
             Media3Commands.TIMER_START -> {
                 sleepTimer.start(args.getLong(Media3Commands.ARG_TIMER_MS, 0L))
                 success()
@@ -47,6 +59,7 @@ class Media3SessionCommandHandler(
             )
             else -> Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
         }
+    }
 
     private fun success(): ListenableFuture<SessionResult> =
         Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
