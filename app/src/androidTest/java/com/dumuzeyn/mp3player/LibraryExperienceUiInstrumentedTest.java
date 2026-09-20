@@ -225,6 +225,9 @@ public class LibraryExperienceUiInstrumentedTest {
     public void songPropertiesRequireDeliberateStationaryHold() {
         MainActivityCore host = launchWithLibrary();
         openTabByClick(host, LibraryTabs.SONGS);
+        InstrumentedTestSupport.waitFor("Song row was not laid out", 5000L,
+                () -> findDescription(host.songsView,
+                        "Открыть или включить песню UI song 0") != null);
         View song = findDescription(host.songsView,
                 "Открыть или включить песню UI song 0");
         assertNotNull(song);
