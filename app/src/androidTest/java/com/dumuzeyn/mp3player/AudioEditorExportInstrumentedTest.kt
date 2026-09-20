@@ -67,7 +67,9 @@ class AudioEditorExportInstrumentedTest {
         val m4a = export(AudioEditProject(listOf(clip)))
         val wave = File.createTempFile("editor-format-", ".wav", context.cacheDir).also(files::add)
         WaveAudioConverter.convert(m4a, wave)
-        assertEquals("RIFF", wave.inputStream().use { String(it.readNBytes(4), Charsets.US_ASCII) })
+        val header = ByteArray(4)
+        wave.inputStream().use { assertEquals(4, it.read(header)) }
+        assertEquals("RIFF", String(header, Charsets.US_ASCII))
         assertTrue("WAV export is silent", ExportAudioProbe.rms(wave) > 10)
 
         val mp3 = File.createTempFile("editor-format-", ".mp3", context.cacheDir).also(files::add)

@@ -109,7 +109,11 @@ class AudioEditorUiInstrumentedTest {
             val mutedWorkspace = host.list.findViewById<ViewGroup>(R.id.editor_workspace)
             val mutedButton = descendants(mutedWorkspace).filterIsInstance<Button>()
                 .first { it.contentDescription == "Включить звук дорожки 1" }
-            assertTrue("Muted lane is not visibly marked", mutedButton.text.toString().contains("×"))
+            assertEquals(
+                "Muted lane is not visibly marked",
+                StrictIcon.MUTE,
+                mutedButton.getTag(R.id.strict_button_icon),
+            )
             mutedButton.performClick()
             assertFalse(host.audioEditorController.mutedPreviewLanes.contains(0))
             val clipRow = descendants(host.list).filterIsInstance<Button>()

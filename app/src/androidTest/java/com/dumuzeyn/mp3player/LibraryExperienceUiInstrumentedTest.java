@@ -272,7 +272,7 @@ public class LibraryExperienceUiInstrumentedTest {
         View groupMarker = groupContainer.getChildAt(1);
         assertEquals(View.VISIBLE, groupMarker.getVisibility());
         assertEquals(255, groupMarker.getBackground().getAlpha());
-        assertNotNull(findText(groupContainer, Button.class, "Ⅱ"));
+        assertNotNull(findStrictIcon(groupContainer, StrictIcon.PAUSE));
         RotatingCoverImageView groupCover = find(groupContainer, RotatingCoverImageView.class);
         assertNotNull(groupCover);
         assertPlayingCoverRotates("Playing group cover did not rotate", groupCover);
@@ -288,7 +288,7 @@ public class LibraryExperienceUiInstrumentedTest {
         assertNotNull(playlistCard);
         ViewGroup playlistContainer = (ViewGroup) playlistCard.getParent();
         assertEquals(View.VISIBLE, playlistContainer.getChildAt(1).getVisibility());
-        assertNotNull(findText(playlistContainer, Button.class, "Ⅱ"));
+        assertNotNull(findStrictIcon(playlistContainer, StrictIcon.PAUSE));
         RotatingCoverImageView playlistCover = find(
                 playlistContainer, RotatingCoverImageView.class);
         assertNotNull(playlistCover);
@@ -549,6 +549,8 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Group cards did not open: " + tab, 5000L,
                 () -> host.navigationState.tabIndex == tab
                         && host.list.findViewById(R.id.group_card) != null
+                        && host.list.findViewById(R.id.group_card).getWidth() > 0
+                        && host.list.findViewById(R.id.group_card).getHeight() > 0
                         && !host.navigationState.tabAnimating);
         assertLibraryCardSize(host.list.findViewById(R.id.group_card), width, height);
         int inset = host.responsiveLayoutController.contentScrollbarClearance();
@@ -595,6 +597,20 @@ public class LibraryExperienceUiInstrumentedTest {
             ViewGroup group = (ViewGroup) view;
             for (int index = 0; index < group.getChildCount(); index++) {
                 T found = find(group.getChildAt(index), type);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static Button findStrictIcon(View view, StrictIcon icon) {
+        if (view instanceof Button && icon == view.getTag(R.id.strict_button_icon)) {
+            return (Button) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int index = 0; index < group.getChildCount(); index++) {
+                Button found = findStrictIcon(group.getChildAt(index), icon);
                 if (found != null) return found;
             }
         }
