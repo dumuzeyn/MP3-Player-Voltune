@@ -11,10 +11,13 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import kotlin.math.abs
 
-/** Compact vertical wheel used to choose how many tracks enter a random queue. */
+/** Compact vertical wheel used to choose how many tracks enter a generated queue. */
 internal class RandomQueueCountView(
     private val host: MainActivityCore,
     maximum: Int,
+    private val kindEnglish: String = "random",
+    private val kindRussian: String = "случайной",
+    viewId: Int = R.id.random_queue_count,
 ) : FrameLayout(host) {
     private val maximum = maximum.coerceAtLeast(1)
     private val stepDistance = host.dp(12).toFloat()
@@ -32,7 +35,7 @@ internal class RandomQueueCountView(
         private set
 
     init {
-        id = R.id.random_queue_count
+        id = viewId
         background = host.uiFactory.cardBackground(host.appearanceState.cardOpacity)
         TextOutlinePolicy.markCardSurface(this, true)
         addView(label, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
@@ -132,8 +135,10 @@ internal class RandomQueueCountView(
     private fun updateLabel() {
         label.text = value.toString()
         contentDescription = host.tr(
-            "Random queue size: $value of $maximum. Swipe up or down to change it.",
-            "Размер случайной очереди: $value из $maximum. Проведите вверх или вниз для изменения.",
+            "${kindEnglish.replaceFirstChar(Char::uppercase)} queue size: $value of $maximum. " +
+                "Swipe up or down to change it.",
+            "Размер $kindRussian очереди: $value из $maximum. " +
+                "Проведите вверх или вниз для изменения.",
         )
     }
 

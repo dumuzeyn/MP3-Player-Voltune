@@ -49,8 +49,8 @@ android {
         applicationId "com.dumuzeyn.mp3player"
         minSdk 23
         targetSdk 35
-        versionCode 46
-        versionName "4.0.2"
+        versionCode 47
+        versionName "4.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters "arm64-v8a", "armeabi-v7a", "x86_64" }
         externalNativeBuild { cmake { arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON" } }
@@ -160,8 +160,8 @@ tasks.register("checkLauncherIcon") {
                 }
             }
         }
-        double effectiveWidth = (maxX - minX + 1d) / foreground.width * (84d / 108d)
-        if (effectiveWidth < 0.50d || effectiveWidth > 0.70d) {
+        double effectiveWidth = (maxX - minX + 1d) / foreground.width
+        if (effectiveWidth < 0.78d || effectiveWidth > 0.88d) {
             throw new GradleException("Adaptive icon safe-zone width is ${effectiveWidth}")
         }
         def manifestText = file("src/main/AndroidManifest.xml").getText("UTF-8")
@@ -174,8 +174,8 @@ tasks.register("checkLauncherIcon") {
                 'ic_launcher_dark': 'voltune_icon_foreground_layer'
         ]
         def launcherBackgrounds = [
-                'ic_launcher_home': 'voltune_background_light',
-                'ic_launcher_dark': 'voltune_background_dark'
+                'ic_launcher_home': 'launcher_icon_transparent',
+                'ic_launcher_dark': 'launcher_icon_transparent'
         ]
         palettes.each { background ->
             ['light', 'dark'].each { mode ->
@@ -185,7 +185,7 @@ tasks.register("checkLauncherIcon") {
                         icon += "_foreground_${foregroundPalette}"
                     }
                     launcherIcons[icon] = "voltune_icon_foreground_${foregroundPalette}_layer"
-                    launcherBackgrounds[icon] = "launcher_icon_${background}_${mode}_bg"
+                    launcherBackgrounds[icon] = 'launcher_icon_transparent'
                 }
             }
         }
@@ -246,7 +246,7 @@ tasks.register("checkLauncherIcon") {
         ['v26', 'v33'].each { api ->
             def defaultIcon = file("src/main/res/mipmap-anydpi-${api}/ic_launcher_voltune.xml")
                     .getText("UTF-8")
-            if (!defaultIcon.contains('@color/voltune_background_dark')) {
+            if (!defaultIcon.contains('@color/launcher_icon_transparent')) {
                 throw new GradleException("Default ${api} application icon uses a stale background")
             }
         }
@@ -283,8 +283,8 @@ tasks.register("checkLauncherIcon") {
                     }
                 }
             }
-            double paletteWidth = (paletteMaxX - paletteMinX + 1d) / paletteImage.width * (84d / 108d)
-            if (paletteWidth < 0.50d || paletteWidth > 0.70d) {
+            double paletteWidth = (paletteMaxX - paletteMinX + 1d) / paletteImage.width
+            if (paletteWidth < 0.78d || paletteWidth > 0.88d) {
                 throw new GradleException("${palette} adaptive icon safe-zone width is ${paletteWidth}")
             }
             if (styleText.count("@drawable/voltune_icon_splash_${palette}") != 10) {

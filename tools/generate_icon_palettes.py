@@ -72,7 +72,7 @@ def adaptive_xml(background: str, mode: str, foreground: str,
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
-        f'    <background android:drawable="@color/launcher_icon_{background}_{mode}_bg" />\n'
+        '    <background android:drawable="@color/launcher_icon_transparent" />\n'
         f'    <foreground android:drawable="@drawable/voltune_icon_foreground_{foreground}_layer" />'
         f'{monochrome_line}\n</adaptive-icon>\n'
     )
@@ -193,6 +193,13 @@ def legacy_tile(foreground: Image.Image, background: tuple[int, int, int]) -> Im
 
 
 def main() -> None:
+    for directory in ("mipmap-anydpi", "mipmap-anydpi-v26", "mipmap-anydpi-v33"):
+        (ROOT / f"app/src/main/res/{directory}/ic_launcher_round.xml").unlink(missing_ok=True)
+    for density in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
+        directory = ROOT / f"app/src/main/res/mipmap-{density}"
+        if directory.is_dir():
+            for stale_icon in directory.glob("ic_launcher*.png"):
+                stale_icon.unlink()
     source = Image.open(SOURCE).convert("RGBA")
     colors = resource_colors()
     for mode in ("light", "dark"):

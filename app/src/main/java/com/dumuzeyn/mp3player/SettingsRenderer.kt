@@ -11,8 +11,11 @@ import java.util.Locale
 
 internal class SettingsRenderer(private val host: MainActivityCore) {
     private var memoryButton: Button? = null
+    private var uninterruptedButton: Button? = null
     private var backgroundPlaybackButton: Button? = null
     private var volumeButton: Button? = null
+    private var equalizerButton: Button? = null
+    private var stableVolumeButton: Button? = null
     private val fadeSettings = FadeSettingsController(host)
     private var fadeButton: Button? = null
     private var coverStyleButton: Button? = null
@@ -39,8 +42,11 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
     fun refreshDynamicLabels() {
         memoryButton?.text = host.tr("Mini-player memory: ", "Память мини-плеера: ") +
             host.settingsController.resumeWindowText()
+        uninterruptedButton?.text = host.uninterruptedPlaybackController.settingLabel()
         backgroundPlaybackButton?.text = host.backgroundPlaybackSettingsController.settingLabel()
         volumeButton?.text = host.volumeLevelingController.settingLabel()
+        equalizerButton?.text = host.equalizerController.settingLabel()
+        stableVolumeButton?.text = host.stableVolumeController.settingLabel()
         fadeButton?.text = fadeSettings.label()
         rotationButton?.text = host.coverRotationSettingsController.settingLabel()
         coverStyleButton?.text = coverStyleLabel()
@@ -83,7 +89,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         }
 
         section(host.tr("Playback", "Воспроизведение"))
-        addButton(host.uninterruptedPlaybackController.settingLabel()) {
+        uninterruptedButton = addButton(host.uninterruptedPlaybackController.settingLabel()) {
             host.uninterruptedPlaybackController.toggle()
         }
         backgroundPlaybackButton = addButton(
@@ -91,14 +97,20 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         ) { host.backgroundPlaybackSettingsController.openDialog() }
 
         section(host.tr("Sound", "Звук"))
-        fadeButton = addButton(fadeSettings.label()) { fadeSettings.openDialog() }
+        fadeButton = addButton(fadeSettings.label()) { fadeSettings.toggle() }.apply {
+            setOnLongClickListener { fadeSettings.openDialog(); true }
+        }
         volumeButton = addButton(host.volumeLevelingController.settingLabel()) {
-            host.volumeLevelingController.openDialog()
+            host.volumeLevelingController.toggle()
+        }.apply {
+            setOnLongClickListener { host.volumeLevelingController.openDialog(); true }
         }
-        addButton(host.tr("Equalizer", "Эквалайзер")) {
-            host.equalizerController.openDialog()
+        equalizerButton = addButton(host.equalizerController.settingLabel()) {
+            host.equalizerController.toggle()
+        }.apply {
+            setOnLongClickListener { host.equalizerController.openDialog(); true }
         }
-        addButton(host.stableVolumeController.settingLabel()) {
+        stableVolumeButton = addButton(host.stableVolumeController.settingLabel()) {
             host.stableVolumeController.toggle()
         }
 

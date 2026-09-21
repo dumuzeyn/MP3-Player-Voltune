@@ -8,6 +8,11 @@ import android.widget.SeekBar
 internal class EqualizerController(private val host: MainActivityCore) {
     private var playerButton: Button? = null
 
+    fun settingLabel(): String = host.tr("Equalizer: ", "Эквалайзер: ") +
+        host.tr(if (enabled()) "on" else "off", if (enabled()) "вкл" else "выкл")
+
+    fun toggle() = setEnabled(!enabled())
+
     fun createPlayerButton(): Button {
         val label = host.tr("Equalizer", "Эквалайзер")
         val button = host.uiFactory.button(label).apply {
@@ -16,9 +21,7 @@ internal class EqualizerController(private val host: MainActivityCore) {
             maxLines = 2
             textSize = 14f
             contentDescription = host.tr("Equalizer", "Эквалайзер")
-            setOnClickListener {
-                this@EqualizerController.setEnabled(!this@EqualizerController.enabled())
-            }
+            setOnClickListener { this@EqualizerController.toggle() }
             setOnLongClickListener { openDialog(); true }
         }
         playerButton = button
@@ -192,6 +195,7 @@ internal class EqualizerController(private val host: MainActivityCore) {
         prefs().edit().putBoolean(ENABLED, value).apply()
         dispatchSettings()
         refreshButton()
+        host.refreshSettingsLabels()
     }
 
     private fun refreshButton() {

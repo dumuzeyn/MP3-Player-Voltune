@@ -8,8 +8,8 @@ FOREGROUND = ROOT / "app/src/main/res/drawable-nodpi/voltune_icon_foreground.png
 OUTPUT = ROOT / "docs/brand/voltune-icon-preview.png"
 SIZE = 360
 BRAND = (9, 2, 24, 255)
-ADAPTIVE_INSET_RATIO = 12 / 108
-SPLASH_INSET_RATIO = 36 / 288
+ADAPTIVE_INSET_RATIO = 0.0
+SPLASH_INSET_RATIO = 20 / 288
 
 
 def fit(image: Image.Image, inset_ratio: float, background=(0, 0, 0, 0)) -> Image.Image:
@@ -54,8 +54,19 @@ def main() -> None:
     adaptive = fit(foreground, ADAPTIVE_INSET_RATIO, BRAND)
     alpha_bounds = fit(foreground, ADAPTIVE_INSET_RATIO).getchannel("A").getbbox()
     content_ratio = (alpha_bounds[2] - alpha_bounds[0]) / SIZE
-    if not 0.50 <= content_ratio <= 0.70:
-        raise SystemExit(f"Adaptive content ratio {content_ratio:.3f} is outside 0.50..0.70")
+    if not 0.78 <= content_ratio <= 0.88:
+        raise SystemExit(f"Adaptive content ratio {content_ratio:.3f} is outside 0.78..0.88")
+    center = (SIZE - 1) / 2
+    radius_squared = center * center
+    alpha = fit(foreground, ADAPTIVE_INSET_RATIO).getchannel("A")
+    clipped = sum(
+        1
+        for y in range(SIZE)
+        for x in range(SIZE)
+        if alpha.getpixel((x, y)) > 8 and (x - center) ** 2 + (y - center) ** 2 > radius_squared
+    )
+    if clipped:
+        raise SystemExit(f"Adaptive foreground has {clipped} pixels outside the circle mask")
 
     splash = fit(foreground, SPLASH_INSET_RATIO, BRAND)
     header = fit(foreground, 0.12, (20, 17, 28, 255))

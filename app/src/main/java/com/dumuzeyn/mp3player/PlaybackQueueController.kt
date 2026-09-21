@@ -28,6 +28,16 @@ class PlaybackQueueController(
         if (queue.isNotEmpty()) playback.submitQueue(queue, 0, 0, host.repeatMode(), true)
     }
 
+    fun playSimilar(count: Int) {
+        val tracks = host.libraryState.tracks
+        val seed = tracks.getOrNull(host.currentTrackIndex())
+            ?: host.libraryState.homeContent.recentlyPlayed.firstOrNull()
+            ?: tracks.takeIf { it.isNotEmpty() }?.let { it[Random().nextInt(it.size)] }
+        val preferred = similarCandidates(seed, tracks)
+        val queue = QueueTransformations.similarSubset(tracks, seed, preferred, count)
+        if (queue.isNotEmpty()) playback.submitQueue(queue, 0, 0, host.repeatMode(), true)
+    }
+
     fun toggleOrStart() {
         if (playback.hasPlaybackSession()) {
             playback.toggle()
@@ -161,6 +171,28 @@ class PlaybackQueueController(
 
     private fun containsUri(tracks: List<Track>, uri: String): Boolean =
         indexOfUri(tracks, uri) >= 0
+
+    private fun similarCandidates(seed: Track?, tracks: List<Track>): Set<Track> {
+        if (seed == null) return emptySet()
+        val groupTrackIds = host.soundAnalysisController.groups()
+            .firstOrNull { seed.trackId in it.trackIds }
+            ?.trackIds
+            ?.toHashSet()
+            .orEmpty()
+        return tracks.filterTo(LinkedHashSet()) { track ->
+            track.trackId in groupTrackIds || metadataMatches(seed, track)
+        }
+    }
+
+    private fun metadataMatches(seed: Track, candidate: Track): Boolean =
+        candidate.trackId != seed.trackId && (
+            meaningfulMatch(seed.artist, candidate.artist, "Unknown artist") ||
+                meaningfulMatch(seed.album, candidate.album, "Unknown album") ||
+                !GenreNormalizer.isUnknown(seed.genre) && seed.genre == candidate.genre
+            )
+
+    private fun meaningfulMatch(first: String, second: String, unknown: String): Boolean =
+        !first.equals(unknown, ignoreCase = true) && first.equals(second, ignoreCase = true)
 
     private fun indexOfUri(tracks: List<Track>, uri: String): Int =
         tracks.indexOfFirst { it.uri == uri }
