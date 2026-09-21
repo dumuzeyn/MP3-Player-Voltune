@@ -160,7 +160,7 @@ tasks.register("checkLauncherIcon") {
                 }
             }
         }
-        double effectiveWidth = (maxX - minX + 1d) / foreground.width * 0.64d
+        double effectiveWidth = (maxX - minX + 1d) / foreground.width * (84d / 108d)
         if (effectiveWidth < 0.50d || effectiveWidth > 0.70d) {
             throw new GradleException("Adaptive icon safe-zone width is ${effectiveWidth}")
         }
@@ -283,7 +283,7 @@ tasks.register("checkLauncherIcon") {
                     }
                 }
             }
-            double paletteWidth = (paletteMaxX - paletteMinX + 1d) / paletteImage.width * 0.64d
+            double paletteWidth = (paletteMaxX - paletteMinX + 1d) / paletteImage.width * (84d / 108d)
             if (paletteWidth < 0.50d || paletteWidth > 0.70d) {
                 throw new GradleException("${palette} adaptive icon safe-zone width is ${paletteWidth}")
             }
