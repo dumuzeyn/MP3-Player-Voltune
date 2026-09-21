@@ -18,4 +18,15 @@ object Media3Commands {
     @JvmField val AUDIO_EFFECTS_COMMAND = SessionCommand(AUDIO_EFFECTS, Bundle.EMPTY)
     @JvmField val CLEAR_QUEUE_COMMAND = SessionCommand(CLEAR_QUEUE, Bundle.EMPTY)
     @JvmField val DIAGNOSTIC_SNAPSHOT_COMMAND = SessionCommand(DIAGNOSTIC_SNAPSHOT, Bundle.EMPTY)
+
+    @JvmField val internalCommands = listOf(
+        CLEAR_QUEUE_COMMAND,
+        TIMER_START_COMMAND,
+        TIMER_CANCEL_COMMAND,
+        AUDIO_EFFECTS_COMMAND,
+        DIAGNOSTIC_SNAPSHOT_COMMAND,
+        EDITOR_PREVIEW_COMMAND,
+    )
+
+    @JvmField val internalActions = internalCommands.mapTo(HashSet()) { it.customAction }
 }

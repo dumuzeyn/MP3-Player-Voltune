@@ -11,4 +11,6 @@
     <item name="editor_workspace" type="id" />
     <item name="strict_button_icon" type="id" />
     <item name="strict_button_icon_above" type="id" />
+    <item name="random_queue_button" type="id" />
+    <item name="random_queue_count" type="id" />
 </resources>

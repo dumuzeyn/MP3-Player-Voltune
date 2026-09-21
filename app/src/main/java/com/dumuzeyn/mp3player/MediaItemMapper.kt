@@ -48,6 +48,29 @@ class MediaItemMapper {
         )
     }
 
+    /** Public library representation: no playable URI and no technical track extras. */
+    fun toLibraryItem(track: Track, artworkAuthority: String): MediaItem {
+        val artworkUri = Uri.Builder()
+            .scheme("content")
+            .authority(artworkAuthority)
+            .appendPath("artwork")
+            .appendPath(mediaId(track))
+            .build()
+        val metadata = MediaMetadata.Builder()
+            .setTitle(track.title)
+            .setArtist(track.artist)
+            .setAlbumTitle(track.album)
+            .setArtworkUri(artworkUri)
+            .setIsBrowsable(false)
+            .setIsPlayable(true)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+            .build()
+        return MediaItem.Builder()
+            .setMediaId(mediaId(track))
+            .setMediaMetadata(metadata)
+            .build()
+    }
+
     fun mediaId(track: Track?): String = track?.trackId.orEmpty()
 
     companion object {

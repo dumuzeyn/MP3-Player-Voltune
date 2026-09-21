@@ -1,5 +1,8 @@
 package com.dumuzeyn.mp3player
 
+import java.util.Collections
+import java.util.Random
+
 object QueueTransformations {
     @JvmStatic
     fun <T> move(source: List<T>, from: Int, to: Int): ArrayList<T> =
@@ -19,4 +22,17 @@ object QueueTransformations {
             remove(item)
             add((currentIndex + 1).coerceIn(0, size), item)
         }
+
+    @JvmStatic
+    @JvmOverloads
+    fun <T> randomSubset(
+        source: List<T>,
+        requestedCount: Int,
+        random: Random = Random(),
+    ): ArrayList<T> {
+        if (source.isEmpty()) return ArrayList()
+        val shuffled = ArrayList(source)
+        Collections.shuffle(shuffled, random)
+        return ArrayList(shuffled.subList(0, requestedCount.coerceIn(1, shuffled.size)))
+    }
 }
