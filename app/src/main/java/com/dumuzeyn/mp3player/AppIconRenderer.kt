@@ -121,12 +121,20 @@ internal object AppIconRenderer {
                 val alpha = Color.alpha(source)
                 if (alpha == 0) continue
 
+                val red = Color.red(source)
+                val green = Color.green(source)
+                val blue = Color.blue(source)
+                val saturationRange = maxOf(red, green, blue) - minOf(red, green, blue)
+                if (saturationRange <= NEUTRAL_COLOR_RANGE) {
+                    continue
+                }
+
                 val gradient = if (width == 1) 0f else x.toFloat() / (width - 1)
                 val themed = blend(primaryColor, secondaryColor, gradient)
                 val luminance = (
-                    Color.red(source) * 0.2126f +
-                        Color.green(source) * 0.7152f +
-                        Color.blue(source) * 0.0722f
+                    red * 0.2126f +
+                        green * 0.7152f +
+                        blue * 0.0722f
                     ) / 255f
                 val shade = 0.72f + luminance * 0.48f
                 pixels[index] = Color.argb(
@@ -148,4 +156,6 @@ internal object AppIconRenderer {
             (Color.blue(first) * inverse + Color.blue(second) * amount).roundToInt(),
         )
     }
+
+    private const val NEUTRAL_COLOR_RANGE = 28
 }
