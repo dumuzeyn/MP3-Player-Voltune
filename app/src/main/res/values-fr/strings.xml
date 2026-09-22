@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Commandes du lecteur Voltunizator</string>
+    <string name="widget_artwork">Pochette de l’album</string>
+    <string name="widget_previous">Précédent</string>
+    <string name="widget_play_pause">Lire ou mettre en pause</string>
+    <string name="widget_next">Suivant</string>
+</resources>

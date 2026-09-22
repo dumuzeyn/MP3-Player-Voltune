@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Voltunizator 播放器控件</string>
+    <string name="widget_artwork">专辑封面</string>
+    <string name="widget_previous">上一首</string>
+    <string name="widget_play_pause">播放或暂停</string>
+    <string name="widget_next">下一首</string>
+</resources>

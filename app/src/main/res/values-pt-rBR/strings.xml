@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Controles do player Voltunizator</string>
+    <string name="widget_artwork">Capa do álbum</string>
+    <string name="widget_previous">Anterior</string>
+    <string name="widget_play_pause">Reproduzir ou pausar</string>
+    <string name="widget_next">Próxima</string>
+</resources>

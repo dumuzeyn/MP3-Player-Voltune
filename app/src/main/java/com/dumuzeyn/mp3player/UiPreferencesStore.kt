@@ -13,7 +13,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         with(host.appearanceState) {
             animations = preferences.getBoolean(ANIMATIONS, true)
             language = preferences.getString(LANGUAGE, "ru") ?: "ru"
-            if (language != "en" && language != "ru") language = "ru"
+            if (!AppLanguages.supports(language)) language = "ru"
             customTimerMinutes = preferences.getInt(CUSTOM_TIMER, 10)
             resumeWindowMinutes = max(0, preferences.getInt(RESUME_WINDOW_MINUTES, 120))
             particleFrequency = preferences.getInt(PARTICLE_FREQUENCY, 45).coerceIn(10, 100)
