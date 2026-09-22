@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">عناصر تحكم مشغل Voltunizator</string>
+    <string name="widget_artwork">غلاف الألبوم</string>
+    <string name="widget_previous">السابق</string>
+    <string name="widget_play_pause">تشغيل أو إيقاف مؤقت</string>
+    <string name="widget_next">التالي</string>
+</resources>

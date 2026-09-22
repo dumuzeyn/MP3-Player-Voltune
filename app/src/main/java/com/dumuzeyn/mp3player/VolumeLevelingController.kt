@@ -85,13 +85,6 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
         val content = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
         panel.addView(ScrollView(host).apply { addView(content) }, LinearLayout.LayoutParams(-1, -2, 1f))
 
-        val enabledButton = dialogButton(settingLabel())
-        enabledButton.setOnClickListener {
-            toggle()
-            enabledButton.text = settingLabel()
-        }
-        content.addView(enabledButton, rowParams())
-
         content.addView(dialogButton(modeLabel(mode())).apply {
             setOnClickListener {
                 host.overlayHost.removeView(shade)
@@ -200,10 +193,11 @@ internal class VolumeLevelingController(private val host: MainActivityCore) {
             host.tr(" · file errors: ", " · ошибок файлов: ") +
             normalizer.errorCount(host.libraryState.tracks)
 
-    private fun toggle() {
+    fun toggle() {
         prefs().edit().putBoolean(ENABLED, !enabled()).apply()
         refreshButton()
         dispatchSettings()
+        host.refreshSettingsLabels()
     }
 
     private fun enabled(): Boolean = prefs().getBoolean(ENABLED, false)

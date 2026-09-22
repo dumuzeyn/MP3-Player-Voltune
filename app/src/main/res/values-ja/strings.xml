@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Voltunizator プレーヤー操作</string>
+    <string name="widget_artwork">アルバムアート</string>
+    <string name="widget_previous">前へ</string>
+    <string name="widget_play_pause">再生または一時停止</string>
+    <string name="widget_next">次へ</string>
+</resources>

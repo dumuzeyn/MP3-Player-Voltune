@@ -55,6 +55,8 @@ class Media3PlayerService : MediaLibraryService() {
     private var positionSaveJob: Job? = null
     private var audioSessionId = C.AUDIO_SESSION_ID_UNSET
     private var audioFocusState = "managed"
+    private var uninterruptedPlayback = false
+    private var noVolumeDucking = false
 
     override fun onCreate() {
         super.onCreate()
@@ -67,13 +69,13 @@ class Media3PlayerService : MediaLibraryService() {
         historyRecorder = PlaybackHistoryRecorder(this)
         val controllerAccess = Media3ControllerAccess(Process.myUid(), packageName)
 
-        val uninterrupted = getSharedPreferences(UninterruptedPlaybackController.PREFS, MODE_PRIVATE)
-            .getBoolean(UninterruptedPlaybackController.ENABLED, false)
+        val playbackPreferences = getSharedPreferences(UninterruptedPlaybackController.PREFS, MODE_PRIVATE)
+        val uninterrupted = playbackPreferences.getBoolean(UninterruptedPlaybackController.ENABLED, false)
+        val stableVolume = playbackPreferences.getBoolean(StableVolumeController.ENABLED, false)
+        uninterruptedPlayback = uninterrupted
+        noVolumeDucking = stableVolume
         audioFocusState = if (uninterrupted) "ignored_by_setting" else "managed"
-        val attributes = AudioAttributes.Builder()
-            .setUsage(C.USAGE_MEDIA)
-            .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-            .build()
+        val attributes = playbackAudioAttributes(stableVolume)
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(attributes, !uninterrupted)
             .setHandleAudioBecomingNoisy(!uninterrupted)
@@ -199,6 +201,7 @@ class Media3PlayerService : MediaLibraryService() {
 
     private fun applyAudioEffects() {
         if (editorPreview.active) return
+        applyPlaybackBehavior()
         if (loudnessNormalizer.isEnabled) prefetchLoudness()
         val analyzedGain = if (loudnessNormalizer.isEnabled) {
             loudnessNormalizer.cachedGainDb(playbackState.currentTrack())
@@ -211,6 +214,26 @@ class Media3PlayerService : MediaLibraryService() {
             audioEffects.apply(audioSessionId, appliedGain.coerceAtLeast(0.0f))
         }
     }
+
+    private fun applyPlaybackBehavior() {
+        val preferences = getSharedPreferences(UninterruptedPlaybackController.PREFS, MODE_PRIVATE)
+        val uninterrupted = preferences.getBoolean(UninterruptedPlaybackController.ENABLED, false)
+        val stableVolume = preferences.getBoolean(StableVolumeController.ENABLED, false)
+        if (uninterrupted == uninterruptedPlayback && stableVolume == noVolumeDucking) return
+        uninterruptedPlayback = uninterrupted
+        noVolumeDucking = stableVolume
+        player.setAudioAttributes(playbackAudioAttributes(stableVolume), !uninterrupted)
+        player.setHandleAudioBecomingNoisy(!uninterrupted)
+        audioFocusState = if (uninterrupted) "ignored_by_setting" else "managed"
+    }
+
+    private fun playbackAudioAttributes(stableVolume: Boolean): AudioAttributes =
+        AudioAttributes.Builder()
+            .setUsage(C.USAGE_MEDIA)
+            .setContentType(
+                if (stableVolume) C.AUDIO_CONTENT_TYPE_SPEECH else C.AUDIO_CONTENT_TYPE_MUSIC,
+            )
+            .build()
 
     private fun prefetchLoudness() {
         if (!loudnessNormalizer.isEnabled || player.mediaItemCount == 0) return

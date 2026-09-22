@@ -7,6 +7,7 @@ import android.view.Gravity
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.Toast
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
@@ -36,12 +37,21 @@ internal class SettingsController(private val host: MainActivityCore) {
             host.uiFactory.dialogTitle(host.tr("Language", "Язык")),
             host.uiFactory.dialogTitleParams(),
         )
-        addChoice(panel, "English", host.appearanceState.language == "en") {
-            applyLanguage("en", shade)
+        val choices = LinearLayout(host).apply {
+            orientation = LinearLayout.VERTICAL
         }
-        addChoice(panel, "Русский", host.appearanceState.language == "ru") {
-            applyLanguage("ru", shade)
+        AppLanguages.all.forEach { language ->
+            addChoice(choices, language.nativeName, host.appearanceState.language == language.code) {
+                applyLanguage(language.code, shade)
+            }
         }
+        panel.addView(
+            ScrollView(host).apply {
+                isVerticalScrollBarEnabled = false
+                addView(choices, LinearLayout.LayoutParams(-1, -2))
+            },
+            LinearLayout.LayoutParams(-1, host.dp(470)),
+        )
         addDoneButton(panel, shade)
         shade.addView(panel, host.centerParams(host.dp(330), -2))
         host.overlayHost.addView(shade)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Voltunizator प्लेयर नियंत्रण</string>
+    <string name="widget_artwork">एल्बम कवर</string>
+    <string name="widget_previous">पिछला</string>
+    <string name="widget_play_pause">चलाएँ या रोकें</string>
+    <string name="widget_next">अगला</string>
+</resources>

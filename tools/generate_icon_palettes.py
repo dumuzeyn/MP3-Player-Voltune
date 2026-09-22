@@ -12,7 +12,7 @@ COLORS = ROOT / "app/src/main/res/values/colors.xml"
 MANIFEST = ROOT / "app/src/main/AndroidManifest.xml"
 STYLES = ROOT / "app/src/main/res/values/styles.xml"
 STYLES_V31 = ROOT / "app/src/main/res/values-v31/styles.xml"
-ACTIVITIES = ROOT / "app/src/main/java/com/dumuzeyn/mp3player/LauncherThemeActivities.java"
+ACTIVITIES = ROOT / "app/src/main/java/com/dumuzeyn/mp3player/LauncherThemeActivities.kt"
 PALETTES = ("blue", "red", "green", "pink", "orange")
 
 
@@ -54,6 +54,15 @@ def replace_generated_block(path: Path, start: str, end: str, content: str) -> N
     path.write_text(f"{before}{start}\n{content}\n{end}{after}", encoding="utf-8")
 
 
+def save_png(image: Image.Image, path: Path) -> None:
+    temporary = path.with_name(f".{path.name}.tmp")
+    try:
+        image.save(temporary, format="PNG", optimize=True)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def adaptive_xml(background: str, mode: str, foreground: str,
                  monochrome: bool) -> str:
     monochrome_line = (
@@ -63,7 +72,7 @@ def adaptive_xml(background: str, mode: str, foreground: str,
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
-        f'    <background android:drawable="@color/launcher_icon_{background}_{mode}_bg" />\n'
+        '    <background android:drawable="@color/launcher_icon_transparent" />\n'
         f'    <foreground android:drawable="@drawable/voltune_icon_foreground_{foreground}_layer" />'
         f'{monochrome_line}\n</adaptive-icon>\n'
     )
@@ -72,7 +81,7 @@ def adaptive_xml(background: str, mode: str, foreground: str,
 def generate_component_blocks() -> None:
     activity_lines = []
     alias_lines = []
-    java_lines = []
+    kotlin_lines = []
     fallback_styles = []
     splash_styles = []
     for background in PALETTES:
@@ -107,11 +116,7 @@ def generate_component_blocks() -> None:
                     "            </intent-filter>",
                     "        </activity-alias>",
                 ])
-                java_lines.extend([
-                    f"    public static final class {suffix} extends MainActivity {{",
-                    "    }",
-                    "",
-                ])
+                kotlin_lines.append(f"    class {suffix} : MainActivity()")
                 fallback_styles.extend([
                     f'    <style name="{style}" parent="{parent}">',
                     f'        <item name="android:statusBarColor">@color/{color}</item>',
@@ -134,9 +139,9 @@ def generate_component_blocks() -> None:
     replace_generated_block(MANIFEST, "<!-- GENERATED CUSTOM FOREGROUND ALIASES START -->",
                             "<!-- GENERATED CUSTOM FOREGROUND ALIASES END -->",
                             "\n".join(alias_lines))
-    replace_generated_block(ACTIVITIES, "// GENERATED CUSTOM FOREGROUND ACTIVITIES START",
-                            "// GENERATED CUSTOM FOREGROUND ACTIVITIES END",
-                            "\n".join(java_lines).rstrip())
+    replace_generated_block(ACTIVITIES, "    // GENERATED CUSTOM FOREGROUND ACTIVITIES START",
+                            "    // GENERATED CUSTOM FOREGROUND ACTIVITIES END",
+                            "\n".join(kotlin_lines))
     replace_generated_block(STYLES, "<!-- GENERATED CUSTOM FOREGROUND STYLES START -->",
                             "<!-- GENERATED CUSTOM FOREGROUND STYLES END -->",
                             "\n".join(fallback_styles))
@@ -164,7 +169,12 @@ def recolor(source: Image.Image, first: tuple[int, int, int],
     shaded = ImageChops.multiply(horizontal_gradient(source.size, first, second),
                                  Image.merge("RGB", (shading, shading, shading)))
     highlights = luminance.point(lambda value: max(0, min(150, (value - 205) * 3)))
-    result = Image.composite(Image.new("RGB", source.size, "white"), shaded, highlights)
+    recolored = Image.composite(Image.new("RGB", source.size, "white"), shaded, highlights)
+    # Keep the neutral vinyl, grooves and shadows neutral while the colored mark follows
+    # the application's primary and secondary accent colors.
+    saturation = source.convert("HSV").getchannel("S")
+    neutral_mask = saturation.point(lambda value: 255 if value <= 28 else 0)
+    result = Image.composite(source.convert("RGB"), recolored, neutral_mask)
     result.putalpha(alpha)
     return result
 
@@ -183,11 +193,20 @@ def legacy_tile(foreground: Image.Image, background: tuple[int, int, int]) -> Im
 
 
 def main() -> None:
+    for directory in ("mipmap-anydpi", "mipmap-anydpi-v26", "mipmap-anydpi-v33"):
+        (ROOT / f"app/src/main/res/{directory}/ic_launcher_round.xml").unlink(missing_ok=True)
+    for density in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"):
+        directory = ROOT / f"app/src/main/res/mipmap-{density}"
+        if directory.is_dir():
+            for stale_icon in directory.glob("ic_launcher*.png"):
+                stale_icon.unlink()
     source = Image.open(SOURCE).convert("RGBA")
     colors = resource_colors()
     for mode in ("light", "dark"):
-        legacy_tile(source, colors[f"voltune_background_{mode}"]).save(
-            DRAWABLES / f"voltune_icon_legacy_{mode}.png", optimize=True)
+        save_png(
+            legacy_tile(source, colors[f"voltune_background_{mode}"]),
+            DRAWABLES / f"voltune_icon_legacy_{mode}.png",
+        )
     previews = []
     foregrounds = {}
     for name in PALETTES:
@@ -195,7 +214,7 @@ def main() -> None:
         secondary = colors[f"launcher_foreground_{name}_secondary"]
         foreground = recolor(source, primary, secondary)
         foregrounds[name] = foreground
-        foreground.save(DRAWABLES / f"voltune_icon_foreground_{name}.png", optimize=True)
+        save_png(foreground, DRAWABLES / f"voltune_icon_foreground_{name}.png")
     generated_icons = 0
     for background_name in PALETTES:
         for mode in ("light", "dark"):
@@ -203,7 +222,7 @@ def main() -> None:
             for foreground_name, foreground in foregrounds.items():
                 legacy = legacy_name(background_name, mode, foreground_name)
                 tile = legacy_tile(foreground, background)
-                tile.save(DRAWABLES / f"{legacy}.png", optimize=True)
+                save_png(tile, DRAWABLES / f"{legacy}.png")
                 icon = icon_name(background_name, mode, foreground_name)
                 (ROOT / f"app/src/main/res/mipmap-anydpi/{icon}.xml").write_text(
                     '<?xml version="1.0" encoding="utf-8"?>\n'
@@ -224,7 +243,7 @@ def main() -> None:
     for index, preview in enumerate(previews):
         sheet.alpha_composite(preview, ((index // 2) * 256, (index % 2) * 256))
     PREVIEW.parent.mkdir(parents=True, exist_ok=True)
-    sheet.convert("RGB").save(PREVIEW, quality=95)
+    save_png(sheet.convert("RGB"), PREVIEW)
     generate_component_blocks()
     print(f"Generated {len(PALETTES)} foregrounds and {generated_icons + 2} legacy icons")
 

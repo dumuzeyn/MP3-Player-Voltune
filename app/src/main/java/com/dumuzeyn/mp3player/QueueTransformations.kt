@@ -35,4 +35,31 @@ object QueueTransformations {
         Collections.shuffle(shuffled, random)
         return ArrayList(shuffled.subList(0, requestedCount.coerceIn(1, shuffled.size)))
     }
+
+    @JvmStatic
+    @JvmOverloads
+    fun <T> similarSubset(
+        source: List<T>,
+        seed: T?,
+        preferred: Set<T>,
+        requestedCount: Int,
+        random: Random = Random(),
+    ): ArrayList<T> {
+        if (source.isEmpty()) return ArrayList()
+        val limit = requestedCount.coerceIn(1, source.size)
+        val result = ArrayList<T>(limit)
+        val actualSeed = seed?.takeIf(source::contains)
+        actualSeed?.let(result::add)
+
+        val similar = source.filterTo(ArrayList()) { it != actualSeed && it in preferred }
+        Collections.shuffle(similar, random)
+        similar.take(limit - result.size).forEach(result::add)
+
+        if (result.size < limit) {
+            val remaining = source.filterTo(ArrayList()) { it !in result }
+            Collections.shuffle(remaining, random)
+            remaining.take(limit - result.size).forEach(result::add)
+        }
+        return result
+    }
 }

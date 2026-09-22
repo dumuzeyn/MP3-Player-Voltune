@@ -40,7 +40,7 @@ internal class SoundMenuRenderer(host: MainActivityCore) : TrackGroupMenuRendere
 
     override fun groupedTracks(): Map<String, ArrayList<Track>> {
         val result = LinkedHashMap<String, ArrayList<Track>>()
-        val english = host.appearanceState.language == "en"
+        val english = host.appearanceState.language != "ru"
         host.soundAnalysisController.groups().forEach { group ->
             val tracks = group.trackIds.mapNotNullTo(ArrayList()) { host.findTrack(it) }
             if (tracks.isNotEmpty()) {

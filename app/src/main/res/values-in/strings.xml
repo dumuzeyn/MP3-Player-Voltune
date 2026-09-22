@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Kontrol pemutar Voltunizator</string>
+    <string name="widget_artwork">Sampul album</string>
+    <string name="widget_previous">Sebelumnya</string>
+    <string name="widget_play_pause">Putar atau jeda</string>
+    <string name="widget_next">Berikutnya</string>
+</resources>

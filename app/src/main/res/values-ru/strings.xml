@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Управление плеером Voltunizator</string>
+    <string name="widget_artwork">Обложка альбома</string>
+    <string name="widget_previous">Предыдущая</string>
+    <string name="widget_play_pause">Воспроизвести или приостановить</string>
+    <string name="widget_next">Следующая</string>
+</resources>

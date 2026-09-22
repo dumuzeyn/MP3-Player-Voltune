@@ -33,4 +33,20 @@ public class QueueTransformationsTest {
         assertEquals(1, QueueTransformations.randomSubset(source, 0, new Random(7)).size());
         assertEquals(4, QueueTransformations.randomSubset(source, 99, new Random(7)).size());
     }
+
+    @Test
+    public void similarSubsetKeepsSeedFirstAndUsesPreferredTracksBeforeFallback() {
+        List<String> source = Arrays.asList("seed", "near-a", "far", "near-b");
+        List<String> subset = QueueTransformations.similarSubset(
+                source,
+                "seed",
+                new HashSet<>(Arrays.asList("near-a", "near-b")),
+                3,
+                new Random(7));
+
+        assertEquals("seed", subset.get(0));
+        assertEquals(3, subset.size());
+        assertEquals(new HashSet<>(Arrays.asList("seed", "near-a", "near-b")),
+                new HashSet<>(subset));
+    }
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Voltunizator-Wiedergabesteuerung</string>
+    <string name="widget_artwork">Albumcover</string>
+    <string name="widget_previous">Zurück</string>
+    <string name="widget_play_pause">Wiedergabe oder Pause</string>
+    <string name="widget_next">Weiter</string>
+</resources>

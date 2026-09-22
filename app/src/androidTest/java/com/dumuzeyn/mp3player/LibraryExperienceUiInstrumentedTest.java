@@ -109,6 +109,15 @@ public class LibraryExperienceUiInstrumentedTest {
         InstrumentedTestSupport.waitFor("Random queue has the wrong size", 5000L,
                 () -> host.playbackUiState.queue.size() == randomCount.getValue());
 
+        Button similarQueue = host.list.findViewById(R.id.similar_queue_button);
+        RandomQueueCountView similarCount = host.list.findViewById(R.id.similar_queue_count);
+        assertNotNull(similarQueue);
+        assertNotNull(similarCount);
+        instrumentation.runOnMainSync(similarCount::performClick);
+        instrumentation.runOnMainSync(similarQueue::performClick);
+        InstrumentedTestSupport.waitFor("Similar queue has the wrong size", 5000L,
+                () -> host.playbackUiState.queue.size() == similarCount.getValue());
+
         assertOverlayOpens(host, host.overlayController::openSearch);
         assertOverlayOpens(host, host.overlayController::openQueue);
         assertFullPlayerPages(host, track);

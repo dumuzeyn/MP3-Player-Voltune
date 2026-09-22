@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voltunizator</string>
+    <string name="widget_description">Voltunizator 플레이어 컨트롤</string>
+    <string name="widget_artwork">앨범 아트</string>
+    <string name="widget_previous">이전</string>
+    <string name="widget_play_pause">재생 또는 일시정지</string>
+    <string name="widget_next">다음</string>
+</resources>

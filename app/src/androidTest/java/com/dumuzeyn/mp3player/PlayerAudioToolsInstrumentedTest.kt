@@ -126,6 +126,74 @@ class PlayerAudioToolsInstrumentedTest {
         }
     }
 
+    @Test fun settingsAudioButtonsToggleAndHoldWithoutDuplicateSwitches() {
+        val activity = launch()
+        val playbackPreferences = context.getSharedPreferences(
+            UninterruptedPlaybackController.PREFS,
+            Context.MODE_PRIVATE,
+        )
+        val effectPreferences = context.getSharedPreferences(EqualizerController.PREFS, 0)
+        val fadePreferences = context.getSharedPreferences(PlaybackFadePolicy.PREFS, 0)
+        onMain {
+            playbackPreferences.edit()
+                .putBoolean(UninterruptedPlaybackController.ENABLED, false)
+                .putBoolean(StableVolumeController.ENABLED, false)
+                .commit()
+            effectPreferences.edit()
+                .putBoolean(VolumeLevelingController.ENABLED, false)
+                .putBoolean(EqualizerController.ENABLED, false)
+                .commit()
+            fadePreferences.edit().putBoolean(PlaybackFadePolicy.ENABLED, false).commit()
+            activity.navigationState.tabIndex = LibraryTabs.SETTINGS
+            activity.render()
+
+            val uninterrupted = findTextContaining(activity.list, "Всегда играть:")!!
+            uninterrupted.performClick()
+            assertTrue(playbackPreferences.getBoolean(UninterruptedPlaybackController.ENABLED, false))
+            assertTrue(uninterrupted.text.toString().endsWith("вкл"))
+            uninterrupted.performClick()
+            assertFalse(playbackPreferences.getBoolean(UninterruptedPlaybackController.ENABLED, true))
+            assertTrue(uninterrupted.text.toString().endsWith("выкл"))
+
+            val stable = findTextContaining(activity.list, "Без приглушения громкости:")!!
+            stable.performClick()
+            assertTrue(playbackPreferences.getBoolean(StableVolumeController.ENABLED, false))
+            stable.performClick()
+            assertFalse(playbackPreferences.getBoolean(StableVolumeController.ENABLED, true))
+            assertTrue(stable.text.toString().endsWith("выкл"))
+
+            val fade = findTextContaining(activity.list, "Затихание в конце:")!!
+            fade.performClick()
+            assertTrue(fadePreferences.getBoolean(PlaybackFadePolicy.ENABLED, false))
+            assertTrue(fade.text.toString().contains(" с"))
+            fade.performClick()
+            assertFalse(fadePreferences.getBoolean(PlaybackFadePolicy.ENABLED, true))
+            assertTrue(fade.text.toString().endsWith("выкл"))
+            assertTrue(fade.performLongClick())
+            val fadeDialog = activity.overlayHost.getChildAt(activity.overlayHost.childCount - 1)
+            assertNull(findText(fadeDialog, "Включено"))
+            activity.overlayHost.removeView(fadeDialog)
+
+            val volume = findTextContaining(activity.list, "Единая громкость:")!!
+            volume.performClick()
+            assertTrue(effectPreferences.getBoolean(VolumeLevelingController.ENABLED, false))
+            volume.performClick()
+            assertFalse(effectPreferences.getBoolean(VolumeLevelingController.ENABLED, true))
+            assertTrue(volume.performLongClick())
+            val volumeDialog = activity.overlayHost.getChildAt(activity.overlayHost.childCount - 1)
+            assertNull(findTextContaining(volumeDialog, "Единая громкость:"))
+            activity.overlayHost.removeView(volumeDialog)
+
+            val equalizer = findTextContaining(activity.list, "Эквалайзер:")!!
+            equalizer.performClick()
+            assertTrue(effectPreferences.getBoolean(EqualizerController.ENABLED, false))
+            equalizer.performClick()
+            assertFalse(effectPreferences.getBoolean(EqualizerController.ENABLED, true))
+            assertTrue(equalizer.performLongClick())
+            assertNotNull(findText(activity.overlayHost, "Эквалайзер"))
+        }
+    }
+
     @Test fun choosingSaveDestinationDoesNotChangeMembership() {
         val activity = launch()
         onMain {

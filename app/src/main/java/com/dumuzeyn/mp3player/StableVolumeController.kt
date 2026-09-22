@@ -11,7 +11,8 @@ class StableVolumeController(private val host: MainActivityCore) {
 
     fun toggle() {
         prefs().edit().putBoolean(ENABLED, !enabled()).apply()
-        host.render()
+        host.refreshPlaybackAppearance()
+        host.refreshSettingsLabels()
     }
 
     private fun enabled(): Boolean = prefs().getBoolean(ENABLED, false)
