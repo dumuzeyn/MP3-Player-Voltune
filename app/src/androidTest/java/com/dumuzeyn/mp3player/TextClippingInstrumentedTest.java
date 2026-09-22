@@ -87,7 +87,7 @@ public class TextClippingInstrumentedTest {
         context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
                 .clear().commit();
         MainActivityCore host = launchRussianActivity();
-        assertEquals("Voltune — аудио плеер и редактор", host.getString(R.string.app_name));
+        assertEquals("Voltunizator", host.getString(R.string.app_name));
         assertEquals("Тематические альбомы", host.tabs[LibraryTabs.SOUND]);
         assertHomeTabCentered(host, "clean launch");
         List<String> duplicates = new ArrayList<>();
