@@ -17,6 +17,7 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
@@ -32,6 +33,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.viewpager2.widget.ViewPager2;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.After;
@@ -220,6 +222,68 @@ public class LibraryExperienceUiInstrumentedTest {
                 host.switchTabAnimated(LibraryTabs.SETTINGS, 1));
         InstrumentedTestSupport.waitFor("Settings tab did not open", 5000L,
                 () -> host.navigationState.tabIndex == LibraryTabs.SETTINGS);
+    }
+
+    @Test
+    public void homeSongsRemainSelectableAfterGeneratedQueues() {
+        MainActivityCore host = launchWithLibrary(true);
+        Button randomQueue = host.list.findViewById(R.id.random_queue_button);
+        Button similarQueue = host.list.findViewById(R.id.similar_queue_button);
+        assertNotNull(randomQueue);
+        assertNotNull(similarQueue);
+        assertEquals("Home needs no mini-player clearance before playback", null,
+                host.list.findViewWithTag("mini-player-spacer"));
+
+        for (Button create : new Button[] {randomQueue, similarQueue}) {
+            instrumentation.runOnMainSync(create::performClick);
+            InstrumentedTestSupport.waitFor("Generated queue did not start", 5000L,
+                    () -> !host.playbackUiState.queue.isEmpty());
+            InstrumentedTestSupport.waitFor("Home did not reserve space for the mini-player", 5000L,
+                    () -> host.miniPlayer.getVisibility() == View.VISIBLE
+                            && host.list.findViewWithTag("mini-player-spacer") != null);
+            Track current = host.playbackStateProvider.currentTrack();
+            Track other = host.libraryState.tracks.stream()
+                    .filter(track -> current == null || !track.uri.equals(current.uri))
+                    .filter(track -> findDescription(host.list,
+                            "Открыть или включить песню " + track.title) != null)
+                    .reduce((first, second) -> second).orElseThrow(AssertionError::new);
+            View row = findDescription(host.list,
+                    "Открыть или включить песню " + other.title);
+            assertNotNull("Home song row disappeared after creating a queue", row);
+            instrumentation.runOnMainSync(() -> host.contentScroll.scrollTo(0,
+                    host.contentScroll.getChildAt(0).getHeight() - host.contentScroll.getHeight()));
+            instrumentation.waitForIdleSync();
+            InstrumentedTestSupport.waitFor("Home song row was not visible", 5000L,
+                    () -> row.isShown() && row.getWidth() > 0 && row.getHeight() > 0);
+            int[] location = new int[2];
+            instrumentation.runOnMainSync(() -> row.getLocationInWindow(location));
+            float x = location[0] + row.getWidth() * 0.55f;
+            float y = location[1] + row.getHeight() * 0.5f;
+            MotionEvent probe = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, x, y, 0);
+            try {
+                assertFalse("Test tap landed on the mini-player",
+                        host.playerUiController.isInsideMiniPlayer(probe));
+            } finally {
+                probe.recycle();
+            }
+            long down = SystemClock.uptimeMillis();
+            dispatchActivityTouch(host, MotionEvent.obtain(
+                    down, down, MotionEvent.ACTION_DOWN, x, y, 0));
+            dispatchActivityTouch(host, MotionEvent.obtain(
+                    down, down + 50L, MotionEvent.ACTION_UP, x, y, 0));
+            SystemClock.sleep(500L);
+            if (!host.isCurrent(other)) {
+                instrumentation.runOnMainSync(row::performClick);
+                InstrumentedTestSupport.waitFor(
+                        "Even a direct Home row click did not select the song", 5000L,
+                        () -> host.isCurrent(other));
+                throw new AssertionError("The on-screen tap did not reach the Home song row"
+                        + " (x=" + x + ", y=" + y + ", scroll="
+                        + host.contentScroll.getScrollY() + ")");
+            }
+            assertEquals("The song tap opened an overlay instead of selecting the song",
+                    0, host.overlayHost.getChildCount());
+        }
     }
 
     @Test
@@ -686,6 +750,10 @@ public class LibraryExperienceUiInstrumentedTest {
     }
 
     private MainActivityCore launchWithLibrary() {
+        return launchWithLibrary(false);
+    }
+
+    private MainActivityCore launchWithLibrary(boolean playable) {
         instrumentation = InstrumentationRegistry.getInstrumentation();
         Context context = ApplicationProvider.getApplicationContext();
         context.deleteDatabase(LibraryDatabase.DB_NAME);
@@ -700,8 +768,25 @@ public class LibraryExperienceUiInstrumentedTest {
                 .commit();
         ArrayList<Track> tracks = new ArrayList<>();
         for (int index = 0; index < 10; index++) {
-            tracks.add(new Track("content://voltune.ui/track/" + index,
-                    "UI song " + index, "UI artist", "UI album", "UI genre", 180000));
+            String uri = "content://voltune.ui/track/" + index;
+            if (playable) {
+                File file = new File(context.getCacheDir(), "ui-song-" + index + ".mp3");
+                try (InputStream source = instrumentation.getContext().getAssets()
+                        .open("audio-formats/tone.mp3");
+                        FileOutputStream destination = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = source.read(buffer)) != -1) destination.write(buffer, 0, read);
+                } catch (Exception error) {
+                    throw new AssertionError("Could not prepare playable UI fixture", error);
+                }
+                uri = Uri.fromFile(file).toString();
+            }
+            tracks.add(new Track(uri,
+                    "UI song " + index,
+                    playable ? "Unknown artist" : "UI artist",
+                    playable ? "Unknown album" : "UI album",
+                    "UI genre", 180000));
         }
         TrackStore.save(context, tracks);
         Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(

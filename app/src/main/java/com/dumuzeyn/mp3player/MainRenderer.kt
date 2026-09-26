@@ -218,6 +218,10 @@ internal class MainRenderer(private val host: MainActivityCore) {
 
     fun setHomeTransitionPaused(paused: Boolean) = homeRenderer.setPlaybackTransitionPaused(paused)
 
+    fun syncHomeMiniPlayerSpacer() {
+        cachedHomeContent?.let { MiniPlayerSpacer.sync(host, it) }
+    }
+
     private fun attachCachedHome(): Boolean {
         val content = cachedHomeContent ?: return false
         if (cachedHomeModel !== host.libraryState.homeContent || cachedHomeKey != homeKey()) {
