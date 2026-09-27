@@ -1,10 +1,10 @@
 <a id="russian"></a>
 
 <p align="center">
-  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Иконка Voltune">
+  <img src="app/src/main/res/drawable-nodpi/voltune_icon_legacy_light.png" width="148" alt="Иконка Voltunizator">
 </p>
 
-<h1 align="center">Voltune — аудио плеер и редактор</h1>
+<h1 align="center">Voltunizator — аудиоплеер и редактор</h1>
 
 <p align="center">
   <strong>Ваша музыка. Ваши правила. Никаких аккаунтов и подписок.</strong>
@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.0.0-9b4dff?style=for-the-badge" alt="Скачать Voltune">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.1.1-9b4dff?style=for-the-badge" alt="Скачать Voltunizator">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -26,12 +26,25 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 6.0+">
   <img src="https://img.shields.io/badge/Музыка-офлайн-17151d?style=flat-square" alt="Офлайн-плеер">
-  <img src="https://img.shields.io/badge/Интерфейс-русский_и_английский-ffd12f?style=flat-square&labelColor=17151d" alt="Русский и английский интерфейс">
+  <img src="https://img.shields.io/badge/Интерфейс-12_языков-ffd12f?style=flat-square&labelColor=17151d" alt="Интерфейс на 12 языках">
 </p>
 
-Voltune превращает папку с музыкой в удобную личную медиатеку. Приложение быстро находит нужный трек, продолжает играть в фоне, помнит очередь и позицию, а внешний вид можно настроить под себя. Музыка остаётся на устройстве: для прослушивания не нужны интернет, регистрация или облачный сервис.
+Voltunizator превращает музыку на телефоне в личную медиатеку. Приложение находит треки, продолжает играть в фоне, помнит очередь и позицию, а внешний вид можно настроить под себя. Для прослушивания не нужны интернет, регистрация или облачный сервис.
 
-## Почему Voltune
+<a id="screenshots"></a>
+## Приложение в действии
+
+Десять снимков работающей версии 4.1.1 на Android-эмуляторе. Для демонстрации импортированы 165 MP3 из личной медиатеки автора снимков; сами аудиофайлы в репозиторий не включены.
+
+<table>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/01-home.png" width="240" alt="Главная: продолжить прослушивание и быстрые очереди"><br>Главная и быстрые очереди</td><td align="center"><img src="docs/screenshots/collection-4.1.1/02-songs.png" width="240" alt="Список песен с обложками"><br>Песни и медиатека</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/03-player.png" width="240" alt="Большой плеер"><br>Большой плеер</td><td align="center"><img src="docs/screenshots/collection-4.1.1/04-queue.png" width="240" alt="Очередь воспроизведения"><br>Очередь воспроизведения</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/05-playlists.png" width="240" alt="Пользовательский плейлист"><br>Плейлисты</td><td align="center"><img src="docs/screenshots/collection-4.1.1/06-thematic.png" width="240" alt="Тематические альбомы после анализа"><br>Тематические альбомы</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/07-genres.png" width="240" alt="Группировка по жанрам"><br>Жанры</td><td align="center"><img src="docs/screenshots/collection-4.1.1/08-search.png" width="240" alt="Поиск по медиатеке"><br>Поиск</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/09-editor.png" width="240" alt="Аудиоредактор с волной и инструментами"><br>Аудиоредактор</td><td align="center"><img src="docs/screenshots/collection-4.1.1/10-settings.png" width="240" alt="Настройки навигации и звука"><br>Настройки</td></tr>
+</table>
+
+## Почему Voltunizator
 
 | Преимущество | Что получает пользователь |
 | --- | --- |
@@ -48,9 +61,6 @@ Voltune превращает папку с музыкой в удобную ли
 
 Вкладка «Тематические альбомы» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
 
-<p align="center">
-  <img src="docs/screenshots/ru/library.png" width="36%" alt="Библиотека песен Voltune">
-</p>
 
 ## Полный контроль над воспроизведением
 
@@ -58,29 +68,23 @@ Voltune превращает папку с музыкой в удобную ли
 
 Воспроизведение продолжает работать в фоне и управляется из системной медиапанели Android. Очередь, текущая песня, позиция и режим повтора сохраняются, чтобы после возвращения не начинать всё заново.
 
-<p align="center">
-  <img src="docs/screenshots/ru/player.png" width="36%" alt="Большой плеер Voltune">
-</p>
 
 ## Звук и внешний вид под ваш вкус
 
-Voltune предлагает эквалайзер с готовыми профилями и собственной сохраняемой конфигурацией. Функция выравнивания громкости анализирует треки и сглаживает заметные перепады между песнями.
+Voltunizator предлагает эквалайзер с готовыми профилями и собственной сохраняемой конфигурацией. Функция выравнивания громкости анализирует треки и сглаживает заметные перепады между песнями.
 
 Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и прозрачность карточек. Круглые обложки вращаются как пластинки, а скорость вращения и параметры частиц настраиваются отдельно.
 
-<p align="center">
-  <img src="docs/screenshots/ru/settings.png" width="36%" alt="Настройки Voltune">
-</p>
 
 ## Аудиоредактор
 
 Раздел «Редактор» после папок позволяет обрезать, делить и соединять фрагменты,
 располагать до восьми звуковых дорожек, менять их громкость и слушать монтаж.
-Звуковая волна показывает реальный сигнал; для выделения определяются BPM и тональность.
-Черновик сохраняется, изменения можно отменять. Экспорт выполняется в AAC/M4A,
+Звуковая волна показывает сигнал и положение фрагментов.
+Черновик сохраняется, изменения можно отменять. Экспорт доступен в M4A, MP3 и WAV,
 исходные аудиофайлы не перезаписываются.
 
-Локальные модели очищают речь и разделяют музыку на вокал, ударные, бас и остальное.
+Локальные модели убирают шумы и разделяют музыку на вокал, ударные, бас и остальное.
 Удаление вокала создаёт инструментальную дорожку. Обработка требует свободной памяти
 и места; на слабых устройствах разделение может занимать значительно больше времени,
 чем длится песня. Точность зависит от записи, полная изоляция инструментов не гарантируется.
@@ -90,7 +94,7 @@ Voltune предлагает эквалайзер с готовыми профи
 
 - Стартовая «Главная» с продолжением прослушивания, историей, новыми и часто слушаемыми треками.
 - Локальная вкладка «Тематические альбомы» с адаптивными группами по реальному аудиосигналу без облака.
-- Монтаж, предпрослушивание, разделение источников, очистка речи и экспорт AAC/M4A.
+- Монтаж, предпрослушивание, разделение источников, удаление шумов и экспорт M4A/MP3/WAV.
 - Скорость 0,25–4x, три режима выравнивания громкости и затихание в конце трека.
 - Короткое нажатие на инструменты большого плеера переключает режим, удержание открывает настройки.
 - Умные плейлисты, глобальный поиск по пяти категориям и просмотр библиотеки по папкам.
@@ -113,7 +117,7 @@ Voltune предлагает эквалайзер с готовыми профи
 - Однотонные, градиентные, графические и GIF-фоны с регулируемым размытием.
 - Настраиваемые цвета, контур текста, частицы и прозрачность разных типов карточек.
 - Обычные скруглённые или вращающиеся круглые обложки.
-- Русский и английский интерфейс.
+- Интерфейс на русском, английском, испанском, португальском (Бразилия), упрощённом китайском, немецком, французском, хинди, индонезийском, японском, корейском и арабском.
 - Автоматическая адаптация интерфейса для планшетов.
 - Локальные отчёты о сбоях без сохранения URI и путей к музыкальным файлам.
 
@@ -189,10 +193,10 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 <a id="english"></a>
 
 <p align="center">
-  <img src="docs/brand/voltune-icon-3.1.png" width="148" alt="Voltune icon">
+  <img src="app/src/main/res/drawable-nodpi/voltune_icon_legacy_light.png" width="148" alt="Voltunizator icon">
 </p>
 
-<h1 align="center">Voltune — audio player and editor</h1>
+<h1 align="center">Voltunizator — audio player and editor</h1>
 
 <p align="center">
   <strong>Your music. Your rules. No accounts or subscriptions.</strong>
@@ -204,7 +208,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_4.0.0-9b4dff?style=for-the-badge" alt="Download Voltune">
+    <img src="https://img.shields.io/badge/Download_APK-Version_4.1.1-9b4dff?style=for-the-badge" alt="Download Voltunizator">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
@@ -214,10 +218,10 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 <p align="center">
   <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android 6.0+">
   <img src="https://img.shields.io/badge/Music-offline-17151d?style=flat-square" alt="Offline player">
-  <img src="https://img.shields.io/badge/Interface-English_and_Russian-ffd12f?style=flat-square&labelColor=17151d" alt="English and Russian interface">
+  <img src="https://img.shields.io/badge/Interface-12_languages-ffd12f?style=flat-square&labelColor=17151d" alt="Interface in 12 languages">
 </p>
 
-Voltune turns a folder of downloaded music into a focused personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers extensive visual customization. Music stays on the device: playback requires no internet connection, account, or cloud service.
+Voltunizator turns locally stored music into a personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers visual customization. Playback requires no internet connection, account, or cloud service. See the [10 real app screenshots](#screenshots) above.
 
 ## Why Voltune
 
@@ -232,13 +236,10 @@ Voltune turns a folder of downloaded music into a focused personal library. It f
 
 ## A large library that stays manageable
 
-Songs, Favorites, Playlists, Similar tracks, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltune creates only the rows that are actually visible.
+Songs, Favorites, Playlists, Thematic albums, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltunizator creates only the rows that are actually visible.
 
 The Thematic albums tab analyzes sound locally and adaptively groups nearby tracks by energy, dynamics, spectrum, and timbre. BPM does not affect group distance, membership, or names. Audio and profiles never leave the device.
 
-<p align="center">
-  <img src="docs/screenshots/en/library.png" width="36%" alt="Voltune music library">
-</p>
 
 ## Complete playback control
 
@@ -246,28 +247,21 @@ The mini-player keeps essential actions available throughout the app, while the 
 
 Playback continues in the background and integrates with Android system media controls. The queue, current song, position, and repeat mode are preserved so returning to the app does not mean starting over.
 
-<p align="center">
-  <img src="docs/screenshots/en/player.png" width="36%" alt="Voltune full player">
-</p>
 
 ## Sound and appearance made personal
 
-Voltune includes an equalizer with built-in presets and a remembered custom profile. Volume leveling analyzes tracks and smooths noticeable loudness differences between songs.
+Voltunizator includes an equalizer with built-in presets and a remembered custom profile. Volume leveling analyzes tracks and smooths noticeable loudness differences between songs.
 
 Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and card opacity. Circular artwork can rotate like a record, with separate controls for rotation speed and particle effects.
 
-<p align="center">
-  <img src="docs/screenshots/en/settings.png" width="36%" alt="Voltune settings">
-</p>
 
 ## Audio editor
 
 Editor follows Folders and supports trimming, splitting, joining, up to eight mixed
 lanes, clip volume, draft restoration, undo/redo and preview. A decoded waveform
-provides range selection, with BPM and musical-key estimates. Export produces
-AAC/M4A without overwriting original audio files.
+provides range selection. Export supports M4A, MP3, and WAV without overwriting original audio files.
 
-Offline models clean speech and separate drums, bass, other instruments and vocals.
+Offline models reduce noise and separate drums, bass, other instruments and vocals.
 Vocal removal creates an instrumental stem. Separation needs free memory and storage
 and can take substantially longer than the song on slower devices. Results depend
 on the recording; perfect source isolation is not guaranteed. The APK includes the
@@ -277,7 +271,7 @@ model, with no in-app download or upload.
 
 - Home starts with listening continuity, history, recent additions, favorites, and quick access.
 - The local Thematic albums tab builds adaptive groups from real audio features without cloud processing.
-- Audio editing, preview, source separation, speech cleanup and AAC/M4A export.
+- Audio editing, preview, source separation, noise reduction, and M4A/MP3/WAV export.
 - Playback speed from 0.25x to 4x, three loudness modes and optional end-of-track fade.
 - Tap full-player tools to toggle; hold to configure their settings.
 - Smart playlists, five-category global search, and safe folder-based browsing.
@@ -300,7 +294,7 @@ model, with no in-app download or upload.
 - Solid, gradient, image, and GIF backgrounds with adjustable blur.
 - Custom colors, text outlines, particles, and opacity by card type.
 - Rounded square or rotating circular artwork.
-- English and Russian interfaces.
+- Interfaces in Russian, English, Spanish, Brazilian Portuguese, Simplified Chinese, German, French, Hindi, Indonesian, Japanese, Korean, and Arabic.
 - Automatic tablet adaptation.
 - Local crash reports that do not store music URIs or file paths.
 
