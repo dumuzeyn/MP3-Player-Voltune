@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.1.1-9b4dff?style=for-the-badge" alt="Скачать Voltunizator">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.2.0-9b4dff?style=for-the-badge" alt="Скачать Voltunizator">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -34,14 +34,14 @@ Voltunizator превращает музыку на телефоне в личн
 <a id="screenshots"></a>
 ## Приложение в действии
 
-Десять снимков работающей версии 4.1.1 на Android-эмуляторе. Для демонстрации импортированы 165 MP3 из личной медиатеки автора снимков; сами аудиофайлы в репозиторий не включены.
+Десять снимков работающей версии 4.2.0 на Android-эмуляторе. Для демонстрации импортированы 165 MP3 из личной медиатеки автора снимков; сами аудиофайлы в репозиторий не включены.
 
 <table>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/01-home.png" width="240" alt="Главная: продолжить прослушивание и быстрые очереди"><br>Главная и быстрые очереди</td><td align="center"><img src="docs/screenshots/collection-4.1.1/02-songs.png" width="240" alt="Список песен с обложками"><br>Песни и медиатека</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/03-player.png" width="240" alt="Большой плеер"><br>Большой плеер</td><td align="center"><img src="docs/screenshots/collection-4.1.1/04-queue.png" width="240" alt="Очередь воспроизведения"><br>Очередь воспроизведения</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/05-playlists.png" width="240" alt="Пользовательский плейлист"><br>Плейлисты</td><td align="center"><img src="docs/screenshots/collection-4.1.1/06-thematic.png" width="240" alt="Тематические альбомы после анализа"><br>Тематические альбомы</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/07-genres.png" width="240" alt="Группировка по жанрам"><br>Жанры</td><td align="center"><img src="docs/screenshots/collection-4.1.1/08-search.png" width="240" alt="Поиск по медиатеке"><br>Поиск</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.1.1/09-editor.png" width="240" alt="Аудиоредактор с волной и инструментами"><br>Аудиоредактор</td><td align="center"><img src="docs/screenshots/collection-4.1.1/10-settings.png" width="240" alt="Настройки навигации и звука"><br>Настройки</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/01-home.png" width="240" alt="Главная: продолжить прослушивание и быстрые очереди"><br>Главная и быстрые очереди</td><td align="center"><img src="docs/screenshots/collection-4.2.0/02-songs.png" width="240" alt="Список песен с обложками"><br>Песни и медиатека</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/03-player.png" width="240" alt="Большой плеер с аудиовизуализатором"><br>Большой плеер и визуализатор</td><td align="center"><img src="docs/screenshots/collection-4.2.0/04-queue.png" width="240" alt="Очередь воспроизведения"><br>Очередь воспроизведения</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/05-playlists.png" width="240" alt="Пользовательский плейлист"><br>Плейлисты</td><td align="center"><img src="docs/screenshots/collection-4.2.0/06-thematic.png" width="240" alt="Тематические альбомы после анализа"><br>Тематические альбомы</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/07-genres.png" width="240" alt="Группировка по жанрам"><br>Жанры</td><td align="center"><img src="docs/screenshots/collection-4.2.0/08-search.png" width="240" alt="Поиск по медиатеке"><br>Поиск</td></tr>
+  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/09-editor.png" width="240" alt="Аудиоредактор с волной и инструментами"><br>Аудиоредактор</td><td align="center"><img src="docs/screenshots/collection-4.2.0/10-settings.png" width="240" alt="Настройки навигации и звука"><br>Настройки</td></tr>
 </table>
 
 ## Почему Voltunizator
@@ -64,7 +64,7 @@ Voltunizator превращает музыку на телефоне в личн
 
 ## Полный контроль над воспроизведением
 
-Мини-плеер всегда оставляет основные действия под рукой, а большой плеер показывает качественную обложку, прогресс и очередь. Можно перематывать трек, включать повтор песни или всего списка, запускать таймер сна, управлять эквалайзером и добавлять композицию в избранное либо плейлист.
+Мини-плеер всегда оставляет основные действия под рукой, а большой плеер показывает качественную обложку, живой аудиовизуализатор, прогресс и очередь. Визуализатор получает сигнал непосредственно из Media3 при открытом плеере и не требует доступа к микрофону. Можно перематывать трек, включать повтор песни или всего списка, запускать таймер сна, управлять эквалайзером и добавлять композицию в избранное либо плейлист.
 
 Воспроизведение продолжает работать в фоне и управляется из системной медиапанели Android. Очередь, текущая песня, позиция и режим повтора сохраняются, чтобы после возвращения не начинать всё заново.
 
@@ -97,6 +97,7 @@ Voltunizator предлагает эквалайзер с готовыми пр�
 - Монтаж, предпрослушивание, разделение источников, удаление шумов и экспорт M4A/MP3/WAV.
 - Скорость 0,25–4x, три режима выравнивания громкости и затихание в конце трека.
 - Короткое нажатие на инструменты большого плеера переключает режим, удержание открывает настройки.
+- Живой визуализатор звука в большом плеере без доступа к микрофону и повторного декодирования трека.
 - Умные плейлисты, глобальный поиск по пяти категориям и просмотр библиотеки по папкам.
 - Очередь Media3 с перетаскиванием, свайпом, «играть следующим» и сохранением в плейлист.
 - Локальные `.lrc`, обычные и встроенные ID3-тексты без сетевых запросов.
@@ -208,7 +209,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_4.1.1-9b4dff?style=for-the-badge" alt="Download Voltunizator">
+    <img src="https://img.shields.io/badge/Download_APK-Version_4.2.0-9b4dff?style=for-the-badge" alt="Download Voltunizator">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
@@ -243,7 +244,7 @@ The Thematic albums tab analyzes sound locally and adaptively groups nearby trac
 
 ## Complete playback control
 
-The mini-player keeps essential actions available throughout the app, while the full player presents high-quality artwork, progress, and the current queue. Seek through a track, repeat one song or the complete list, start the sleep timer, open the equalizer, or add the current song to Favorites and playlists.
+The mini-player keeps essential actions available throughout the app, while the full player presents high-quality artwork, a live audio visualizer, progress, and the current queue. The visualizer reads Media3 playback audio only while the full player is open; it needs no microphone permission. Seek through a track, repeat one song or the complete list, start the sleep timer, open the equalizer, or add the current song to Favorites and playlists.
 
 Playback continues in the background and integrates with Android system media controls. The queue, current song, position, and repeat mode are preserved so returning to the app does not mean starting over.
 
