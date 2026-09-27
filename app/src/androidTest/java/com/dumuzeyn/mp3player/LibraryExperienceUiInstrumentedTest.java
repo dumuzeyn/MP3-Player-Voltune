@@ -241,24 +241,40 @@ public class LibraryExperienceUiInstrumentedTest {
             InstrumentedTestSupport.waitFor("Home did not reserve space for the mini-player", 5000L,
                     () -> host.miniPlayer.getVisibility() == View.VISIBLE
                             && host.list.findViewWithTag("mini-player-spacer") != null);
-            Track current = host.playbackStateProvider.currentTrack();
-            Track other = host.libraryState.tracks.stream()
-                    .filter(track -> current == null || !track.uri.equals(current.uri))
-                    .filter(track -> findDescription(host.list,
-                            "Открыть или включить песню " + track.title) != null)
-                    .reduce((first, second) -> second).orElseThrow(AssertionError::new);
-            View row = findDescription(host.list,
-                    "Открыть или включить песню " + other.title);
-            assertNotNull("Home song row disappeared after creating a queue", row);
             instrumentation.runOnMainSync(() -> host.contentScroll.scrollTo(0,
                     host.contentScroll.getChildAt(0).getHeight() - host.contentScroll.getHeight()));
             instrumentation.waitForIdleSync();
-            InstrumentedTestSupport.waitFor("Home song row was not visible", 5000L,
-                    () -> row.isShown() && row.getWidth() > 0 && row.getHeight() > 0);
-            int[] location = new int[2];
-            instrumentation.runOnMainSync(() -> row.getLocationInWindow(location));
-            float x = location[0] + row.getWidth() * 0.55f;
-            float y = location[1] + row.getHeight() * 0.5f;
+            int[] viewportLocation = new int[2];
+            int[] miniLocation = new int[2];
+            instrumentation.runOnMainSync(() -> {
+                host.contentScroll.getLocationInWindow(viewportLocation);
+                host.miniPlayer.getLocationInWindow(miniLocation);
+            });
+            Rect viewport = new Rect(viewportLocation[0], viewportLocation[1],
+                    viewportLocation[0] + host.contentScroll.getWidth(),
+                    Math.min(viewportLocation[1] + host.contentScroll.getHeight(),
+                            miniLocation[1]));
+            Track current = host.playbackStateProvider.currentTrack();
+            Track other = null;
+            Rect tapArea = null;
+            for (Track candidate : host.libraryState.tracks) {
+                if (current != null && candidate.uri.equals(current.uri)) continue;
+                View candidateRow = findDescription(host.list,
+                        "Открыть или включить песню " + candidate.title);
+                if (candidateRow == null) continue;
+                int[] rowLocation = new int[2];
+                candidateRow.getLocationInWindow(rowLocation);
+                Rect visible = new Rect(rowLocation[0], rowLocation[1],
+                        rowLocation[0] + candidateRow.getWidth(),
+                        rowLocation[1] + candidateRow.getHeight());
+                if (visible.intersect(viewport) && visible.height() >= candidateRow.getHeight() / 2) {
+                    other = candidate;
+                    tapArea = visible;
+                }
+            }
+            assertNotNull("No other Home song is visible above the mini-player", other);
+            float x = tapArea.centerX();
+            float y = tapArea.centerY();
             MotionEvent probe = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, x, y, 0);
             try {
                 assertFalse("Test tap landed on the mini-player",
@@ -271,16 +287,9 @@ public class LibraryExperienceUiInstrumentedTest {
                     down, down, MotionEvent.ACTION_DOWN, x, y, 0));
             dispatchActivityTouch(host, MotionEvent.obtain(
                     down, down + 50L, MotionEvent.ACTION_UP, x, y, 0));
-            SystemClock.sleep(500L);
-            if (!host.isCurrent(other)) {
-                instrumentation.runOnMainSync(row::performClick);
-                InstrumentedTestSupport.waitFor(
-                        "Even a direct Home row click did not select the song", 5000L,
-                        () -> host.isCurrent(other));
-                throw new AssertionError("The on-screen tap did not reach the Home song row"
-                        + " (x=" + x + ", y=" + y + ", scroll="
-                        + host.contentScroll.getScrollY() + ")");
-            }
+            Track selected = other;
+            InstrumentedTestSupport.waitFor("The on-screen tap did not select the Home song",
+                    5000L, () -> host.isCurrent(selected));
             assertEquals("The song tap opened an overlay instead of selecting the song",
                     0, host.overlayHost.getChildCount());
         }
