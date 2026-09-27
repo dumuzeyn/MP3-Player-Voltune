@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -85,6 +86,23 @@ public class LauncherIconInstrumentedTest {
         assertTrue(rightGreen > rightRed);
         tile.recycle();
         logo.recycle();
+    }
+
+    @Test
+    public void taskPreviewUsesTheSelectedLauncherArtwork() throws Exception {
+        Context context = ApplicationProvider.getApplicationContext();
+        ComponentName selected = LauncherComponents.forTheme(context, true);
+        PackageManager manager = context.getPackageManager();
+        Bitmap preview = AppIconRenderer.renderLauncherPreview(context, selected,
+                Color.RED, Color.GREEN, Color.BLUE, 192);
+        Bitmap expected = Bitmap.createBitmap(192, 192, Bitmap.Config.ARGB_8888);
+        android.graphics.drawable.Drawable icon = manager.getActivityInfo(selected,
+                PackageManager.MATCH_DISABLED_COMPONENTS).loadIcon(manager);
+        icon.setBounds(0, 0, 192, 192);
+        icon.draw(new Canvas(expected));
+        assertTrue("Task preview differs from the launcher icon", preview.sameAs(expected));
+        preview.recycle();
+        expected.recycle();
     }
 
     @Test

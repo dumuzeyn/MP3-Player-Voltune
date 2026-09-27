@@ -1,6 +1,7 @@
 package com.dumuzeyn.mp3player
 
 import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.res.Configuration
@@ -396,21 +397,24 @@ internal class ThemeController(private val host: MainActivityCore) {
     }
 
     fun updateLauncherIcon() {
+        try {
+            LauncherComponents.apply(host, selectedLauncherComponent())
+            updateTaskPreview()
+        } catch (_: RuntimeException) {
+            // A launcher may reject alias changes while the task is visible.
+        }
+    }
+
+    private fun selectedLauncherComponent(): ComponentName {
         val state = host.appearanceState
-        val useDark = isDarkTheme(state.themeMode, state.customBg, isSystemDark(host))
-        val selected = LauncherComponents.forThemeState(
+        return LauncherComponents.forThemeState(
             host,
             state.themeMode,
-            useDark,
+            isDarkTheme(state.themeMode, state.customBg, isSystemDark(host)),
             state.customBg,
             state.customFg,
             state.customSecondaryAccent,
         )
-        try {
-            LauncherComponents.apply(host, selected)
-        } catch (_: RuntimeException) {
-            // A launcher may reject alias changes while the task is visible.
-        }
     }
 
     @Suppress("DEPRECATION")
@@ -428,8 +432,9 @@ internal class ThemeController(private val host: MainActivityCore) {
         }
     }
 
-    private fun launcherPreviewIcon(): Bitmap = AppIconRenderer.renderPreview(
+    private fun launcherPreviewIcon(): Bitmap = AppIconRenderer.renderLauncherPreview(
         host,
+        selectedLauncherComponent(),
         host.bg,
         host.purple,
         host.yellow,
