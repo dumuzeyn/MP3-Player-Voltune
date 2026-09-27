@@ -37,6 +37,7 @@ internal class FullPlayerPlaybackPage(
     private var repeat: Button? = null
     private var play: Button? = null
     private var speed: Button? = null
+    private var visualizer: FullPlayerVisualizerView? = null
     private var boundTrack: Track? = null
     private var active = false
 
@@ -51,6 +52,11 @@ internal class FullPlayerPlaybackPage(
         createdRoot.addView(content, FrameLayout.LayoutParams(-1, -2))
         val track = state.currentTrack() ?: return createdRoot
         addCoverAndTitle(content, track)
+        visualizer = FullPlayerVisualizerView(host).also {
+            content.addView(it, LinearLayout.LayoutParams(-1, host.dp(48)).apply {
+                setMargins(host.dp(8), 0, host.dp(8), host.dp(4))
+            })
+        }
         addActionRow(content, track)
         addAudioTools(content)
         addSeek(content, track)
@@ -65,6 +71,7 @@ internal class FullPlayerPlaybackPage(
         active = value
         progress.setActive(value && root != null)
         if (value) refresh(true)
+        visualizer?.setActive(value)
         rotatingCover()?.setUiActive(value)
     }
 
@@ -308,6 +315,8 @@ internal class FullPlayerPlaybackPage(
 
     override fun close() {
         progress.close()
+        visualizer?.close()
+        visualizer = null
         cover?.let { host.artworkUi.clearCover(it, coverFallback()) }
         root = null
         cover = null
