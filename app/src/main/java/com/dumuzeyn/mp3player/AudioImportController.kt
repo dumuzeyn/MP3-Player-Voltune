@@ -188,7 +188,8 @@ internal class AudioImportController(private val host: MainActivityCore) {
         } catch (error: RuntimeException) {
             VoltuneLog.failure("persist_folder_permission_failed", error)
         }
-        val source = PersistedFolderStore.remember(host, treeUri, queryDisplayName(treeUri), true)
+        val rootDocument = DocumentsContract.buildDocumentUriUsingTree(treeUri, DocumentsContract.getTreeDocumentId(treeUri))
+        val source = PersistedFolderStore.remember(host, treeUri, queryDisplayName(rootDocument), true)
             ?: return importedTracks
         var store = LibraryImportStore(host)
         val session = try {

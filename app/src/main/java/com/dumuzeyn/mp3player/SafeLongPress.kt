@@ -7,7 +7,7 @@ import android.view.ViewConfiguration
 
 /** Deliberate long press that is cancelled as soon as a scroll or swipe starts. */
 internal object SafeLongPress {
-    const val HOLD_MS = 1_100L
+    const val HOLD_MS = 870L
 
     fun bind(view: View, action: () -> Unit) {
         val slop = ViewConfiguration.get(view.context).scaledTouchSlop

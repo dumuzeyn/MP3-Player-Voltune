@@ -12,8 +12,8 @@ class PlaybackQueueController(
     private val mutations = LibraryMutationController(host)
 
     fun playTrack(track: Track?) {
-        if (track == null || host.libraryState.tracks.indexOf(track) < 0) return
-        playback.submitQueue(arrayListOf(track), 0, 0, host.repeatMode(), true)
+        val current = track?.let { PlaybackQueueResolver.find(host.libraryState.tracks, it) } ?: return
+        playback.submitQueue(arrayListOf(current), 0, 0, host.repeatMode(), true)
     }
 
     fun playList(source: ArrayList<Track>?, shuffle: Boolean) {
