@@ -6,7 +6,7 @@ import org.json.JSONObject
 object ThemePresetCodec {
     const val MAX_BYTES = 64 * 1024
     private const val SCHEMA_VERSION = 1
-    private val STRING_KEYS = listOf("theme", "mainBackgroundMediaUri", "playerBackgroundMediaUri")
+    private val STRING_KEYS = listOf("theme", "mainBackgroundMediaUri", "playerBackgroundMediaUri", "coverShape", "particleShape", "particleCustomPath")
     private val BOOLEAN_KEYS = listOf(
         "textOutlineEnabled", "circularCovers", "particlesEnabled", "animations",
     )

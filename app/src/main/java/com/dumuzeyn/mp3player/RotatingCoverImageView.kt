@@ -3,17 +3,12 @@ package com.dumuzeyn.mp3player
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
-import android.graphics.Outline
-import android.view.View
-import android.view.ViewOutlineProvider
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
-import android.widget.ImageView
 import kotlin.math.abs
-import kotlin.math.min
 import kotlin.math.roundToLong
 
-internal class RotatingCoverImageView(private val host: MainActivityCore) : ImageView(host) {
+internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImageView(host) {
     private val trackUris = HashSet<String>()
     private var sourceTracks = ArrayList<Track>()
     private var requireActiveQueue = false
@@ -25,21 +20,6 @@ internal class RotatingCoverImageView(private val host: MainActivityCore) : Imag
     private var seekStartRotation = 0f
     private var rotationDurationMs = DEFAULT_ROTATION_DURATION_MS
     private var uiActive = true
-
-    init {
-        scaleType = ScaleType.CENTER_CROP
-        outlineProvider = object : ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: Outline) {
-                val radius = if (host.appearanceState.circularCovers) {
-                    min(view.width, view.height) * 0.5f
-                } else {
-                    host.dp(8).toFloat()
-                }
-                outline.setRoundRect(0, 0, view.width, view.height, radius)
-            }
-        }
-        clipToOutline = true
-    }
 
     fun bindTrack(track: Track?) {
         val nextTrackUri = track?.uri.orEmpty()

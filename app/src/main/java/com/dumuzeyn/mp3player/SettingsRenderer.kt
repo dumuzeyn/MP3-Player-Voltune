@@ -129,7 +129,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         addButton(host.cardTransparencyController.settingLabel()) {
             host.cardTransparencyController.openDialog()
         }
-        coverStyleButton = addButton(coverStyleLabel()) { toggleCoverStyle() }
+        coverStyleButton = addButton(coverStyleLabel()) { openCoverStylePicker() }
         defaults(SettingsSectionResetter.Section.APPEARANCE)
 
         section(host.tr("Full player", "Большой плеер"))
@@ -239,11 +239,30 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         refreshDynamicLabels()
     }
 
-    private fun toggleCoverStyle() {
-        host.appearanceState.circularCovers = !host.appearanceState.circularCovers
-        host.saveState()
-        host.refreshPlaybackAppearance()
-        refreshDynamicLabels()
+    private fun openCoverStylePicker() {
+        val shade = host.uiFactory.shade()
+        val panel = host.uiFactory.panelCard()
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Cover shape", "Форма обложки")))
+        listOf(
+            Triple("rounded", "Rounded square", "Скруглённый квадрат"),
+            Triple("circle", "Circle", "Круг"),
+            Triple("hexagon", "Hexagon", "Шестиугольник"),
+            Triple("diamond", "Diamond", "Ромб"),
+        ).forEach { (shape, english, russian) ->
+            val button = host.uiFactory.button(host.tr(english, russian))
+            if (host.appearanceState.coverShape == shape) host.uiFactory.applyPrimaryButtonStyle(button)
+            button.setOnClickListener {
+                host.appearanceState.coverShape = shape
+                host.appearanceState.circularCovers = shape != "rounded"
+                host.saveState()
+                host.overlayHost.removeView(shade)
+                host.refreshPlaybackAppearance()
+                refreshDynamicLabels()
+            }
+            panel.addView(button, LinearLayout.LayoutParams(-1, host.dp(48)))
+        }
+        shade.addView(panel, host.centerParams(host.dp(340), -2))
+        host.overlayHost.addView(shade)
     }
 
     private fun section(label: String) {
@@ -274,11 +293,13 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         }
     }
 
-    private fun coverStyleLabel(): String = host.tr("Cover style: ", "Стиль обложек: ") +
-        host.tr(
-            if (host.appearanceState.circularCovers) "spinning circles" else "rounded squares",
-            if (host.appearanceState.circularCovers) "вращающиеся круги" else "скруглённые квадраты",
-        )
+    private fun coverStyleLabel(): String = host.tr("Cover shape: ", "Форма обложки: ") +
+        when (host.appearanceState.coverShape) {
+            "circle" -> host.tr("Circle", "Круг")
+            "hexagon" -> host.tr("Hexagon", "Шестиугольник")
+            "diamond" -> host.tr("Diamond", "Ромб")
+            else -> host.tr("Rounded square", "Скруглённый квадрат")
+        }
 
     private fun animationsLabel(): String = host.tr("Animations: ", "Анимации: ") + host.tr(
         if (host.appearanceState.animations) "on" else "off",

@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.2.1 - In development, not released
+
+- Smoothed custom-theme launcher icon recoloring and regenerated palette assets.
+- Switched the full-player visualizer to a live playback spectrum with varied peak heights.
+- Added rotating circle, hexagon, and diamond artwork shapes alongside rounded covers.
+- Added particle shape presets and a custom line-drawing editor.
+- Unified card opacity across menus and surfaces.
+- Avoided repeated separation-model hashing in one process and kept user-initiated editor processing at normal thread priority without changing separation settings.
+- Refreshed the bilingual README while keeping 4.2.0 as the latest published download.
+
 ## 3.4.0 - Adaptive Similar restoration and smooth Home playback
 
 - Restored the proven pre-KMeans adaptive clustering behavior from Git history.

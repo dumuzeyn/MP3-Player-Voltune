@@ -1,5 +1,7 @@
 <a id="russian"></a>
 
+<p align="center"><a href="#russian">Русский</a> · <a href="#english">English</a> · <a href="CHANGELOG.md">История изменений</a> · <a href="SECURITY.md">Безопасность</a> · <a href="CONTRIBUTING.md">Участие</a></p>
+
 <p align="center">
   <img src="app/src/main/res/drawable-nodpi/voltune_icon_legacy_light.png" width="148" alt="Иконка Voltunizator">
 </p>
@@ -31,6 +33,24 @@
 
 Voltunizator превращает музыку на телефоне в личную медиатеку. Приложение находит треки, продолжает играть в фоне, помнит очередь и позицию, а внешний вид можно настроить под себя. Для прослушивания не нужны интернет, регистрация или облачный сервис.
 
+**Текущая разработка: 4.2.1.** Кнопка загрузки выше ведёт на последний опубликованный релиз 4.2.0; сборка 4.2.1 пока не публиковалась.
+
+```mermaid
+flowchart LR
+    FILES["Музыка на устройстве"] --> IMPORT["SAF и сканирование"]
+    IMPORT --> LIB["Локальная медиатека"]
+    LIB --> PLAYER["Media3 и ExoPlayer"]
+    LIB --> ANALYSIS["Локальный анализ"]
+    LIB --> EDITOR["Многодорожечный редактор"]
+    PLAYER --> UI["Интерфейс и Android Auto"]
+    ANALYSIS --> UI
+    EDITOR --> UI
+```
+
+Медиатека остаётся общей основой плеера, поиска, тематических альбомов, плейлистов и редактора. Обработка пользовательского аудио выполняется на устройстве.
+
+**Разделы:** [Скриншоты](#screenshots) · [Медиатека](#library-ru) · [Плеер](#playback-ru) · [Редактор](#editor-ru) · [Архитектура](#architecture-ru) · [Сборка](#build-ru)
+
 <a id="screenshots"></a>
 ## Приложение в действии
 
@@ -55,6 +75,7 @@ Voltunizator превращает музыку на телефоне в личн
 | **Быстрая работа** | `RecyclerView`, фоновая загрузка библиотеки, кэш обложек и поиск без блокировки интерфейса. |
 | **Телефон и планшет** | Макет автоматически адаптируется к размеру экрана без отдельной настройки. |
 
+<a id="library-ru"></a>
 ## Большая библиотека остаётся удобной
 
 Песни, избранное, плейлисты, тематические альбомы, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
@@ -62,6 +83,7 @@ Voltunizator превращает музыку на телефоне в личн
 Вкладка «Тематические альбомы» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
 
 
+<a id="playback-ru"></a>
 ## Полный контроль над воспроизведением
 
 Мини-плеер всегда оставляет основные действия под рукой, а большой плеер показывает качественную обложку, живой аудиовизуализатор, прогресс и очередь. Визуализатор получает сигнал непосредственно из Media3 при открытом плеере и не требует доступа к микрофону. Можно перематывать трек, включать повтор песни или всего списка, запускать таймер сна, управлять эквалайзером и добавлять композицию в избранное либо плейлист.
@@ -73,10 +95,21 @@ Voltunizator превращает музыку на телефоне в личн
 
 Voltunizator предлагает эквалайзер с готовыми профилями и собственной сохраняемой конфигурацией. Функция выравнивания громкости анализирует треки и сглаживает заметные перепады между песнями.
 
-Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и прозрачность карточек. Круглые обложки вращаются как пластинки, а скорость вращения и параметры частиц настраиваются отдельно.
+Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и общую прозрачность карточек. Обложки могут быть скруглёнными, круглыми, шестиугольными или ромбовидными; последние три формы вращаются при воспроизведении. Частицы имеют готовые фигуры и редактор собственной формы.
 
 
+<a id="editor-ru"></a>
 ## Аудиоредактор
+
+```mermaid
+flowchart LR
+    SOURCE["Исходные файлы"] --> LANES["До 8 дорожек"]
+    LANES --> TIMELINE["Фрагменты и волна"]
+    TIMELINE --> PREVIEW["Предпрослушивание"]
+    PREVIEW --> EXPORT["Экспорт M4A / MP3 / WAV"]
+```
+
+Выберите композицию в библиотеке и откройте редактор через свойства песни либо добавьте аудио внутри редактора. Фрагменты можно обрезать, разделять и переставлять; отдельные дорожки можно приглушить при предпрослушивании. Экспорт создаёт новый файл и не перезаписывает источник.
 
 Раздел «Редактор» после папок позволяет обрезать, делить и соединять фрагменты,
 располагать до восьми звуковых дорожек, менять их громкость и слушать монтаж.
@@ -116,12 +149,13 @@ Voltunizator предлагает эквалайзер с готовыми пр�
 - Анализ воспринимаемой громкости и плавное выравнивание уровня между треками.
 - Светлая, тёмная и полностью настраиваемая тема.
 - Однотонные, градиентные, графические и GIF-фоны с регулируемым размытием.
-- Настраиваемые цвета, контур текста, частицы и прозрачность разных типов карточек.
-- Обычные скруглённые или вращающиеся круглые обложки.
+- Настраиваемые цвета, контур текста, формы частиц и общая прозрачность карточек.
+- Скруглённые, круглые, шестиугольные и ромбовидные обложки; выбранные фигурные обложки вращаются.
 - Интерфейс на русском, английском, испанском, португальском (Бразилия), упрощённом китайском, немецком, французском, хинди, индонезийском, японском, корейском и арабском.
 - Автоматическая адаптация интерфейса для планшетов.
 - Локальные отчёты о сбоях без сохранения URI и путей к музыкальным файлам.
 
+<a id="architecture-ru"></a>
 ## Как устроен проект
 
 ```mermaid
@@ -159,7 +193,10 @@ flowchart LR
 | Темы, фоны и элементы интерфейса | `ThemeController`, `BackgroundSettingsController`, `UiFactory`, `ButtonFactory` |
 | Эквалайзер и громкость | `EqualizerController`, `AudioEffectsManager`, `TrackLoudnessNormalizer` |
 
+<a id="build-ru"></a>
 ## Сборка
+
+Исходники разделены по задачам: `LibraryRepository` хранит медиатеку, `Media3PlayerService` владеет проигрывателем и очередью, `MainRenderer` отображает навигацию, а редактор использует отдельные обработчики и локальную модель. Внешние Media3-контроллеры получают только стандартные возможности управления; внутренние команды и технические поля библиотеки им недоступны.
 
 Требуются JDK 17 и Android SDK:
 
@@ -193,6 +230,8 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <a id="english"></a>
 
+<p align="center"><a href="#russian">Русский</a> · <a href="#english">English</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="SECURITY.md">Security</a> · <a href="CONTRIBUTING.md">Contributing</a></p>
+
 <p align="center">
   <img src="app/src/main/res/drawable-nodpi/voltune_icon_legacy_light.png" width="148" alt="Voltunizator icon">
 </p>
@@ -224,6 +263,24 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 Voltunizator turns locally stored music into a personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers visual customization. Playback requires no internet connection, account, or cloud service. See the [10 real app screenshots](#screenshots) above.
 
+**Current development: 4.2.1.** The download button above still points to the latest published release, 4.2.0. Version 4.2.1 has not been published yet.
+
+```mermaid
+flowchart LR
+    FILES["On-device music"] --> IMPORT["SAF and scanning"]
+    IMPORT --> LIB["Local library"]
+    LIB --> PLAYER["Media3 and ExoPlayer"]
+    LIB --> ANALYSIS["On-device analysis"]
+    LIB --> EDITOR["Multitrack editor"]
+    PLAYER --> UI["UI and Android Auto"]
+    ANALYSIS --> UI
+    EDITOR --> UI
+```
+
+The library is the shared foundation for playback, search, thematic albums, playlists, and editing. User audio is processed on the device.
+
+**Sections:** [Screenshots](#screenshots) · [Library](#library-en) · [Player](#playback-en) · [Editor](#editor-en) · [Architecture](#architecture-en) · [Build](#build-en)
+
 ## Why Voltune
 
 | Advantage | What it means |
@@ -235,6 +292,7 @@ Voltunizator turns locally stored music into a personal library. It finds tracks
 | **Responsive with large libraries** | `RecyclerView`, background loading, artwork caching, and non-blocking search. |
 | **Phone and tablet ready** | The layout adapts automatically to the available screen size. |
 
+<a id="library-en"></a>
 ## A large library that stays manageable
 
 Songs, Favorites, Playlists, Thematic albums, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltunizator creates only the rows that are actually visible.
@@ -242,6 +300,7 @@ Songs, Favorites, Playlists, Thematic albums, Genres, Artists, and Albums are or
 The Thematic albums tab analyzes sound locally and adaptively groups nearby tracks by energy, dynamics, spectrum, and timbre. BPM does not affect group distance, membership, or names. Audio and profiles never leave the device.
 
 
+<a id="playback-en"></a>
 ## Complete playback control
 
 The mini-player keeps essential actions available throughout the app, while the full player presents high-quality artwork, a live audio visualizer, progress, and the current queue. The visualizer reads Media3 playback audio only while the full player is open; it needs no microphone permission. Seek through a track, repeat one song or the complete list, start the sleep timer, open the equalizer, or add the current song to Favorites and playlists.
@@ -253,10 +312,21 @@ Playback continues in the background and integrates with Android system media co
 
 Voltunizator includes an equalizer with built-in presets and a remembered custom profile. Volume leveling analyzes tracks and smooths noticeable loudness differences between songs.
 
-Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and card opacity. Circular artwork can rotate like a record, with separate controls for rotation speed and particle effects.
+Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and one shared card-opacity control. Artwork may be rounded, circular, hexagonal, or diamond-shaped; the shaped variants rotate while playing. Particles offer presets and a custom drawing surface.
 
 
+<a id="editor-en"></a>
 ## Audio editor
+
+```mermaid
+flowchart LR
+    SOURCE["Source files"] --> LANES["Up to 8 lanes"]
+    LANES --> TIMELINE["Clips and waveform"]
+    TIMELINE --> PREVIEW["Preview"]
+    PREVIEW --> EXPORT["M4A / MP3 / WAV export"]
+```
+
+Open a song from its properties or add audio in the editor. Trim, split, and move clips; mute individual lanes while previewing. Export creates a new file and does not overwrite the source.
 
 Editor follows Folders and supports trimming, splitting, joining, up to eight mixed
 lanes, clip volume, draft restoration, undo/redo and preview. A decoded waveform
@@ -293,12 +363,13 @@ model, with no in-app download or upload.
 - Per-track loudness analysis and smooth leveling between songs.
 - Light, Dark, and fully configurable Custom themes.
 - Solid, gradient, image, and GIF backgrounds with adjustable blur.
-- Custom colors, text outlines, particles, and opacity by card type.
-- Rounded square or rotating circular artwork.
+- Custom colors, text outlines, particle shapes, and shared card opacity.
+- Rounded, circular, hexagonal, and diamond-shaped artwork; shaped artwork rotates.
 - Interfaces in Russian, English, Spanish, Brazilian Portuguese, Simplified Chinese, German, French, Hindi, Indonesian, Japanese, Korean, and Arabic.
 - Automatic tablet adaptation.
 - Local crash reports that do not store music URIs or file paths.
 
+<a id="architecture-en"></a>
 ## Project architecture
 
 ```mermaid
@@ -336,7 +407,10 @@ Primary extension points:
 | Themes, backgrounds, and UI elements | `ThemeController`, `BackgroundSettingsController`, `UiFactory`, `ButtonFactory` |
 | Equalizer and loudness | `EqualizerController`, `AudioEffectsManager`, `TrackLoudnessNormalizer` |
 
+<a id="build-en"></a>
 ## Build
+
+Responsibilities are separated: `LibraryRepository` maintains the library, `Media3PlayerService` owns playback and the queue, `MainRenderer` displays navigation, and the editor uses dedicated processors plus an on-device model. External Media3 controllers receive standard playback controls only; internal commands and technical library metadata remain private.
 
 JDK 17 and the Android SDK are required:
 

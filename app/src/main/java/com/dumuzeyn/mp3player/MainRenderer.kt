@@ -271,6 +271,7 @@ internal class MainRenderer(private val host: MainActivityCore) {
     private fun homeKey(): String = buildString {
         append(host.appearanceState.language)
         append('|').append(host.appearanceState.circularCovers)
+        append('|').append(host.appearanceState.coverShape)
         append('|').append(host.panel)
         append('|').append(host.primaryText)
         append('|').append(host.secondaryText)
