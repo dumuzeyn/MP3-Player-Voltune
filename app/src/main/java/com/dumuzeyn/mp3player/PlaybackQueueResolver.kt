@@ -4,6 +4,11 @@ import org.json.JSONArray
 
 object PlaybackQueueResolver {
     @JvmStatic
+    fun find(library: List<Track>, selected: Track): Track? = library.firstOrNull {
+        it.trackId == selected.trackId || it.uri == selected.uri
+    }
+
+    @JvmStatic
     fun restore(library: List<Track>, queueJson: String?, fallback: Track?): ArrayList<Track> {
         val savedIds = ArrayList<String>()
         runCatching {

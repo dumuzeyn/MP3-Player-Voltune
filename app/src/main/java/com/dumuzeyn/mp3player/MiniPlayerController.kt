@@ -60,10 +60,11 @@ internal class MiniPlayerController(
         val track = currentTrack()
         if (track == null || isOverlayOpen()) {
             hideMiniPlayer()
-            return
+        } else {
+            bindMiniPlayer(track)
+            showMiniPlayer()
         }
-        bindMiniPlayer(track)
-        showMiniPlayer()
+        host.mainRenderer.syncHomeMiniPlayerSpacer()
     }
 
     fun isInsideMiniPlayer(event: MotionEvent): Boolean {

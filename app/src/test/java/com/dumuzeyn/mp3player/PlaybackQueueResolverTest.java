@@ -7,6 +7,16 @@ import org.junit.Test;
 
 public class PlaybackQueueResolverTest {
     @Test
+    public void findResolvesStaleCardAfterPlaybackStatsReplaceTrack() {
+        Track original = new Track("uri:played", "Played", "Artist");
+        Track updated = original.withPlaybackStats(5, 0, 100L, 100L);
+        ArrayList<Track> library = new ArrayList<>();
+        library.add(updated);
+
+        assertEquals(updated, PlaybackQueueResolver.find(library, original));
+    }
+
+    @Test
     public void restorePreservesSavedShuffleOrderAndSkipsMissingTracks() {
         ArrayList<Track> library = new ArrayList<>();
         library.add(new Track("uri:a", "A", "Artist"));

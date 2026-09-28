@@ -2,6 +2,7 @@ package com.dumuzeyn.mp3player
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Process
@@ -12,6 +13,10 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.audio.TeeAudioProcessor
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -76,7 +81,18 @@ class Media3PlayerService : MediaLibraryService() {
         noVolumeDucking = stableVolume
         audioFocusState = if (uninterrupted) "ignored_by_setting" else "managed"
         val attributes = playbackAudioAttributes(stableVolume)
-        player = ExoPlayer.Builder(this)
+        val renderers = object : DefaultRenderersFactory(this) {
+            override fun buildAudioSink(
+                context: Context,
+                enableFloatOutput: Boolean,
+                enableAudioOutputPlaybackParameters: Boolean,
+            ): AudioSink = DefaultAudioSink.Builder(context)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParameters)
+                .setAudioProcessors(arrayOf(TeeAudioProcessor(PlaybackVisualizerBuffer.shared)))
+                .build()
+        }
+        player = ExoPlayer.Builder(this, renderers)
             .setAudioAttributes(attributes, !uninterrupted)
             .setHandleAudioBecomingNoisy(!uninterrupted)
             .setWakeMode(C.WAKE_MODE_LOCAL)

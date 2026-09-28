@@ -97,7 +97,11 @@ internal object AppIconRenderer {
     ): Bitmap {
         val safeSize = size.coerceAtLeast(1)
         return try {
-            val icon = context.packageManager.getActivityIcon(component)
+            val manager = context.packageManager
+            val icon = manager.getActivityInfo(
+                component,
+                PackageManager.MATCH_DISABLED_COMPONENTS,
+            ).loadIcon(manager)
             val bitmap = Bitmap.createBitmap(safeSize, safeSize, Bitmap.Config.ARGB_8888)
             icon.setBounds(0, 0, safeSize, safeSize)
             icon.draw(Canvas(bitmap))

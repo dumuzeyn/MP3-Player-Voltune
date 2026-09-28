@@ -5,6 +5,8 @@ import android.widget.LinearLayout
 
 /** Reserves scroll space only while the mini player is visible. */
 object MiniPlayerSpacer {
+    private const val TAG = "mini-player-spacer"
+
     @JvmStatic
     fun addIfNeeded(host: MainActivityCore) {
         val currentIndex = host.currentTrackIndex()
@@ -14,9 +16,20 @@ object MiniPlayerSpacer {
         ) {
             return
         }
-        val spacer = View(host).apply {
-            layoutParams = LinearLayout.LayoutParams(-1, host.dp(88))
+        host.list.addView(create(host))
+    }
+
+    fun sync(host: MainActivityCore, content: LinearLayout) {
+        val existing = content.findViewWithTag<View>(TAG)
+        if (host.miniPlayer.visibility == View.VISIBLE) {
+            if (existing == null) content.addView(create(host))
+        } else if (existing != null) {
+            content.removeView(existing)
         }
-        host.list.addView(spacer)
+    }
+
+    private fun create(host: MainActivityCore): View = View(host).apply {
+        tag = TAG
+        layoutParams = LinearLayout.LayoutParams(-1, host.dp(88))
     }
 }
