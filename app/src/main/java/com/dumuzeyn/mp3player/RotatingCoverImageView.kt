@@ -106,10 +106,10 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
         if (!seeking || !host.appearanceState.rotateCovers) return
         val deltaMs = positionMs - seekStartPosition
         if (deltaMs == 0) {
-            rotation = seekStartRotation
+            setArtworkRotation(seekStartRotation)
             return
         }
-        rotation = seekStartRotation + degreesForSeekDelta(deltaMs)
+        setArtworkRotation(seekStartRotation + degreesForSeekDelta(deltaMs))
     }
 
     fun endSeekSpin(positionMs: Int, animateTap: Boolean) {
@@ -121,28 +121,28 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
         }
         val totalDeltaMs = positionMs - seekStartPosition
         if (totalDeltaMs == 0) {
-            rotation = seekStartRotation
+            setArtworkRotation(seekStartRotation)
             updatePlaybackState()
             return
         }
         val target = seekStartRotation + degreesForSeekDelta(totalDeltaMs)
         if (!animateTap || !host.appearanceState.animations) {
-            rotation = target % 360f
+            setArtworkRotation(target % 360f)
             updatePlaybackState()
             return
         }
-        rotation = seekStartRotation
+        setArtworkRotation(seekStartRotation)
         val animator = ValueAnimator.ofFloat(seekStartRotation, target)
         rotationAnimator = animator
         val turns = abs(target - seekStartRotation) / 360f
         animator.duration = (180f + turns * 115f).coerceIn(220f, 850f).toLong()
         animator.interpolator = DecelerateInterpolator()
-        animator.addUpdateListener { rotation = it.animatedValue as Float }
+        animator.addUpdateListener { setArtworkRotation(it.animatedValue as Float) }
         animator.addListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
                 if (rotationAnimator !== animator) return
                 rotationAnimator = null
-                rotation %= 360f
+                setArtworkRotation(rotation % 360f)
                 updatePlaybackState()
             }
         })
@@ -170,7 +170,7 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
             duration = rotationDurationMs
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
-            addUpdateListener { rotation = it.animatedValue as Float }
+            addUpdateListener { setArtworkRotation(it.animatedValue as Float) }
             start()
         }
     }
@@ -179,7 +179,18 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
         val animator = rotationAnimator
         rotationAnimator = null
         animator?.cancel()
-        if (reset) rotation = 0f
+        if (reset) setArtworkRotation(0f)
+    }
+
+    fun refreshCoverTransform() = setArtworkRotation(rotation)
+
+    private fun setArtworkRotation(degrees: Float) {
+        rotation = degrees
+        val fit = if (host.appearanceState.rotateCovers) {
+            CoverShapeGeometry.rotationFitScale(host.appearanceState.coverShape, degrees)
+        } else 1f
+        scaleX = fit
+        scaleY = fit
     }
 
     companion object {

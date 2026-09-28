@@ -257,6 +257,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
             Triple("hexagon", "Hexagon", "Шестиугольник"),
             Triple("diamond", "Diamond", "Ромб"),
             Triple("star", "Star", "Звезда"),
+            Triple("triangle", "Triangle", "Треугольник"),
         ).forEach { (shape, english, russian) ->
             val button = host.uiFactory.button(host.tr(english, russian))
             if (host.appearanceState.coverShape == shape) host.uiFactory.applyPrimaryButtonStyle(button)
@@ -312,6 +313,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
             "hexagon" -> host.tr("Hexagon", "Шестиугольник")
             "diamond" -> host.tr("Diamond", "Ромб")
             "star" -> host.tr("Star", "Звезда")
+            "triangle" -> host.tr("Triangle", "Треугольник")
             else -> host.tr("Rounded square", "Скруглённый квадрат")
         }
 

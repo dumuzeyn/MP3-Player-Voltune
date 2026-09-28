@@ -15,6 +15,7 @@ internal object CoverAppearanceRefresher {
         if (view is ShapedCoverImageView) view.invalidateCoverShape()
         if (view is RotatingCoverImageView) {
             view.setRotationSpeedPercent(speed)
+            view.refreshCoverTransform()
             view.updatePlaybackState()
         }
         if (view is ViewGroup) {

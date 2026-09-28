@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.3 - In development, not released
+
+- Added a wider triangular artwork shape.
+- Kept rotating square artwork within its view bounds so its upper corners are not clipped.
+
 ## 4.2.2 - In development, not released
 
 - Balanced visualizer peaks across frequency regions instead of letting bass dominate the left side.

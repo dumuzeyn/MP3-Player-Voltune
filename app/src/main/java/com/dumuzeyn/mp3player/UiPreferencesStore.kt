@@ -34,7 +34,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
             particlesEnabled = preferences.getBoolean(PARTICLES_ENABLED, false)
             circularCovers = preferences.getBoolean(CIRCULAR_COVERS, false)
             coverShape = preferences.getString(COVER_SHAPE, null)
-                ?.takeIf { it in setOf("rounded", "circle", "hexagon", "diamond", "star") }
+                ?.takeIf { it in setOf("rounded", "circle", "hexagon", "diamond", "star", "triangle") }
                 ?: if (circularCovers) "circle" else "rounded"
             rotateCovers = preferences.getBoolean(ROTATE_COVERS, circularCovers)
             mainBackgroundMode = if (preferences.contains(MAIN_BACKGROUND_MODE)) {

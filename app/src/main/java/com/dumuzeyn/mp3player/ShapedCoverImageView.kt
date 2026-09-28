@@ -41,7 +41,7 @@ internal open class ShapedCoverImageView(protected val host: MainActivityCore) :
         clip.reset()
         when (shape) {
             "circle" -> clip.addOval(0f, 0f, w, h, Path.Direction.CW)
-            "hexagon", "star" -> {
+            "hexagon", "star", "triangle" -> {
                 CoverShapeGeometry.vertices(shape, w, h)
                     .forEachIndexed { index, (x, y) ->
                         if (index == 0) clip.moveTo(x, y) else clip.lineTo(x, y)
