@@ -33,5 +33,6 @@ public class AppearanceStateTest {
         AppearanceState state = new AppearanceState();
         assertEquals("rounded", state.coverShape);
         assertEquals("lightning", state.particleShape);
+        assertEquals(false, state.rotateCovers);
     }
 }

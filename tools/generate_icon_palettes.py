@@ -236,7 +236,7 @@ def main() -> None:
                     adaptive_xml(background_name, mode, foreground_name, False),
                     encoding="utf-8")
                 (ROOT / f"app/src/main/res/mipmap-anydpi-v33/{icon}.xml").write_text(
-                    adaptive_xml(background_name, mode, foreground_name, True),
+                    adaptive_xml(background_name, mode, foreground_name, False),
                     encoding="utf-8")
                 generated_icons += 1
                 if background_name == foreground_name:

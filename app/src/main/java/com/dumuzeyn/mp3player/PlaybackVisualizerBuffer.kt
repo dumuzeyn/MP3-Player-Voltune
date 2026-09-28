@@ -80,8 +80,18 @@ internal class PlaybackVisualizerBuffer : TeeAudioProcessor.AudioBufferSink {
         }
         val peak = frameLevels.maxOrNull()?.coerceAtLeast(0.0001f) ?: 0.0001f
         val energy = (rms * 6f).coerceIn(0f, 1f)
-        for (bar in frameLevels.indices) {
-            frameLevels[bar] = (frameLevels[bar] / peak).coerceIn(0f, 1f).pow(0.7f) * energy
+        for (region in 0 until REGIONS) {
+            val first = region * BARS / REGIONS
+            val last = (region + 1) * BARS / REGIONS
+            var regionPeak = 0f
+            for (bar in first until last) regionPeak = maxOf(regionPeak, frameLevels[bar])
+            val relativeEnergy = regionPeak / peak
+            val weight = if (relativeEnergy < 0.002f) 0f else
+                relativeEnergy.pow(0.18f).coerceAtLeast(0.35f)
+            for (bar in first until last) {
+                frameLevels[bar] = if (regionPeak == 0f) 0f else
+                    (frameLevels[bar] / regionPeak).coerceIn(0f, 1f).pow(0.7f) * weight * energy
+            }
         }
         if (enabled && currentGeneration == generation) levels = frameLevels
     }
@@ -90,12 +100,17 @@ internal class PlaybackVisualizerBuffer : TeeAudioProcessor.AudioBufferSink {
         require(bars > 0)
         val frame = levels
         return FloatArray(bars) { index ->
-            frame[(index.toLong() * frame.size / bars).toInt()]
+            val first = (index.toLong() * frame.size / bars).toInt()
+            val last = maxOf(first + 1, ((index + 1L) * frame.size / bars).toInt())
+            var strongest = 0f
+            for (source in first until last) strongest = maxOf(strongest, frame[source])
+            strongest
         }
     }
 
     companion object {
         private const val BARS = 96
+        private const val REGIONS = 6
         private const val FFT_SIZE = 2048
         val shared = PlaybackVisualizerBuffer()
     }

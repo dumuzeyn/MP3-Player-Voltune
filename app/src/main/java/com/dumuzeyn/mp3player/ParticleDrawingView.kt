@@ -23,6 +23,7 @@ internal class ParticleDrawingView(private val host: MainActivityCore) : View(ho
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                parent?.requestDisallowInterceptTouchEvent(true)
                 if (strokes.sumOf { it.size } >= 128) return true
                 strokes.add(ArrayList())
                 addPoint(event.x, event.y)
@@ -34,7 +35,12 @@ internal class ParticleDrawingView(private val host: MainActivityCore) : View(ho
             }
             MotionEvent.ACTION_UP -> {
                 addPoint(event.x, event.y)
+                parent?.requestDisallowInterceptTouchEvent(false)
                 performClick()
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                parent?.requestDisallowInterceptTouchEvent(false)
                 return true
             }
         }

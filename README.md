@@ -33,7 +33,7 @@
 
 Voltunizator превращает музыку на телефоне в личную медиатеку. Приложение находит треки, продолжает играть в фоне, помнит очередь и позицию, а внешний вид можно настроить под себя. Для прослушивания не нужны интернет, регистрация или облачный сервис.
 
-**Текущая разработка: 4.2.1.** Кнопка загрузки выше ведёт на последний опубликованный релиз 4.2.0; сборка 4.2.1 пока не публиковалась.
+**Текущая разработка: 4.2.2.** Кнопка загрузки выше ведёт на последний опубликованный релиз 4.2.0; сборка 4.2.2 пока не публиковалась.
 
 ```mermaid
 flowchart LR
@@ -95,7 +95,7 @@ flowchart LR
 
 Voltunizator предлагает эквалайзер с готовыми профилями и собственной сохраняемой конфигурацией. Функция выравнивания громкости анализирует треки и сглаживает заметные перепады между песнями.
 
-Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и общую прозрачность карточек. Обложки могут быть скруглёнными, круглыми, шестиугольными или ромбовидными; последние три формы вращаются при воспроизведении. Частицы имеют готовые фигуры и редактор собственной формы.
+Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и общую прозрачность карточек. Обложки могут быть скруглёнными, круглыми, шестиугольными, ромбовидными или звёздными; вращение включается отдельно для любой формы. Частицы имеют готовые фигуры и редактор собственной формы.
 
 
 <a id="editor-ru"></a>
@@ -150,7 +150,7 @@ flowchart LR
 - Светлая, тёмная и полностью настраиваемая тема.
 - Однотонные, градиентные, графические и GIF-фоны с регулируемым размытием.
 - Настраиваемые цвета, контур текста, формы частиц и общая прозрачность карточек.
-- Скруглённые, круглые, шестиугольные и ромбовидные обложки; выбранные фигурные обложки вращаются.
+- Скруглённые, круглые, шестиугольные, ромбовидные и звёздные обложки с отдельной настройкой вращения.
 - Интерфейс на русском, английском, испанском, португальском (Бразилия), упрощённом китайском, немецком, французском, хинди, индонезийском, японском, корейском и арабском.
 - Автоматическая адаптация интерфейса для планшетов.
 - Локальные отчёты о сбоях без сохранения URI и путей к музыкальным файлам.
@@ -263,7 +263,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 Voltunizator turns locally stored music into a personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers visual customization. Playback requires no internet connection, account, or cloud service. See the [10 real app screenshots](#screenshots) above.
 
-**Current development: 4.2.1.** The download button above still points to the latest published release, 4.2.0. Version 4.2.1 has not been published yet.
+**Current development: 4.2.2.** The download button above still points to the latest published release, 4.2.0. Version 4.2.2 has not been published yet.
 
 ```mermaid
 flowchart LR
@@ -312,7 +312,7 @@ Playback continues in the background and integrates with Android system media co
 
 Voltunizator includes an equalizer with built-in presets and a remembered custom profile. Volume leveling analyzes tracks and smooths noticeable loudness differences between songs.
 
-Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and one shared card-opacity control. Artwork may be rounded, circular, hexagonal, or diamond-shaped; the shaped variants rotate while playing. Particles offer presets and a custom drawing surface.
+Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and one shared card-opacity control. Artwork may be rounded, circular, hexagonal, diamond-shaped, or star-shaped; rotation can be enabled for any shape. Particles offer presets and a custom drawing surface.
 
 
 <a id="editor-en"></a>
@@ -364,7 +364,7 @@ model, with no in-app download or upload.
 - Light, Dark, and fully configurable Custom themes.
 - Solid, gradient, image, and GIF backgrounds with adjustable blur.
 - Custom colors, text outlines, particle shapes, and shared card opacity.
-- Rounded, circular, hexagonal, and diamond-shaped artwork; shaped artwork rotates.
+- Rounded, circular, hexagonal, diamond-shaped, and star-shaped artwork with independent rotation control.
 - Interfaces in Russian, English, Spanish, Brazilian Portuguese, Simplified Chinese, German, French, Hindi, Indonesian, Japanese, Korean, and Arabic.
 - Automatic tablet adaptation.
 - Local crash reports that do not store music URIs or file paths.

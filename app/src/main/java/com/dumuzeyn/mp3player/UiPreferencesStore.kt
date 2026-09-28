@@ -34,9 +34,9 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
             particlesEnabled = preferences.getBoolean(PARTICLES_ENABLED, false)
             circularCovers = preferences.getBoolean(CIRCULAR_COVERS, false)
             coverShape = preferences.getString(COVER_SHAPE, null)
-                ?.takeIf { it in setOf("rounded", "circle", "hexagon", "diamond") }
+                ?.takeIf { it in setOf("rounded", "circle", "hexagon", "diamond", "star") }
                 ?: if (circularCovers) "circle" else "rounded"
-            circularCovers = coverShape != "rounded"
+            rotateCovers = preferences.getBoolean(ROTATE_COVERS, circularCovers)
             mainBackgroundMode = if (preferences.contains(MAIN_BACKGROUND_MODE)) {
                 clampBackgroundMode(
                     preferences.getInt(
@@ -110,6 +110,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
                 .putBoolean(PARTICLES_ENABLED, particlesEnabled)
                 .putBoolean(CIRCULAR_COVERS, circularCovers)
                 .putString(COVER_SHAPE, coverShape)
+                .putBoolean(ROTATE_COVERS, rotateCovers)
                 .putInt(MAIN_BACKGROUND_MODE, mainBackgroundMode)
                 .putInt(PLAYER_BACKGROUND_MODE, playerBackgroundMode)
                 .putInt(MAIN_SOLID_BACKGROUND, mainSolidBackground)
@@ -164,6 +165,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         private const val PLAYER_GRADIENT = "playerGradient"
         private const val CIRCULAR_COVERS = "circularCovers"
         private const val COVER_SHAPE = "coverShape"
+        private const val ROTATE_COVERS = "rotateCovers"
         private const val MAIN_GRADIENT = "mainGradient"
         private const val MAIN_GRADIENT_START = "mainGradientStart"
         private const val MAIN_GRADIENT_END = "mainGradientEnd"

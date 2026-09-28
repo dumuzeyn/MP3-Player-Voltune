@@ -128,6 +128,7 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
 
     private fun openDrawingDialog() {
         val shade = host.uiFactory.shade()
+        (shade as? SwipeDismissFrameLayout)?.setSwipeDismissEnabled(false)
         val panel = host.uiFactory.panelCard()
         panel.addView(host.uiFactory.dialogTitle(host.tr("Draw a particle", "Нарисовать частицу")))
         val drawing = ParticleDrawingView(host)

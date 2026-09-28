@@ -18,7 +18,7 @@ object SettingsSectionResetter {
             "mainSolidBackground", "mainGradientStart", "mainGradientEnd",
             "mainBackgroundMediaUri", "mainBackgroundBlur", "cardOpacity", "songCardOpacity",
             "favoriteCardOpacity", "playlistCardOpacity", "genreCardOpacity",
-            "artistCardOpacity", "albumCardOpacity", "settingsCardOpacity", "circularCovers", "coverShape",
+            "artistCardOpacity", "albumCardOpacity", "settingsCardOpacity", "circularCovers", "coverShape", "rotateCovers",
         )
 
         Section.FULL_PLAYER -> listOf(

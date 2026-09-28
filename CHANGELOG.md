@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.2.2 - In development, not released
+
+- Balanced visualizer peaks across frequency regions instead of letting bass dominate the left side.
+- Made the hexagonal cover regular, added a symmetric star, and separated cover rotation from shape.
+- Kept the full-color gradient on custom launcher icons when Android themed icons are enabled.
+- Prevented the particle drawing dialog from dismissing during horizontal strokes.
+- Restored Settings scroll after an animated return to the tab.
+
 ## 4.2.1 - In development, not released
 
 - Smoothed custom-theme launcher icon recoloring and regenerated palette assets.

@@ -50,6 +50,7 @@ class AppearanceState {
     @JvmField var playerBackgroundBlur = 20
     @JvmField var circularCovers = false
     @JvmField var coverShape = "rounded"
+    @JvmField var rotateCovers = false
     @JvmField var mainGradientStart = VoltunePalette.GRADIENT_BLUE
     @JvmField var mainGradientEnd = VoltunePalette.GRADIENT_PURPLE
     @JvmField var playerGradientStart = VoltunePalette.GRADIENT_BLUE

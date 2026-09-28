@@ -8,7 +8,7 @@ object ThemePresetCodec {
     private const val SCHEMA_VERSION = 1
     private val STRING_KEYS = listOf("theme", "mainBackgroundMediaUri", "playerBackgroundMediaUri", "coverShape", "particleShape", "particleCustomPath")
     private val BOOLEAN_KEYS = listOf(
-        "textOutlineEnabled", "circularCovers", "particlesEnabled", "animations",
+        "textOutlineEnabled", "circularCovers", "rotateCovers", "particlesEnabled", "animations",
     )
     private val INTEGER_KEYS = listOf(
         "customBg", "customFg", "customSecondaryAccent", "customTextColor",

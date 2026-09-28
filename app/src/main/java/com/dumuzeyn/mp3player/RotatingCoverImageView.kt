@@ -21,6 +21,8 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
     private var rotationDurationMs = DEFAULT_ROTATION_DURATION_MS
     private var uiActive = true
 
+    init { setRotationSpeedPercent(host.appearanceState.fullPlayerRotationSpeed) }
+
     fun bindTrack(track: Track?) {
         val nextTrackUri = track?.uri.orEmpty()
         if (nextTrackUri != boundTrackUri) {
@@ -81,19 +83,19 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
             if (lastObservedTrackUri.isNotEmpty()) stopRotation(true)
             lastObservedTrackUri = currentUri
         }
-        val shouldRotate = uiActive && host.appearanceState.circularCovers && playing &&
+        val shouldRotate = uiActive && host.appearanceState.rotateCovers && playing &&
             trackUris.contains(currentUri) &&
             (!requireActiveQueue || host.playbackQueueController.isCurrentCollection(sourceTracks))
         if (seeking) return
         if (shouldRotate && isAttachedToWindow) {
             startRotation()
         } else {
-            stopRotation(!host.appearanceState.circularCovers)
+            stopRotation(!host.appearanceState.rotateCovers)
         }
     }
 
     fun beginSeekSpin(positionMs: Int) {
-        if (!host.appearanceState.circularCovers) return
+        if (!host.appearanceState.rotateCovers) return
         seeking = true
         seekStartPosition = positionMs
         stopRotation(false)
@@ -101,7 +103,7 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
     }
 
     fun updateSeekSpin(positionMs: Int) {
-        if (!seeking || !host.appearanceState.circularCovers) return
+        if (!seeking || !host.appearanceState.rotateCovers) return
         val deltaMs = positionMs - seekStartPosition
         if (deltaMs == 0) {
             rotation = seekStartRotation
@@ -113,7 +115,7 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
     fun endSeekSpin(positionMs: Int, animateTap: Boolean) {
         if (!seeking) return
         seeking = false
-        if (!host.appearanceState.circularCovers) {
+        if (!host.appearanceState.rotateCovers) {
             updatePlaybackState()
             return
         }

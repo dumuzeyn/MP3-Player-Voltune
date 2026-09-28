@@ -58,6 +58,23 @@ class PlaybackVisualizerBufferTest {
         assertTrue(visualizer.snapshot(96).all { it == 0f })
     }
 
+    @Test fun quietUpperFrequenciesRemainVisibleAlongsideBass() {
+        val visualizer = PlaybackVisualizerBuffer()
+        visualizer.flush(48_000, 1, AudioFormat.ENCODING_PCM_16BIT)
+        visualizer.setEnabled(true)
+        val audio = ByteBuffer.allocate(4096).order(ByteOrder.LITTLE_ENDIAN)
+        repeat(2048) { frame ->
+            val low = sin(2.0 * PI * frame * 220 / 48_000) * 23_000
+            val high = sin(2.0 * PI * frame * 6_000 / 48_000) * 1_900
+            audio.putShort((low + high).toInt().toShort())
+        }
+        audio.flip()
+        visualizer.handleBuffer(audio)
+        val bars = visualizer.snapshot(96)
+        assertTrue(bars.take(36).maxOrNull()!! > 0.5f)
+        assertTrue(bars.takeLast(24).maxOrNull()!! > 0.2f)
+    }
+
     private fun tone(frequency: Double): ByteBuffer {
         val audio = ByteBuffer.allocate(4096).order(ByteOrder.LITTLE_ENDIAN)
         repeat(2048) { frame ->

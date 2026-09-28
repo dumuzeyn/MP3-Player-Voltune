@@ -18,6 +18,7 @@ internal class SwipeDismissFrameLayout(context: Context) : FrameLayout(context) 
     private var dismissing = false
     private var protectedGesture = false
     private var dismissAction: Runnable? = null
+    private var swipeDismissEnabled = true
 
     init {
         isClickable = true
@@ -27,7 +28,12 @@ internal class SwipeDismissFrameLayout(context: Context) : FrameLayout(context) 
         dismissAction = action
     }
 
+    fun setSwipeDismissEnabled(enabled: Boolean) {
+        swipeDismissEnabled = enabled
+    }
+
     override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
+        if (!swipeDismissEnabled) return super.onInterceptTouchEvent(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 downX = event.rawX

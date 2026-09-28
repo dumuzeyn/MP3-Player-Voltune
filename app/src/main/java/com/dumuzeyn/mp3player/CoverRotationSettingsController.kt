@@ -4,10 +4,10 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.SeekBar
 
-/** Controls the vinyl-style cover rotation speed used by the full player. */
+/** Controls cover rotation speed across library and player views. */
 class CoverRotationSettingsController(private val host: MainActivityCore) {
     fun settingLabel(): String =
-        host.tr("Full-player disc speed: ", "Скорость диска в плеере: ") +
+        host.tr("Cover rotation speed: ", "Скорость вращения обложек: ") +
             host.appearanceState.fullPlayerRotationSpeed + "%"
 
     fun openDialog() {
@@ -45,6 +45,7 @@ class CoverRotationSettingsController(private val host: MainActivityCore) {
         done.setOnClickListener {
             host.saveState()
             host.overlayHost.removeView(shade)
+            CoverAppearanceRefresher.refresh(host)
             host.refreshSettingsLabels()
         }
         panel.addView(done, LinearLayout.LayoutParams(-1, host.dp(50)))

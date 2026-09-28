@@ -272,6 +272,7 @@ internal class MainRenderer(private val host: MainActivityCore) {
         append(host.appearanceState.language)
         append('|').append(host.appearanceState.circularCovers)
         append('|').append(host.appearanceState.coverShape)
+        append('|').append(host.appearanceState.rotateCovers)
         append('|').append(host.panel)
         append('|').append(host.primaryText)
         append('|').append(host.secondaryText)
