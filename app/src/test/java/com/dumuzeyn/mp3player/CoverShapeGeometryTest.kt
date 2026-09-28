@@ -21,21 +21,31 @@ class CoverShapeGeometryTest {
         assertTrue(sides.maxOrNull()!! - sides.minOrNull()!! < 0.001f)
     }
 
-    @Test fun starHasFiveSymmetricOuterPoints() {
+    @Test fun starHasFiveSymmetricOuterPointsAndShallowNotches() {
         val vertices = CoverShapeGeometry.vertices("star", 100f, 100f)
         assertEquals(10, vertices.size)
         val outer = vertices.filterIndexed { index, _ -> index % 2 == 0 }
         val radii = outer.map { hypot(it.first - 50f, it.second - 50f) }
         assertTrue(radii.maxOrNull()!! - radii.minOrNull()!! < 0.001f)
         assertTrue(vertices.any { it.second == 0f })
+        val inner = vertices.filterIndexed { index, _ -> index % 2 != 0 }
+        val innerRadii = inner.map { hypot(it.first - 50f, it.second - 50f) }
+        assertTrue(innerRadii.all { it / radii.first() in 0.54f..0.56f })
     }
 
-    @Test fun triangleIsWideAndVerticallyCentered() {
-        val vertices = CoverShapeGeometry.vertices("triangle", 100f, 100f)
-        assertEquals(3, vertices.size)
-        assertTrue(vertices[1].first - vertices[0].first > vertices[2].second - vertices[0].second)
-        assertEquals(50f, vertices[1].second, 0.001f)
-        assertEquals(100f, vertices[0].second + vertices[2].second, 0.001f)
+    @Test fun triangleHasEqualSidesAndFitsNonSquareArtwork() {
+        for ((width, height) in listOf(100f to 100f, 140f to 100f, 100f to 140f)) {
+            val vertices = CoverShapeGeometry.vertices("triangle", width, height)
+            assertEquals(3, vertices.size)
+            val sides = vertices.indices.map { index ->
+                val first = vertices[index]
+                val next = vertices[(index + 1) % vertices.size]
+                hypot(first.first - next.first, first.second - next.second)
+            }
+            assertTrue(sides.maxOrNull()!! - sides.minOrNull()!! < 0.001f)
+            assertTrue(vertices.all { it.first in 0f..width && it.second in 0f..height })
+            assertEquals(height / 2f, vertices[1].second, 0.001f)
+        }
     }
 
     @Test fun rotatedSquareAlwaysFitsItsOriginalBounds() {

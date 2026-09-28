@@ -14,11 +14,16 @@ internal object CoverShapeGeometry {
         val centerY = height / 2f
         val radius = min(width / 2f, height / 2f)
         return when (shape) {
-            "triangle" -> listOf(
-                Pair(width * 0.04f, height * 0.08f),
-                Pair(width * 0.96f, height * 0.5f),
-                Pair(width * 0.04f, height * 0.92f),
-            )
+            "triangle" -> {
+                val side = min(width * 0.92f * 2f / sqrt(3f), height * 0.92f)
+                val triangleWidth = side * sqrt(3f) / 2f
+                val left = centerX - triangleWidth / 2f
+                listOf(
+                    Pair(left, centerY - side / 2f),
+                    Pair(centerX + triangleWidth / 2f, centerY),
+                    Pair(left, centerY + side / 2f),
+                )
+            }
             "hexagon" -> {
                 val r = min(width / 2f, height / sqrt(3f))
                 List(6) { index ->
@@ -29,7 +34,7 @@ internal object CoverShapeGeometry {
             }
             "star" -> List(10) { index ->
                 val angle = -PI / 2 + PI * index / 5.0
-                val pointRadius = if (index % 2 == 0) radius else radius * 0.381966f
+                val pointRadius = if (index % 2 == 0) radius else radius * 0.55f
                 Pair(centerX + (cos(angle) * pointRadius).toFloat(),
                     centerY + (sin(angle) * pointRadius).toFloat())
             }

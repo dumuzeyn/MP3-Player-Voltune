@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.4 - In development, not released
+
+- Made triangular artwork equilateral while keeping it within its bounds.
+- Made star artwork notches shallower.
+
 ## 4.2.3 - In development, not released
 
 - Added a wider triangular artwork shape.
