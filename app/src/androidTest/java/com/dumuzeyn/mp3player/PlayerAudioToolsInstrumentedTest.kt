@@ -55,7 +55,9 @@ class PlayerAudioToolsInstrumentedTest {
             }
             val tools = speed.parent as ViewGroup
             assertEquals(3, tools.childCount)
-            assertEquals(3, ((tools.parent as ViewGroup).getChildAt(3) as ViewGroup).childCount)
+            val content = tools.parent as ViewGroup
+            val actionRow = content.getChildAt(content.indexOfChild(tools) - 1) as ViewGroup
+            assertEquals(3, actionRow.childCount)
             assertTrue(speed.performLongClick())
             val dialog = activity.overlayHost.getChildAt(activity.overlayHost.childCount - 1)
             val slider = descendants(dialog).filterIsInstance<SeekBar>().single()
