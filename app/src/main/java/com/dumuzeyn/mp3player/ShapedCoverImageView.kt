@@ -16,14 +16,14 @@ internal open class ShapedCoverImageView(protected val host: MainActivityCore) :
         setBackgroundColor(android.graphics.Color.TRANSPARENT)
     }
 
-    override fun onDraw(canvas: Canvas) {
+    override fun draw(canvas: Canvas) {
         val shape = host.appearanceState.coverShape
         if (clippedWidth != width || clippedHeight != height || clippedShape != shape) {
             rebuildClip(shape)
         }
         val save = canvas.save()
         canvas.clipPath(clip)
-        super.onDraw(canvas)
+        super.draw(canvas)
         canvas.restoreToCount(save)
     }
 

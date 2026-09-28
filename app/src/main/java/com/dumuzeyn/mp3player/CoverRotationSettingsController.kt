@@ -36,6 +36,7 @@ class CoverRotationSettingsController(private val host: MainActivityCore) {
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
                 host.saveState()
+                CoverAppearanceRefresher.refresh(host)
             }
         })
         panel.addView(seek, LinearLayout.LayoutParams(-1, host.dp(48)))

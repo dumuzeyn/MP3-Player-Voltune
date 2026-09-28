@@ -77,6 +77,7 @@ internal class RotatingCoverImageView(host: MainActivityCore) : ShapedCoverImage
     }
 
     fun updatePlaybackState(currentTrack: Track?, playing: Boolean) {
+        setRotationSpeedPercent(host.appearanceState.fullPlayerRotationSpeed)
         invalidateOutline()
         val currentUri = currentTrack?.uri.orEmpty()
         if (currentUri.isNotEmpty() && currentUri != lastObservedTrackUri) {

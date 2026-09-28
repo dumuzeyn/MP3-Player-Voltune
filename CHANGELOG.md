@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.5 - In development, not released
+
+- Applied cover rotation speed to artwork throughout the library, including cached menus.
+- Clipped song-cover fallback backgrounds to the selected artwork shape.
+
 ## 4.2.4 - In development, not released
 
 - Made triangular artwork equilateral while keeping it within its bounds.
