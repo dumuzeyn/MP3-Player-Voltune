@@ -52,8 +52,8 @@ internal class FullPlayerPlaybackPage(
         createdRoot.addView(content, FrameLayout.LayoutParams(-1, -2))
         val track = state.currentTrack() ?: return createdRoot
         addCoverAndTitle(content, track)
-        visualizer = FullPlayerVisualizerView(host).also {
-            content.addView(it, LinearLayout.LayoutParams(-1, host.dp(48)).apply {
+        visualizer = FullPlayerVisualizerView(host, state::isPlaying).also {
+            content.addView(it, LinearLayout.LayoutParams(-1, host.dp(80)).apply {
                 setMargins(host.dp(8), 0, host.dp(8), host.dp(4))
             })
         }
