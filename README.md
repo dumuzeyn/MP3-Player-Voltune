@@ -1,7 +1,5 @@
 <a id="russian"></a>
 
-<p align="center"><a href="#russian">Русский</a> · <a href="#english">English</a> · <a href="CHANGELOG.md">История изменений</a> · <a href="SECURITY.md">Безопасность</a> · <a href="CONTRIBUTING.md">Участие</a></p>
-
 <p align="center">
   <img src="app/src/main/res/drawable-nodpi/voltune_icon_legacy_light.png" width="148" alt="Иконка Voltunizator">
 </p>
@@ -35,6 +33,11 @@ Voltunizator превращает музыку на телефоне в личн
 
 **Версия 4.2.5.2.6.7.** Улучшены разделение аудио на дорожки, визуализатор, обложки и темы; имя исполнителя можно скрыть в плеере и уведомлениях.
 
+<a id="screenshots"></a>
+<p align="center"><img src="docs/screenshots/collection-4.2.0/01-home.png" width="260" alt="Главная: продолжить прослушивание и быстрые очереди"><br><em>Главная и быстрые очереди</em></p>
+
+Снимки интерфейса ниже сделаны в версии 4.2.0 с 165 MP3 из личной медиатеки автора; аудиофайлы в репозиторий не включены.
+
 ```mermaid
 flowchart LR
     FILES["Музыка на устройстве"] --> IMPORT["SAF и сканирование"]
@@ -51,19 +54,6 @@ flowchart LR
 
 **Разделы:** [Скриншоты](#screenshots) · [Медиатека](#library-ru) · [Плеер](#playback-ru) · [Редактор](#editor-ru) · [Архитектура](#architecture-ru) · [Сборка](#build-ru)
 
-<a id="screenshots"></a>
-## Приложение в действии
-
-Десять снимков работающей версии 4.2.0 на Android-эмуляторе. Для демонстрации импортированы 165 MP3 из личной медиатеки автора снимков; сами аудиофайлы в репозиторий не включены.
-
-<table>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/01-home.png" width="240" alt="Главная: продолжить прослушивание и быстрые очереди"><br>Главная и быстрые очереди</td><td align="center"><img src="docs/screenshots/collection-4.2.0/02-songs.png" width="240" alt="Список песен с обложками"><br>Песни и медиатека</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/03-player.png" width="240" alt="Большой плеер с аудиовизуализатором"><br>Большой плеер и визуализатор</td><td align="center"><img src="docs/screenshots/collection-4.2.0/04-queue.png" width="240" alt="Очередь воспроизведения"><br>Очередь воспроизведения</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/05-playlists.png" width="240" alt="Пользовательский плейлист"><br>Плейлисты</td><td align="center"><img src="docs/screenshots/collection-4.2.0/06-thematic.png" width="240" alt="Тематические альбомы после анализа"><br>Тематические альбомы</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/07-genres.png" width="240" alt="Группировка по жанрам"><br>Жанры</td><td align="center"><img src="docs/screenshots/collection-4.2.0/08-search.png" width="240" alt="Поиск по медиатеке"><br>Поиск</td></tr>
-  <tr><td align="center"><img src="docs/screenshots/collection-4.2.0/09-editor.png" width="240" alt="Аудиоредактор с волной и инструментами"><br>Аудиоредактор</td><td align="center"><img src="docs/screenshots/collection-4.2.0/10-settings.png" width="240" alt="Настройки навигации и звука"><br>Настройки</td></tr>
-</table>
-
 ## Почему Voltunizator
 
 | Преимущество | Что получает пользователь |
@@ -78,9 +68,33 @@ flowchart LR
 <a id="library-ru"></a>
 ## Большая библиотека остаётся удобной
 
+### Песни
+
 Песни, избранное, плейлисты, тематические альбомы, жанры, исполнители и альбомы собраны в понятные разделы. Доступны поиск, сортировка, случайное и последовательное воспроизведение, ручная очередь и добавление треков в коллекции. Даже большая медиатека открывается без создания тысяч невидимых карточек.
 
+<p align="center"><img src="docs/screenshots/collection-4.2.0/02-songs.png" width="260" alt="Список песен с обложками"><br><em>Песни и медиатека</em></p>
+
+### Плейлисты
+
+Плейлисты помогают собрать собственные подборки и быстро запускать их целиком.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/05-playlists.png" width="260" alt="Пользовательский плейлист"><br><em>Плейлисты</em></p>
+
+### Тематические альбомы
+
 Вкладка «Тематические альбомы» локально анализирует звучание и адаптивно объединяет близкие треки по энергии, динамике, спектру и тембру. BPM не влияет на расстояние, состав или название групп. Аудио и профили не отправляются в интернет.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/06-thematic.png" width="260" alt="Тематические альбомы после анализа"><br><em>Тематические альбомы</em></p>
+
+### Жанры и поиск
+
+Жанры и исполнители дают привычный способ просмотра медиатеки, а поиск помогает сразу перейти к нужной песне или подборке.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/07-genres.png" width="260" alt="Группировка по жанрам"><br><em>Жанры</em></p>
+
+Глобальный поиск охватывает песни и подборки без выхода из медиатеки.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/08-search.png" width="260" alt="Поиск по медиатеке"><br><em>Поиск</em></p>
 
 
 <a id="playback-ru"></a>
@@ -88,7 +102,11 @@ flowchart LR
 
 Мини-плеер всегда оставляет основные действия под рукой, а большой плеер показывает качественную обложку, живой аудиовизуализатор, прогресс и очередь. Визуализатор получает сигнал непосредственно из Media3 при открытом плеере и не требует доступа к микрофону. Можно перематывать трек, включать повтор песни или всего списка, запускать таймер сна, управлять эквалайзером и добавлять композицию в избранное либо плейлист.
 
+<p align="center"><img src="docs/screenshots/collection-4.2.0/03-player.png" width="260" alt="Большой плеер с аудиовизуализатором"><br><em>Большой плеер и визуализатор</em></p>
+
 Воспроизведение продолжает работать в фоне и управляется из системной медиапанели Android. Очередь, текущая песня, позиция и режим повтора сохраняются, чтобы после возвращения не начинать всё заново.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/04-queue.png" width="260" alt="Очередь воспроизведения"><br><em>Очередь воспроизведения</em></p>
 
 
 ## Звук и внешний вид под ваш вкус
@@ -96,6 +114,8 @@ flowchart LR
 Voltunizator предлагает эквалайзер с готовыми профилями и собственной сохраняемой конфигурацией. Функция выравнивания громкости анализирует треки и сглаживает заметные перепады между песнями.
 
 Светлая, тёмная и пользовательская темы дополняются двумя акцентными цветами, настройкой текста и контура. Для основного интерфейса и большого плеера можно выбрать однотонный фон, градиент, изображение или GIF, отрегулировать размытие и общую прозрачность карточек. Обложки могут быть скруглёнными, круглыми, шестиугольными, ромбовидными, звёздными или треугольными; вращение включается отдельно для любой формы. Частицы имеют готовые фигуры и редактор собственной формы.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/10-settings.png" width="260" alt="Настройки навигации и звука"><br><em>Настройки звука и внешнего вида</em></p>
 
 
 <a id="editor-ru"></a>
@@ -110,6 +130,8 @@ flowchart LR
 ```
 
 Выберите композицию в библиотеке и откройте редактор через свойства песни либо добавьте аудио внутри редактора. Фрагменты можно обрезать, разделять и переставлять; отдельные дорожки можно приглушить при предпрослушивании. Экспорт создаёт новый файл и не перезаписывает источник.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/09-editor.png" width="260" alt="Аудиоредактор с волной и инструментами"><br><em>Многодорожечный редактор</em></p>
 
 Раздел «Редактор» после папок позволяет обрезать, делить и соединять фрагменты,
 располагать до восьми звуковых дорожек, менять их громкость и слушать монтаж.
@@ -230,8 +252,6 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <a id="english"></a>
 
-<p align="center"><a href="#russian">Русский</a> · <a href="#english">English</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="SECURITY.md">Security</a> · <a href="CONTRIBUTING.md">Contributing</a></p>
-
 <p align="center">
   <img src="app/src/main/res/drawable-nodpi/voltune_icon_legacy_light.png" width="148" alt="Voltunizator icon">
 </p>
@@ -261,9 +281,14 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
   <img src="https://img.shields.io/badge/Interface-12_languages-ffd12f?style=flat-square&labelColor=17151d" alt="Interface in 12 languages">
 </p>
 
-Voltunizator turns locally stored music into a personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers visual customization. Playback requires no internet connection, account, or cloud service. See the [10 real app screenshots](#screenshots) above.
+Voltunizator turns locally stored music into a personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers visual customization. Playback requires no internet connection, account, or cloud service. Screenshots appear beside the features they show.
 
 **Version 4.2.5.2.6.7.** Faster stem separation, improved visualizer, artwork and themes, and an option to hide artist names in playback surfaces and notifications.
+
+<a id="screenshots-en"></a>
+<p align="center"><img src="docs/screenshots/collection-4.2.0/01-home.png" width="260" alt="Home screen with listening continuity and quick queues"><br><em>Home and quick queues</em></p>
+
+These interface screenshots were captured in version 4.2.0 with 165 MP3s from a personal library. The audio files are not included in this repository.
 
 ```mermaid
 flowchart LR
@@ -279,7 +304,7 @@ flowchart LR
 
 The library is the shared foundation for playback, search, thematic albums, playlists, and editing. User audio is processed on the device.
 
-**Sections:** [Screenshots](#screenshots) · [Library](#library-en) · [Player](#playback-en) · [Editor](#editor-en) · [Architecture](#architecture-en) · [Build](#build-en)
+**Sections:** [Screenshots](#screenshots-en) · [Library](#library-en) · [Player](#playback-en) · [Editor](#editor-en) · [Architecture](#architecture-en) · [Build](#build-en)
 
 ## Why Voltune
 
@@ -295,9 +320,33 @@ The library is the shared foundation for playback, search, thematic albums, play
 <a id="library-en"></a>
 ## A large library that stays manageable
 
+### Songs
+
 Songs, Favorites, Playlists, Thematic albums, Genres, Artists, and Albums are organized into focused sections. Search, sorting, shuffle, sequential playback, a manual queue, and collection actions remain close at hand. Large libraries stay responsive because Voltunizator creates only the rows that are actually visible.
 
+<p align="center"><img src="docs/screenshots/collection-4.2.0/02-songs.png" width="260" alt="Song list with artwork"><br><em>Songs and library</em></p>
+
+### Playlists
+
+Playlists let you build your own collections and start one with a single action.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/05-playlists.png" width="260" alt="Custom playlist"><br><em>Playlists</em></p>
+
+### Thematic albums
+
 The Thematic albums tab analyzes sound locally and adaptively groups nearby tracks by energy, dynamics, spectrum, and timbre. BPM does not affect group distance, membership, or names. Audio and profiles never leave the device.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/06-thematic.png" width="260" alt="Thematic albums after analysis"><br><em>Thematic albums</em></p>
+
+### Genres and search
+
+Genres and artists offer familiar ways to browse the library.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/07-genres.png" width="260" alt="Music grouped by genre"><br><em>Genres</em></p>
+
+Global search covers songs and collections without leaving the library.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/08-search.png" width="260" alt="Library search"><br><em>Search</em></p>
 
 
 <a id="playback-en"></a>
@@ -305,7 +354,11 @@ The Thematic albums tab analyzes sound locally and adaptively groups nearby trac
 
 The mini-player keeps essential actions available throughout the app, while the full player presents high-quality artwork, a live audio visualizer, progress, and the current queue. The visualizer reads Media3 playback audio only while the full player is open; it needs no microphone permission. Seek through a track, repeat one song or the complete list, start the sleep timer, open the equalizer, or add the current song to Favorites and playlists.
 
+<p align="center"><img src="docs/screenshots/collection-4.2.0/03-player.png" width="260" alt="Full player with audio visualizer"><br><em>Full player and visualizer</em></p>
+
 Playback continues in the background and integrates with Android system media controls. The queue, current song, position, and repeat mode are preserved so returning to the app does not mean starting over.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/04-queue.png" width="260" alt="Playback queue"><br><em>Playback queue</em></p>
 
 
 ## Sound and appearance made personal
@@ -313,6 +366,8 @@ Playback continues in the background and integrates with Android system media co
 Voltunizator includes an equalizer with built-in presets and a remembered custom profile. Volume leveling analyzes tracks and smooths noticeable loudness differences between songs.
 
 Light, Dark, and Custom themes support two accent colors plus independent text and outline settings. The main interface and full player can use solid colors, gradients, validated images, or GIF backgrounds with adjustable blur and one shared card-opacity control. Artwork may be rounded, circular, hexagonal, diamond-shaped, star-shaped, or triangular; rotation can be enabled for any shape. Particles offer presets and a custom drawing surface.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/10-settings.png" width="260" alt="Navigation and audio settings"><br><em>Sound and appearance settings</em></p>
 
 
 <a id="editor-en"></a>
@@ -327,6 +382,8 @@ flowchart LR
 ```
 
 Open a song from its properties or add audio in the editor. Trim, split, and move clips; mute individual lanes while previewing. Export creates a new file and does not overwrite the source.
+
+<p align="center"><img src="docs/screenshots/collection-4.2.0/09-editor.png" width="260" alt="Audio editor with waveform and tools"><br><em>Multitrack editor</em></p>
 
 Editor follows Folders and supports trimming, splitting, joining, up to eight mixed
 lanes, clip volume, draft restoration, undo/redo and preview. A decoded waveform
