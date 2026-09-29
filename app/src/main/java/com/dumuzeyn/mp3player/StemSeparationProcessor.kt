@@ -97,7 +97,8 @@ internal class StemSeparationProcessor(private val context: Context) {
 
     companion object {
         private const val RATE = 44100
-        private const val CORE = RATE * 8
+        // Keep outer windows long enough to avoid repeatedly running Demucs' own 8-second splits.
+        private const val CORE = RATE * 21
         private const val OVERLAP = RATE
         private const val CONTEXT = RATE
         private val gate = Semaphore(1)

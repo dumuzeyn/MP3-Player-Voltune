@@ -18,7 +18,7 @@
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.2.0-9b4dff?style=for-the-badge" alt="Скачать Voltunizator">
+    <img src="https://img.shields.io/badge/Скачать_APK-Версия_4.2.5.2.6.7-9b4dff?style=for-the-badge" alt="Скачать Voltunizator">
   </a>
   <a href="#english">
     <img src="https://img.shields.io/badge/English-Open-ffd12f?style=for-the-badge&labelColor=17151d" alt="Open English version">
@@ -33,7 +33,7 @@
 
 Voltunizator превращает музыку на телефоне в личную медиатеку. Приложение находит треки, продолжает играть в фоне, помнит очередь и позицию, а внешний вид можно настроить под себя. Для прослушивания не нужны интернет, регистрация или облачный сервис.
 
-**Текущая разработка: 4.2.5.2.** Кнопка загрузки выше ведёт на последний опубликованный релиз 4.2.0; сборка 4.2.5.2 пока не публиковалась.
+**Версия 4.2.5.2.6.7.** Улучшены разделение аудио на дорожки, визуализатор, обложки и темы; имя исполнителя можно скрыть в плеере и уведомлениях.
 
 ```mermaid
 flowchart LR
@@ -248,7 +248,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 <p align="center">
   <a href="../../releases/latest/download/MP3-Player-Voltune.apk">
-    <img src="https://img.shields.io/badge/Download_APK-Version_4.2.0-9b4dff?style=for-the-badge" alt="Download Voltunizator">
+    <img src="https://img.shields.io/badge/Download_APK-Version_4.2.5.2.6.7-9b4dff?style=for-the-badge" alt="Download Voltunizator">
   </a>
   <a href="#russian">
     <img src="https://img.shields.io/badge/Русский-Открыть-ffd12f?style=for-the-badge&labelColor=17151d" alt="Открыть русскую версию">
@@ -263,7 +263,7 @@ Android lint, debug APK и компиляцию instrumentation-тестов.
 
 Voltunizator turns locally stored music into a personal library. It finds tracks quickly, keeps playing in the background, remembers the queue and position, and offers visual customization. Playback requires no internet connection, account, or cloud service. See the [10 real app screenshots](#screenshots) above.
 
-**Current development: 4.2.5.2.** The download button above still points to the latest published release, 4.2.0. Version 4.2.5.2 has not been published yet.
+**Version 4.2.5.2.6.7.** Faster stem separation, improved visualizer, artwork and themes, and an option to hide artist names in playback surfaces and notifications.
 
 ```mermaid
 flowchart LR

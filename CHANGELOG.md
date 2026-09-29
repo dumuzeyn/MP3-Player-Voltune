@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.5.2.6.7
+
+- Reduced redundant Demucs inference across overlapping outer windows while preserving the pinned four-stem model and its internal overlap.
+- Includes the unreleased 4.2.1-4.2.5.2 changes below: theme and icon refinements, visualizer and artwork fixes, and optional artist-name hiding.
+
 ## 4.2.5.2 - In development, not released
 
 - Added a saved setting to hide artist names in playback surfaces, the widget, Media3 controls, and notifications while keeping song titles visible.
