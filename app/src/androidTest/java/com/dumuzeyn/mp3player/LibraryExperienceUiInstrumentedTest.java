@@ -351,6 +351,7 @@ public class LibraryExperienceUiInstrumentedTest {
         MainActivityCore host = launchWithLibrary();
         instrumentation.runOnMainSync(() -> {
             host.appearanceState.circularCovers = true;
+            host.appearanceState.rotateCovers = true;
             host.playbackQueueController.clear();
         });
         openTabByClick(host, LibraryTabs.FOLDERS);

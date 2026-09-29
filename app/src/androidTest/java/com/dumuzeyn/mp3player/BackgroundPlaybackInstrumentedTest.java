@@ -260,6 +260,7 @@ public class BackgroundPlaybackInstrumentedTest {
         instrumentation.runOnMainSync(() -> {
             host.appearanceState.animations = true;
             host.appearanceState.circularCovers = true;
+            host.appearanceState.rotateCovers = true;
             setUiSnapshot(host, 0, true);
             holder[0] = new RotatingCoverImageView(host);
             host.root.addView(holder[0], new android.widget.FrameLayout.LayoutParams(200, 200));
