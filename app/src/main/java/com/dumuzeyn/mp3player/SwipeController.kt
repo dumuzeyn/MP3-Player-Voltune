@@ -6,6 +6,7 @@ import android.animation.ValueAnimator
 import android.os.Trace
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
@@ -230,7 +231,21 @@ internal class SwipeController(private val host: MainActivityCore) {
             previewState = state
             host.previewSongRows.setWaveformsTransitionPaused(true)
             prepareSurfaceLayers()
-            scroll.scrollTo(0, state.scrollY)
+            if (state.scrollY > 0) {
+                scroll.visibility = View.INVISIBLE
+                scroll.viewTreeObserver.addOnPreDrawListener(
+                    object : ViewTreeObserver.OnPreDrawListener {
+                        override fun onPreDraw(): Boolean {
+                            val observer = scroll.viewTreeObserver
+                            if (observer.isAlive) observer.removeOnPreDrawListener(this)
+                            if (scroll.parent !== host.contentHost) return true
+                            scroll.scrollTo(0, state.scrollY)
+                            scroll.visibility = View.VISIBLE
+                            return false
+                        }
+                    },
+                )
+            }
         } finally {
             Trace.endSection()
         }

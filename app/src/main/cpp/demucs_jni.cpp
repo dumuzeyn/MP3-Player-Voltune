@@ -42,7 +42,7 @@ Java_com_dumuzeyn_mp3player_DemucsSeparator_separate(JNIEnv* env, jobject, jlong
                                                    jfloatArray input, jobject callback) {
     try {
         const int size = env->GetArrayLength(input);
-        if (!handle || size < 4 || size % 2 || size > 44100 * 2 * 10)
+        if (!handle || size < 4 || size % 2 || size > 44100 * 2 * 23)
             throw std::invalid_argument("Invalid stereo window");
         Eigen::MatrixXf audio(2, size / 2);
         env->GetFloatArrayRegion(input, 0, size, audio.data());

@@ -1,5 +1,48 @@
 # Changelog
 
+## 4.2.5.2.6.7
+
+- Reduced redundant Demucs inference across overlapping outer windows while preserving the pinned four-stem model and its internal overlap.
+- Includes the unreleased 4.2.1-4.2.5.2 changes below: theme and icon refinements, visualizer and artwork fixes, and optional artist-name hiding.
+
+## 4.2.5.2 - In development, not released
+
+- Added a saved setting to hide artist names in playback surfaces, the widget, Media3 controls, and notifications while keeping song titles visible.
+- Updated active queue metadata when the setting changes without changing track tags or playback position.
+
+## 4.2.5 - In development, not released
+
+- Applied cover rotation speed to artwork throughout the library, including cached menus.
+- Clipped song-cover fallback backgrounds to the selected artwork shape.
+
+## 4.2.4 - In development, not released
+
+- Made triangular artwork equilateral while keeping it within its bounds.
+- Made star artwork notches shallower.
+
+## 4.2.3 - In development, not released
+
+- Added a wider triangular artwork shape.
+- Kept rotating square artwork within its view bounds so its upper corners are not clipped.
+
+## 4.2.2 - In development, not released
+
+- Balanced visualizer peaks across frequency regions instead of letting bass dominate the left side.
+- Made the hexagonal cover regular, added a symmetric star, and separated cover rotation from shape.
+- Kept the full-color gradient on custom launcher icons when Android themed icons are enabled.
+- Prevented the particle drawing dialog from dismissing during horizontal strokes.
+- Restored Settings scroll after an animated return to the tab.
+
+## 4.2.1 - In development, not released
+
+- Smoothed custom-theme launcher icon recoloring and regenerated palette assets.
+- Switched the full-player visualizer to a live playback spectrum with varied peak heights.
+- Added rotating circle, hexagon, and diamond artwork shapes alongside rounded covers.
+- Added particle shape presets and a custom line-drawing editor.
+- Unified card opacity across menus and surfaces.
+- Avoided repeated separation-model hashing in one process and kept user-initiated editor processing at normal thread priority without changing separation settings.
+- Refreshed the bilingual README while keeping 4.2.0 as the latest published download.
+
 ## 3.4.0 - Adaptive Similar restoration and smooth Home playback
 
 - Restored the proven pre-KMeans adaptive clustering behavior from Git history.

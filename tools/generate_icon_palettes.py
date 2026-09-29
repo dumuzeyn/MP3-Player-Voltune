@@ -1,7 +1,7 @@
 from pathlib import Path
 from xml.etree import ElementTree
 
-from PIL import Image, ImageChops, ImageDraw
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -164,17 +164,20 @@ def horizontal_gradient(size: tuple[int, int], first: tuple[int, int, int],
 def recolor(source: Image.Image, first: tuple[int, int, int],
             second: tuple[int, int, int]) -> Image.Image:
     alpha = source.getchannel("A")
-    luminance = source.convert("L")
-    shading = luminance.point(lambda value: min(255, round(184 + value * 0.48)))
+    luminance = source.convert("L").filter(ImageFilter.GaussianBlur(6))
+    shading = luminance.point(lambda value: min(255, round(194 + value * 0.23)))
     shaded = ImageChops.multiply(horizontal_gradient(source.size, first, second),
                                  Image.merge("RGB", (shading, shading, shading)))
-    highlights = luminance.point(lambda value: max(0, min(150, (value - 205) * 3)))
-    recolored = Image.composite(Image.new("RGB", source.size, "white"), shaded, highlights)
-    # Keep the neutral vinyl, grooves and shadows neutral while the colored mark follows
-    # the application's primary and secondary accent colors.
-    saturation = source.convert("HSV").getchannel("S")
-    neutral_mask = saturation.point(lambda value: 255 if value <= 28 else 0)
-    result = Image.composite(source.convert("RGB"), recolored, neutral_mask)
+    # A median mask removes isolated colored pixels from the neutral vinyl.
+    hsv = source.convert("HSV")
+    saturation = hsv.getchannel("S").filter(ImageFilter.MedianFilter(9))
+    brightness = hsv.getchannel("V").filter(ImageFilter.MedianFilter(9))
+    colored = ImageChops.multiply(
+        saturation.point(lambda value: 255 if value >= 60 else 0),
+        brightness.point(lambda value: 255 if value >= 85 else 0),
+    )
+    colored = colored.filter(ImageFilter.GaussianBlur(1.5))
+    result = Image.composite(shaded, source.convert("RGB"), colored)
     result.putalpha(alpha)
     return result
 
@@ -233,7 +236,7 @@ def main() -> None:
                     adaptive_xml(background_name, mode, foreground_name, False),
                     encoding="utf-8")
                 (ROOT / f"app/src/main/res/mipmap-anydpi-v33/{icon}.xml").write_text(
-                    adaptive_xml(background_name, mode, foreground_name, True),
+                    adaptive_xml(background_name, mode, foreground_name, False),
                     encoding="utf-8")
                 generated_icons += 1
                 if background_name == foreground_name:

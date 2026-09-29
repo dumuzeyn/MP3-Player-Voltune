@@ -12,6 +12,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.RemoteViews
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -114,6 +115,10 @@ class PlayerWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.player_widget)
             views.setTextViewText(R.id.widget_title, title)
             views.setTextViewText(R.id.widget_artist, artist)
+            views.setViewVisibility(
+                R.id.widget_artist,
+                if (artist.isEmpty()) View.GONE else View.VISIBLE,
+            )
             views.setImageViewResource(
                 R.id.widget_toggle,
                 if (playing) R.drawable.ic_widget_pause else R.drawable.ic_widget_play,

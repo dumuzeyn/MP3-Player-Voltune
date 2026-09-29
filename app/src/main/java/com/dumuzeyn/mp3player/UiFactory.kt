@@ -183,21 +183,7 @@ internal class UiFactory(private val host: MainActivityCore) {
         setBackgroundColor(Color.TRANSPARENT)
     }
 
-    fun staticCoverView(): ImageView = ImageView(host).apply {
-        scaleType = ImageView.ScaleType.CENTER_CROP
-        outlineProvider = object : ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: Outline) {
-                val radius = if (host.appearanceState.circularCovers) {
-                    min(view.width, view.height) * 0.5f
-                } else {
-                    host.dp(8).toFloat()
-                }
-                outline.setRoundRect(0, 0, view.width, view.height, radius)
-            }
-        }
-        clipToOutline = true
-        setBackgroundColor(Color.TRANSPARENT)
-    }
+    fun staticCoverView(): ImageView = ShapedCoverImageView(host)
 
     fun shade(): FrameLayout {
         val shade = SwipeDismissFrameLayout(host)

@@ -49,8 +49,8 @@ android {
         applicationId "com.dumuzeyn.mp3player"
         minSdk 23
         targetSdk 35
-        versionCode 49
-        versionName "4.2.0"
+        versionCode 56
+        versionName "4.2.5.2.6.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters "arm64-v8a", "armeabi-v7a", "x86_64" }
         externalNativeBuild { cmake { arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON" } }
@@ -207,8 +207,9 @@ tasks.register("checkLauncherIcon") {
             if (!themed.contains("@color/${launcherBackgrounds[icon]}")) {
                 throw new GradleException("${icon} themed icon uses the wrong background")
             }
-            if (!themed.contains('<monochrome android:drawable="@drawable/voltune_icon_monochrome"')) {
-                throw new GradleException("${icon} does not provide an Android 13 themed icon")
+            def hasMonochrome = themed.contains('<monochrome android:drawable="@drawable/voltune_icon_monochrome"')
+            if (icon.startsWith('ic_launcher_custom_') ? hasMonochrome : !hasMonochrome) {
+                throw new GradleException("${icon} has the wrong Android 13 themed icon mode")
             }
             if (icon.startsWith('ic_launcher_custom_')) {
                 def parts = icon.split('_')

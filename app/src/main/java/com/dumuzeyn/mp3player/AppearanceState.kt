@@ -9,7 +9,10 @@ class AppearanceState {
     @JvmField var particleLifetime = 100
     @JvmField var particlePrimaryColor = 0
     @JvmField var particleSecondaryColor = 0
+    @JvmField var particleShape = "lightning"
+    @JvmField var particleCustomPath = ""
     @JvmField var fullPlayerRotationSpeed = 100
+    @JvmField var showArtistName = true
     @JvmField var cardOpacity = 82
     @JvmField var songCardOpacity = 82
     @JvmField var favoriteCardOpacity = 82
@@ -21,6 +24,20 @@ class AppearanceState {
     @JvmField var miniPlayerCardOpacity = 82
     @JvmField var headerCardOpacity = 82
     @JvmField var dialogCardOpacity = 82
+    fun setAllCardOpacity(value: Int) {
+        val opacity = value.coerceIn(35, 100)
+        cardOpacity = opacity
+        songCardOpacity = opacity
+        favoriteCardOpacity = opacity
+        playlistCardOpacity = opacity
+        genreCardOpacity = opacity
+        artistCardOpacity = opacity
+        albumCardOpacity = opacity
+        settingsCardOpacity = opacity
+        miniPlayerCardOpacity = opacity
+        headerCardOpacity = opacity
+        dialogCardOpacity = opacity
+    }
     @JvmField var dark = false
     @JvmField var animations = true
     @JvmField var particlesEnabled = false
@@ -33,6 +50,8 @@ class AppearanceState {
     @JvmField var mainBackgroundBlur = 20
     @JvmField var playerBackgroundBlur = 20
     @JvmField var circularCovers = false
+    @JvmField var coverShape = "rounded"
+    @JvmField var rotateCovers = false
     @JvmField var mainGradientStart = VoltunePalette.GRADIENT_BLUE
     @JvmField var mainGradientEnd = VoltunePalette.GRADIENT_PURPLE
     @JvmField var playerGradientStart = VoltunePalette.GRADIENT_BLUE

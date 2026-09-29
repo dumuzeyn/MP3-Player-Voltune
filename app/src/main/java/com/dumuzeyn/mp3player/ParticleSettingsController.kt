@@ -42,6 +42,12 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
             180,
             host.appearanceState.particleLifetime,
         ) { host.appearanceState.particleLifetime = it }
+        val shape = host.uiFactory.button(shapeLabel())
+        shape.setOnClickListener {
+            host.overlayHost.removeView(shade)
+            openShapePicker()
+        }
+        content.addView(shape, LinearLayout.LayoutParams(-1, host.dp(48)))
         addColorButton(content, true)
         addColorButton(content, false)
 
@@ -53,6 +59,8 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
             host.appearanceState.particleLifetime = 100
             host.appearanceState.particlePrimaryColor = 0
             host.appearanceState.particleSecondaryColor = 0
+            host.appearanceState.particleShape = "lightning"
+            host.appearanceState.particleCustomPath = ""
             host.saveState()
             host.refreshParticleSettings()
             host.overlayHost.removeView(shade)
@@ -78,6 +86,74 @@ internal class ParticleSettingsController(private val host: MainActivityCore) {
         shade.addView(panel, host.centerParams(host.dp(340), -2))
         host.overlayHost.addView(shade)
         host.playerUiController.updateMini()
+    }
+
+    private fun shapeLabel(): String = host.tr("Shape: ", "Форма: ") + when (host.appearanceState.particleShape) {
+        "circle" -> host.tr("Circle", "Круг")
+        "star" -> host.tr("Star", "Звезда")
+        "diamond" -> host.tr("Diamond", "Ромб")
+        "line" -> host.tr("Line", "Линия")
+        "custom" -> host.tr("Custom", "Своя")
+        else -> host.tr("Lightning", "Молния")
+    }
+
+    private fun openShapePicker() {
+        val shade = host.uiFactory.shade()
+        val panel = host.uiFactory.panelCard()
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Particle shape", "Форма частиц")))
+        listOf(
+            Triple("lightning", "Lightning", "Молния"),
+            Triple("circle", "Circle", "Круг"),
+            Triple("star", "Star", "Звезда"),
+            Triple("diamond", "Diamond", "Ромб"),
+            Triple("line", "Line", "Линия"),
+            Triple("custom", "Draw your own", "Нарисовать свою"),
+        ).forEach { (value, english, russian) ->
+            val button = host.uiFactory.button(host.tr(english, russian))
+            if (host.appearanceState.particleShape == value) host.uiFactory.applyPrimaryButtonStyle(button)
+            button.setOnClickListener {
+                host.overlayHost.removeView(shade)
+                if (value == "custom") openDrawingDialog() else {
+                    host.appearanceState.particleShape = value
+                    host.saveState()
+                    host.refreshParticleSettings()
+                    openDialog()
+                }
+            }
+            panel.addView(button, LinearLayout.LayoutParams(-1, host.dp(46)))
+        }
+        shade.addView(panel, host.centerParams(host.dp(340), -2))
+        host.overlayHost.addView(shade)
+    }
+
+    private fun openDrawingDialog() {
+        val shade = host.uiFactory.shade()
+        (shade as? SwipeDismissFrameLayout)?.setSwipeDismissEnabled(false)
+        val panel = host.uiFactory.panelCard()
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Draw a particle", "Нарисовать частицу")))
+        val drawing = ParticleDrawingView(host)
+        panel.addView(drawing, LinearLayout.LayoutParams(-1, host.dp(280)))
+        val actions = host.uiFactory.row()
+        val cancel = host.uiFactory.button(host.tr("Cancel", "Отмена"))
+        cancel.setOnClickListener { host.overlayHost.removeView(shade); openDialog() }
+        actions.addView(cancel, LinearLayout.LayoutParams(0, host.dp(48), 1f))
+        val add = host.uiFactory.button(host.tr("Add", "Добавить"))
+        host.uiFactory.applyPrimaryButtonStyle(add)
+        add.setOnClickListener {
+            val encoded = drawing.encodedPath()
+            if (encoded.isNotEmpty()) {
+                host.appearanceState.particleCustomPath = encoded
+                host.appearanceState.particleShape = "custom"
+                host.saveState()
+                host.refreshParticleSettings()
+                host.overlayHost.removeView(shade)
+                openDialog()
+            }
+        }
+        actions.addView(add, LinearLayout.LayoutParams(0, host.dp(48), 1f))
+        panel.addView(actions)
+        shade.addView(panel, host.centerParams(host.dp(340), -2))
+        host.overlayHost.addView(shade)
     }
 
     private fun addColorButton(panel: LinearLayout, primary: Boolean) {

@@ -10,6 +10,7 @@ import android.os.Trace
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -37,7 +38,7 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("UnsafeOptInUsageError")
 class Media3PlayerService : MediaLibraryService() {
-    private val mapper = MediaItemMapper()
+    private val mapper = MediaItemMapper { UiPreferencesStore.showArtistName(this) }
     private val transitionPolicy = PlaybackTransitionPolicy()
     private val errorRecovery = PlaybackErrorRecovery()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -160,9 +161,17 @@ class Media3PlayerService : MediaLibraryService() {
                 ),
             )
             .build()
-        val notificationProvider = DefaultMediaNotificationProvider.Builder(this)
-            .setNotificationId(NOTIFICATION_ID)
-            .build()
+        val notificationProvider = object : DefaultMediaNotificationProvider(
+            this,
+            { NOTIFICATION_ID },
+            DefaultMediaNotificationProvider.DEFAULT_CHANNEL_ID,
+            DefaultMediaNotificationProvider.DEFAULT_CHANNEL_NAME_RESOURCE_ID,
+        ) {
+            override fun getNotificationContentText(metadata: MediaMetadata): CharSequence? =
+                if (UiPreferencesStore.showArtistName(this@Media3PlayerService)) {
+                    super.getNotificationContentText(metadata)
+                } else null
+        }
         notificationProvider.setSmallIcon(R.drawable.ic_notification_music)
         setMediaNotificationProvider(notificationProvider)
 
@@ -423,6 +432,10 @@ class Media3PlayerService : MediaLibraryService() {
                 PlayerWidgetProvider.updateFromPlayer(this@Media3PlayerService, player)
                 logEvent("media_item_transition", "none")
             }
+
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            if (!editorPreview.active) PlayerWidgetProvider.updateFromPlayer(this@Media3PlayerService, player)
+        }
 
         override fun onPlayerError(error: PlaybackException) {
             if (!editorPreview.active) recoverFromError(error)

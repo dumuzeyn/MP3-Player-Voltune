@@ -37,18 +37,14 @@ internal class FullPlayerVisualizerView(
             FloatArray(count)
         }
         if (displayed.size != count) displayed = FloatArray(count)
-        val quietest = samples.minOrNull() ?: 0f
-        val spread = ((samples.maxOrNull() ?: 0f) - quietest).coerceAtLeast(0.01f)
-        val loudness = (samples.average().toFloat() * 3f).coerceIn(0f, 1f).pow(0.55f)
         val barWidth = host.dp(3).toFloat()
         val baseline = height / 2f
         val maxHalfHeight = (height - host.dp(6)) / 2f
         val left = (width - (count - 1) * pitch - barWidth) / 2f
         for (index in samples.indices) {
-            val contrast = ((samples[index] - quietest) / spread).coerceIn(0f, 1f)
             val target = if (samples[index] < 0.002f) 0f else
-                (0.28f + 0.24f * loudness + 0.48f * contrast).coerceAtMost(1f)
-            val response = if (target > displayed[index]) 0.8f else 0.6f
+                (0.03f + 0.97f * samples[index].pow(1.05f)).coerceAtMost(1f)
+            val response = if (target > displayed[index]) 0.82f else 0.42f
             displayed[index] += (target - displayed[index]) * response
             val halfHeight = host.dp(2) / 2f + displayed[index] * (maxHalfHeight - host.dp(2) / 2f)
             paint.color = if (index in count / 2 - 1..count / 2 + 1) host.yellow else host.purple

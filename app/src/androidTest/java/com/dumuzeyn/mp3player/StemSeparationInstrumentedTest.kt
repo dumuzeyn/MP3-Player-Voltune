@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,6 +15,31 @@ import kotlin.math.sin
 @RunWith(AndroidJUnit4::class)
 class StemSeparationInstrumentedTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
+
+    @Test fun benchmarkFullSeparationWindowing() {
+        org.junit.Assume.assumeTrue(
+            InstrumentationRegistry.getArguments().getString("separationBenchmark") == "true",
+        )
+        val source = File(context.cacheDir, "separation-benchmark-source.wav")
+        val stems = List(4) { File(context.cacheDir, "separation-benchmark-$it.wav") }
+        try {
+            PcmWaveWriter(source, 44100, 2).use { writer ->
+                repeat(44100 * 16) { frame ->
+                    writer.sample((.25 * sin(2 * PI * 110 * frame / 44100)).toFloat())
+                    writer.sample((.2 * sin(2 * PI * 440 * frame / 44100)).toFloat())
+                }
+            }
+            val clip = AudioEditClip(uri = Uri.fromFile(source).toString(), title = "Benchmark",
+                sourceDurationMs = 16000, startMs = 0, endMs = 16000)
+            val started = android.os.SystemClock.elapsedRealtime()
+            StemSeparationProcessor(context).process(clip, stems, { false }) { }
+            android.util.Log.i("VoltuneSeparationTest",
+                "16s full separation ms=${android.os.SystemClock.elapsedRealtime() - started}")
+            stems.forEach { assertEquals(44 + 16000 * 44100 / 1000 * 4L, it.length()) }
+        } finally {
+            (stems + source).forEach { it.delete() }
+        }
+    }
 
     @Test fun pinnedModelProducesFourFiniteDistinctStemsAndCancellationWorks() {
         val model = SeparationModelStore.prepare(context) { false }
@@ -86,5 +112,44 @@ class StemSeparationInstrumentedTest {
             assertEquals(308700, frames)
             assertArrayEquals(original, source.readBytes())
         } finally { (stems + source + instrumental).forEach { it.delete() } }
+    }
+
+    @Test fun longSelectionPreservesSamplesAcrossOuterWindowBoundary() {
+        val source = File(context.cacheDir, "separation-long-source.wav")
+        val output = File(context.cacheDir, "separation-long-instrumental.wav")
+        val durationFrames = 44100 * 23
+        try {
+            PcmWaveWriter(source, 44100, 2).use { writer ->
+                repeat(durationFrames) { frame ->
+                    val value = (.2 * sin(2 * PI * 110 * frame / 44100)).toFloat()
+                    writer.sample(value)
+                    writer.sample(-value)
+                }
+            }
+            val clip = AudioEditClip(uri = Uri.fromFile(source).toString(), title = "Long overlap",
+                sourceDurationMs = 23000, startMs = 0, endMs = 23000)
+            StemSeparationProcessor(context).process(clip, listOf(output), { false }) { }
+            assertEquals(44 + durationFrames * 4L, output.length())
+            val samples = setOf(0, 44100 * 20 - 1, 44100 * 20, 44100 * 20 + 1,
+                durationFrames - 1)
+            var frame = 0
+            AudioPcmDecoder(context).decode(Uri.fromFile(output).toString(), 0, 23000,
+                { false }) { format, pcm, _ ->
+                while (pcm.remaining() >= format.frameBytes) {
+                    val left = format.sample(pcm)
+                    val right = format.sample(pcm)
+                    if (frame in samples) {
+                        val expected = (.2 * sin(2 * PI * 110 * frame / 44100)).toFloat()
+                        assertEquals(expected, left, 3f / 32768)
+                        assertEquals(-expected, right, 3f / 32768)
+                    }
+                    frame++
+                }
+            }
+            assertEquals(durationFrames, frame)
+        } finally {
+            source.delete()
+            output.delete()
+        }
     }
 }

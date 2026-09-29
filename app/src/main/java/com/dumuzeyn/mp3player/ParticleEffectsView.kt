@@ -20,6 +20,7 @@ internal class ParticleEffectsView(private val host: MainActivityCore) : View(ho
     private val particles = ArrayList<Particle>()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
+    private var customStrokes: List<List<Pair<Float, Float>>> = emptyList()
     private val random = Random()
     private var lastFrameTime = 0L
     private var lastMoveEmitTime = 0L
@@ -44,6 +45,7 @@ internal class ParticleEffectsView(private val host: MainActivityCore) : View(ho
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeJoin = Paint.Join.ROUND
+        settingsChanged()
     }
 
     fun observeTouch(event: MotionEvent) {
@@ -76,6 +78,16 @@ internal class ParticleEffectsView(private val host: MainActivityCore) : View(ho
     }
 
     fun settingsChanged() {
+        customStrokes = host.appearanceState.particleCustomPath.take(4096).split('|').mapNotNull { stroke ->
+            val points = stroke.split(';').take(128).mapNotNull { pair ->
+                val values = pair.split(',')
+                if (values.size != 2) return@mapNotNull null
+                val x = values[0].toIntOrNull()?.takeIf { it in 0..1000 } ?: return@mapNotNull null
+                val y = values[1].toIntOrNull()?.takeIf { it in 0..1000 } ?: return@mapNotNull null
+                Pair(x / 1000f - 0.5f, y / 1000f - 0.5f)
+            }
+            points.takeIf { it.size > 1 }
+        }
         updateEmitter()
         invalidate()
     }
@@ -204,15 +216,52 @@ internal class ParticleEffectsView(private val host: MainActivityCore) : View(ho
         }
         paint.color = particle.color
         paint.alpha = max(0, (particle.maxAlpha * fade).roundToInt())
-        paint.style = if (particle.filled) Paint.Style.FILL else Paint.Style.STROKE
+        paint.style = if (particle.filled && host.appearanceState.particleShape != "custom")
+            Paint.Style.FILL else Paint.Style.STROKE
         paint.strokeWidth = max(host.dp(1).toFloat(), particle.size * 0.1f)
         path.reset()
-        buildLightningPath(particle.size)
+        buildShapePath(particle.size)
         canvas.save()
         canvas.translate(particle.x, particle.y)
         canvas.rotate(particle.rotation)
         canvas.drawPath(path, paint)
         canvas.restore()
+    }
+
+    private fun buildShapePath(size: Float) {
+        when (host.appearanceState.particleShape) {
+            "circle" -> path.addCircle(0f, 0f, size * 0.5f, Path.Direction.CW)
+            "diamond" -> {
+                path.moveTo(0f, -size * 0.5f)
+                path.lineTo(size * 0.5f, 0f)
+                path.lineTo(0f, size * 0.5f)
+                path.lineTo(-size * 0.5f, 0f)
+                path.close()
+            }
+            "line" -> {
+                path.moveTo(-size * 0.5f, 0f)
+                path.lineTo(size * 0.5f, 0f)
+            }
+            "star" -> {
+                for (point in 0 until 10) {
+                    val angle = -Math.PI / 2 + point * Math.PI / 5
+                    val radius = size * if (point % 2 == 0) 0.5f else 0.22f
+                    val x = (cos(angle) * radius).toFloat()
+                    val y = (sin(angle) * radius).toFloat()
+                    if (point == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                path.close()
+            }
+            "custom" -> {
+                customStrokes.forEach { stroke ->
+                    stroke.forEachIndexed { index, (x, y) ->
+                        if (index == 0) path.moveTo(x * size, y * size)
+                        else path.lineTo(x * size, y * size)
+                    }
+                }
+            }
+            else -> buildLightningPath(size)
+        }
     }
 
     private fun buildLightningPath(size: Float) {

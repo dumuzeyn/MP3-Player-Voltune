@@ -104,6 +104,7 @@ internal class MiniPlayerController(
     private fun bindMiniPlayer(track: Track) {
         host.miniTitle.text = track.title
         host.miniSub.text = track.artist
+        host.miniSub.visibility = if (host.appearanceState.showArtistName) View.VISIBLE else View.GONE
         host.uiFactory.setIcon(
             host.miniButton,
             if (playbackState.isPlaying()) StrictIcon.PAUSE else StrictIcon.PLAY,

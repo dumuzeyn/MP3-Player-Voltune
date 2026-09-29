@@ -118,29 +118,37 @@ internal object AppIconRenderer {
         val height = bitmap.height
         val pixels = IntArray(width * height)
         bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+        val colored = BooleanArray(pixels.size) { index ->
+            val source = pixels[index]
+            Color.alpha(source) > 0 &&
+                maxOf(Color.red(source), Color.green(source), Color.blue(source)) >= 85 &&
+                maxOf(Color.red(source), Color.green(source), Color.blue(source)) -
+                    minOf(Color.red(source), Color.green(source), Color.blue(source)) > 50
+        }
         for (y in 0 until height) {
             for (x in 0 until width) {
                 val index = y * width + x
                 val source = pixels[index]
                 val alpha = Color.alpha(source)
-                if (alpha == 0) continue
-
-                val red = Color.red(source)
-                val green = Color.green(source)
-                val blue = Color.blue(source)
-                val saturationRange = maxOf(red, green, blue) - minOf(red, green, blue)
-                if (saturationRange <= NEUTRAL_COLOR_RANGE) {
-                    continue
+                if (alpha == 0 || !colored[index]) continue
+                var neighbors = 0
+                var luminance = 0f
+                var samples = 0
+                for (nearY in maxOf(0, y - 2)..minOf(height - 1, y + 2)) {
+                    for (nearX in maxOf(0, x - 2)..minOf(width - 1, x + 2)) {
+                        val nearIndex = nearY * width + nearX
+                        if (colored[nearIndex]) neighbors++
+                        val near = pixels[nearIndex]
+                        luminance += Color.red(near) * 0.2126f +
+                            Color.green(near) * 0.7152f + Color.blue(near) * 0.0722f
+                        samples++
+                    }
                 }
+                if (neighbors < 8) continue
 
                 val gradient = if (width == 1) 0f else x.toFloat() / (width - 1)
                 val themed = blend(primaryColor, secondaryColor, gradient)
-                val luminance = (
-                    red * 0.2126f +
-                        green * 0.7152f +
-                        blue * 0.0722f
-                    ) / 255f
-                val shade = 0.72f + luminance * 0.48f
+                val shade = 0.76f + luminance / samples / 255f * 0.23f
                 pixels[index] = Color.argb(
                     alpha,
                     (Color.red(themed) * shade).roundToInt().coerceIn(0, 255),
@@ -161,5 +169,4 @@ internal object AppIconRenderer {
         )
     }
 
-    private const val NEUTRAL_COLOR_RANGE = 28
 }

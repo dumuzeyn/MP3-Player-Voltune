@@ -21,34 +21,23 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
             particleLifetime = preferences.getInt(PARTICLE_LIFETIME, 100).coerceIn(50, 180)
             particlePrimaryColor = preferences.getInt(PARTICLE_PRIMARY_COLOR, 0)
             particleSecondaryColor = preferences.getInt(PARTICLE_SECONDARY_COLOR, 0)
+            particleShape = preferences.getString(PARTICLE_SHAPE, "lightning")
+                ?.takeIf { it in setOf("lightning", "circle", "star", "diamond", "line", "custom") }
+                ?: "lightning"
+            particleCustomPath = preferences.getString(PARTICLE_CUSTOM_PATH, "")?.take(4096).orEmpty()
             fullPlayerRotationSpeed = preferences.getInt(FULL_PLAYER_ROTATION_SPEED, 100)
                 .coerceIn(25, 200)
+            showArtistName = preferences.getBoolean(SHOW_ARTIST_NAME, true)
             customTextColor = preferences.getInt(CUSTOM_TEXT_COLOR, 0)
             textOutlineEnabled = preferences.getBoolean(TEXT_OUTLINE_ENABLED, false)
             textOutlineColor = preferences.getInt(TEXT_OUTLINE_COLOR, 0)
-            cardOpacity = preferences.getInt(CARD_OPACITY, 82).coerceIn(35, 100)
-            songCardOpacity = preferences.getInt(SONG_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            favoriteCardOpacity = preferences.getInt(FAVORITE_CARD_OPACITY, songCardOpacity)
-                .coerceIn(35, 100)
-            playlistCardOpacity = preferences.getInt(PLAYLIST_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            genreCardOpacity = preferences.getInt(GENRE_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            artistCardOpacity = preferences.getInt(ARTIST_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            albumCardOpacity = preferences.getInt(ALBUM_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            settingsCardOpacity = preferences.getInt(SETTINGS_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            miniPlayerCardOpacity = preferences.getInt(MINI_PLAYER_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            headerCardOpacity = preferences.getInt(HEADER_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
-            dialogCardOpacity = preferences.getInt(DIALOG_CARD_OPACITY, cardOpacity)
-                .coerceIn(35, 100)
+            setAllCardOpacity(preferences.getInt(CARD_OPACITY, 82))
             particlesEnabled = preferences.getBoolean(PARTICLES_ENABLED, false)
             circularCovers = preferences.getBoolean(CIRCULAR_COVERS, false)
+            coverShape = preferences.getString(COVER_SHAPE, null)
+                ?.takeIf { it in setOf("rounded", "circle", "hexagon", "diamond", "star", "triangle") }
+                ?: if (circularCovers) "circle" else "rounded"
+            rotateCovers = preferences.getBoolean(ROTATE_COVERS, circularCovers)
             mainBackgroundMode = if (preferences.contains(MAIN_BACKGROUND_MODE)) {
                 clampBackgroundMode(
                     preferences.getInt(
@@ -102,7 +91,10 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
                 .putInt(PARTICLE_LIFETIME, particleLifetime)
                 .putInt(PARTICLE_PRIMARY_COLOR, particlePrimaryColor)
                 .putInt(PARTICLE_SECONDARY_COLOR, particleSecondaryColor)
+                .putString(PARTICLE_SHAPE, particleShape)
+                .putString(PARTICLE_CUSTOM_PATH, particleCustomPath)
                 .putInt(FULL_PLAYER_ROTATION_SPEED, fullPlayerRotationSpeed)
+                .putBoolean(SHOW_ARTIST_NAME, showArtistName)
                 .putInt(CUSTOM_TEXT_COLOR, customTextColor)
                 .putBoolean(TEXT_OUTLINE_ENABLED, textOutlineEnabled)
                 .putInt(TEXT_OUTLINE_COLOR, textOutlineColor)
@@ -119,6 +111,8 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
                 .putInt(DIALOG_CARD_OPACITY, dialogCardOpacity)
                 .putBoolean(PARTICLES_ENABLED, particlesEnabled)
                 .putBoolean(CIRCULAR_COVERS, circularCovers)
+                .putString(COVER_SHAPE, coverShape)
+                .putBoolean(ROTATE_COVERS, rotateCovers)
                 .putInt(MAIN_BACKGROUND_MODE, mainBackgroundMode)
                 .putInt(PLAYER_BACKGROUND_MODE, playerBackgroundMode)
                 .putInt(MAIN_SOLID_BACKGROUND, mainSolidBackground)
@@ -152,7 +146,10 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         private const val PARTICLE_LIFETIME = "particleLifetime"
         private const val PARTICLE_PRIMARY_COLOR = "particlePrimaryColor"
         private const val PARTICLE_SECONDARY_COLOR = "particleSecondaryColor"
+        private const val PARTICLE_SHAPE = "particleShape"
+        private const val PARTICLE_CUSTOM_PATH = "particleCustomPath"
         private const val FULL_PLAYER_ROTATION_SPEED = "fullPlayerRotationSpeed"
+        private const val SHOW_ARTIST_NAME = "showArtistName"
         private const val CUSTOM_TEXT_COLOR = "customTextColor"
         private const val TEXT_OUTLINE_ENABLED = "textOutlineEnabled"
         private const val TEXT_OUTLINE_COLOR = "textOutlineColor"
@@ -170,6 +167,8 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         private const val PARTICLES_ENABLED = "particlesEnabled"
         private const val PLAYER_GRADIENT = "playerGradient"
         private const val CIRCULAR_COVERS = "circularCovers"
+        private const val COVER_SHAPE = "coverShape"
+        private const val ROTATE_COVERS = "rotateCovers"
         private const val MAIN_GRADIENT = "mainGradient"
         private const val MAIN_GRADIENT_START = "mainGradientStart"
         private const val MAIN_GRADIENT_END = "mainGradientEnd"
@@ -183,6 +182,11 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         private const val PLAYER_BACKGROUND_MEDIA_URI = "playerBackgroundMediaUri"
         private const val MAIN_BACKGROUND_BLUR = "mainBackgroundBlur"
         private const val PLAYER_BACKGROUND_BLUR = "playerBackgroundBlur"
+
+        @JvmStatic
+        fun showArtistName(context: Context): Boolean =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(SHOW_ARTIST_NAME, true)
 
         @JvmStatic
         fun readThemeMode(context: Context): String =

@@ -8,7 +8,7 @@ import kotlin.math.min
 
 internal class CardTransparencyController(private val host: MainActivityCore) {
     fun settingLabel(): String =
-        host.tr("Card opacity by section", "Прозрачность карточек по разделам")
+        host.tr("Card opacity", "Прозрачность карточек")
 
     fun openDialog() {
         val shade = host.uiFactory.shade()
@@ -20,66 +20,9 @@ internal class CardTransparencyController(private val host: MainActivityCore) {
         )
 
         val controls = LinearLayout(host).apply { orientation = LinearLayout.VERTICAL }
-        addControl(
-            controls,
-            host.tr("Songs", "Песни"),
-            { host.appearanceState.songCardOpacity },
-            { host.appearanceState.songCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Favorites", "Избранное"),
-            { host.appearanceState.favoriteCardOpacity },
-            { host.appearanceState.favoriteCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Playlists", "Плейлисты"),
-            { host.appearanceState.playlistCardOpacity },
-            { host.appearanceState.playlistCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Genres", "Жанры"),
-            { host.appearanceState.genreCardOpacity },
-            { host.appearanceState.genreCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Artists", "Исполнители"),
-            { host.appearanceState.artistCardOpacity },
-            { host.appearanceState.artistCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Albums", "Альбомы"),
-            { host.appearanceState.albumCardOpacity },
-            { host.appearanceState.albumCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Settings", "Настройки"),
-            { host.appearanceState.settingsCardOpacity },
-            { host.appearanceState.settingsCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Mini-player", "Мини-плеер"),
-            { host.appearanceState.miniPlayerCardOpacity },
-            { host.appearanceState.miniPlayerCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Application header", "Шапка приложения"),
-            { host.appearanceState.headerCardOpacity },
-            { host.appearanceState.headerCardOpacity = it },
-        )
-        addControl(
-            controls,
-            host.tr("Dialogs", "Диалоговые окна"),
-            { host.appearanceState.dialogCardOpacity },
-            { host.appearanceState.dialogCardOpacity = it },
-        )
+        addControl(controls, settingLabel(), { host.appearanceState.cardOpacity }) {
+            host.appearanceState.setAllCardOpacity(it)
+        }
 
         val scroll = ScrollView(host)
         scroll.addView(controls, FrameLayout.LayoutParams(-1, -2))

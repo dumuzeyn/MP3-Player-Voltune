@@ -12,7 +12,7 @@ import java.util.concurrent.Future
 
 internal class AudioEditorProcessing(private val host: MainActivityCore, private val render: () -> Unit) : AutoCloseable {
     private val executor = Executors.newSingleThreadExecutor { run ->
-        Thread({ Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND); run.run() }, "editor-processing")
+        Thread({ Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT); run.run() }, "editor-processing")
     }
     private var job: Future<*>? = null
     private var generation = 0

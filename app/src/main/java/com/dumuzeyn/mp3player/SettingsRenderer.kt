@@ -11,6 +11,7 @@ import java.util.Locale
 
 internal class SettingsRenderer(private val host: MainActivityCore) {
     private var memoryButton: Button? = null
+    private var artistButton: Button? = null
     private var uninterruptedButton: Button? = null
     private var backgroundPlaybackButton: Button? = null
     private var volumeButton: Button? = null
@@ -19,6 +20,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
     private val fadeSettings = FadeSettingsController(host)
     private var fadeButton: Button? = null
     private var coverStyleButton: Button? = null
+    private var coverMotionButton: Button? = null
     private var rotationButton: Button? = null
     private var animationsButton: Button? = null
     private var particlesButton: Button? = null
@@ -40,6 +42,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
     }
 
     fun refreshDynamicLabels() {
+        artistButton?.text = artistLabel()
         memoryButton?.text = host.tr("Mini-player memory: ", "Память мини-плеера: ") +
             host.settingsController.resumeWindowText()
         uninterruptedButton?.text = host.uninterruptedPlaybackController.settingLabel()
@@ -50,6 +53,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         fadeButton?.text = fadeSettings.label()
         rotationButton?.text = host.coverRotationSettingsController.settingLabel()
         coverStyleButton?.text = coverStyleLabel()
+        coverMotionButton?.text = coverMotionLabel()
         animationsButton?.text = animationsLabel()
         particlesButton?.text = particlesLabel()
         soundAnalysisButton?.text = host.soundAnalysisController.settingLabel()
@@ -77,6 +81,13 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         section(host.tr("General", "Основные"))
         addButton(host.tr("Language: ", "Язык: ") + host.languageName()) {
             host.settingsController.openLanguageDialog()
+        }
+        artistButton = addButton(artistLabel()) {
+            host.appearanceState.showArtistName = !host.appearanceState.showArtistName
+            host.saveUiState()
+            host.playbackController.refreshArtistVisibility()
+            host.playerUiController.syncPlaybackUi()
+            refreshDynamicLabels()
         }
         memoryButton = addButton(
             host.tr("Mini-player memory: ", "Память мини-плеера: ") +
@@ -129,7 +140,13 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         addButton(host.cardTransparencyController.settingLabel()) {
             host.cardTransparencyController.openDialog()
         }
-        coverStyleButton = addButton(coverStyleLabel()) { toggleCoverStyle() }
+        coverStyleButton = addButton(coverStyleLabel()) { openCoverStylePicker() }
+        coverMotionButton = addButton(coverMotionLabel()) {
+            host.appearanceState.rotateCovers = !host.appearanceState.rotateCovers
+            host.saveState()
+            CoverAppearanceRefresher.refresh(host)
+            refreshDynamicLabels()
+        }
         defaults(SettingsSectionResetter.Section.APPEARANCE)
 
         section(host.tr("Full player", "Большой плеер"))
@@ -194,6 +211,10 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         append('|').append(host.appearanceState.textOutlineColor)
     }
 
+    private fun artistLabel(): String =
+        host.tr("Show artist: ", "Показывать исполнителя: ") +
+            if (host.appearanceState.showArtistName) host.tr("on", "вкл") else host.tr("off", "выкл")
+
     private fun renderAdvanced() {
         section(host.tr("Advanced library", "Расширенная библиотека"))
         addButton(host.tr("Batch edit metadata", "Массовое изменение метаданных")) {
@@ -239,11 +260,36 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         refreshDynamicLabels()
     }
 
-    private fun toggleCoverStyle() {
-        host.appearanceState.circularCovers = !host.appearanceState.circularCovers
-        host.saveState()
-        host.refreshPlaybackAppearance()
-        refreshDynamicLabels()
+    private fun openCoverStylePicker() {
+        val shade = host.uiFactory.shade()
+        val panel = host.uiFactory.panelCard()
+        panel.addView(host.uiFactory.dialogTitle(host.tr("Cover shape", "Форма обложки")))
+        listOf(
+            Triple("rounded", "Rounded square", "Скруглённый квадрат"),
+            Triple("circle", "Circle", "Круг"),
+            Triple("hexagon", "Hexagon", "Шестиугольник"),
+            Triple("diamond", "Diamond", "Ромб"),
+            Triple("star", "Star", "Звезда"),
+            Triple("triangle", "Triangle", "Треугольник"),
+        ).forEach { (shape, english, russian) ->
+            val button = host.uiFactory.button(host.tr(english, russian))
+            if (host.appearanceState.coverShape == shape) host.uiFactory.applyPrimaryButtonStyle(button)
+            button.setOnClickListener {
+                val previousShape = host.appearanceState.coverShape
+                host.appearanceState.coverShape = shape
+                host.appearanceState.circularCovers = shape == "circle"
+                if (previousShape == "rounded" && shape != "rounded") {
+                    host.appearanceState.rotateCovers = true
+                }
+                host.saveState()
+                host.overlayHost.removeView(shade)
+                CoverAppearanceRefresher.refresh(host)
+                refreshDynamicLabels()
+            }
+            panel.addView(button, LinearLayout.LayoutParams(-1, host.dp(48)))
+        }
+        shade.addView(panel, host.centerParams(host.dp(340), -2))
+        host.overlayHost.addView(shade)
     }
 
     private fun section(label: String) {
@@ -274,10 +320,20 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         }
     }
 
-    private fun coverStyleLabel(): String = host.tr("Cover style: ", "Стиль обложек: ") +
+    private fun coverStyleLabel(): String = host.tr("Cover shape: ", "Форма обложки: ") +
+        when (host.appearanceState.coverShape) {
+            "circle" -> host.tr("Circle", "Круг")
+            "hexagon" -> host.tr("Hexagon", "Шестиугольник")
+            "diamond" -> host.tr("Diamond", "Ромб")
+            "star" -> host.tr("Star", "Звезда")
+            "triangle" -> host.tr("Triangle", "Треугольник")
+            else -> host.tr("Rounded square", "Скруглённый квадрат")
+        }
+
+    private fun coverMotionLabel(): String = host.tr("Rotate covers: ", "Вращать обложки: ") +
         host.tr(
-            if (host.appearanceState.circularCovers) "spinning circles" else "rounded squares",
-            if (host.appearanceState.circularCovers) "вращающиеся круги" else "скруглённые квадраты",
+            if (host.appearanceState.rotateCovers) "on" else "off",
+            if (host.appearanceState.rotateCovers) "вкл" else "выкл",
         )
 
     private fun animationsLabel(): String = host.tr("Animations: ", "Анимации: ") + host.tr(
