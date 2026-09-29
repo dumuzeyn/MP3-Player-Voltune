@@ -10,7 +10,7 @@ import com.dumuzeyn.mp3player.data.playback.PlaybackStateManager
 
 /** Sends UI commands to Media3 and publishes one read-only playback projection. */
 class PlaybackController(private val host: MainActivityCore) : Player.Listener {
-    private val mapper = MediaItemMapper()
+    private val mapper = MediaItemMapper { host.appearanceState.showArtistName }
     private val connection = MediaControllerConnection(host, this, ::onControllerConnected)
     private var discardExpiredSession = false
 
@@ -248,6 +248,22 @@ class PlaybackController(private val host: MainActivityCore) : Player.Listener {
 
     fun refreshAudioEffects() = connection.execute {
         it.sendCustomCommand(Media3Commands.AUDIO_EFFECTS_COMMAND, Bundle.EMPTY)
+    }
+
+    fun refreshArtistVisibility() = connection.execute { controller ->
+        if (EditorPreviewSession.isPreview(controller.currentMediaItem)) return@execute
+        val tracksById = host.libraryState.tracks.associateBy(Track::trackId)
+        val items = (0 until controller.mediaItemCount).map { index ->
+            val item = controller.getMediaItemAt(index)
+            val artist = if (host.appearanceState.showArtistName) {
+                tracksById[item.mediaId]?.artist ?: item.mediaMetadata.artist
+            } else ""
+            item.buildUpon().setMediaMetadata(
+                item.mediaMetadata.buildUpon().setArtist(artist).build(),
+            ).build()
+        }
+        if (items.isNotEmpty()) controller.replaceMediaItems(0, items.size, items)
+        PlayerWidgetProvider.updateFromPlayer(host, controller)
     }
 
     fun currentPosition(): Long = connection.controller

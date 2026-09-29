@@ -8,6 +8,8 @@ import static org.junit.Assert.assertTrue;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Instrumentation;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -58,6 +60,7 @@ public class BackgroundPlaybackInstrumentedTest {
         context.getSharedPreferences("mp3_player_ui", Context.MODE_PRIVATE).edit()
                 .putBoolean("particlesEnabled", false)
                 .putBoolean("animations", false)
+                .putBoolean("showArtistName", true)
                 .commit();
         if (Build.VERSION.SDK_INT >= 33) {
             InstrumentedTestSupport.runShellCommand(instrumentation,
@@ -96,6 +99,62 @@ public class BackgroundPlaybackInstrumentedTest {
         if (secondWaveFile != null) {
             secondWaveFile.delete();
         }
+    }
+
+    @Test
+    public void hidingArtistPreservesPlaybackAndQueue() {
+        activity = launchMainActivity();
+        startQueue(Arrays.asList(firstTrack, secondTrack), Player.REPEAT_MODE_ONE);
+        waitForPlayingUri("First track did not start", firstTrack.uri);
+        controllerAction(() -> controller.seekTo(1000));
+        long positionBefore = controllerValue(controller::getCurrentPosition);
+        MainActivityCore host = (MainActivityCore) activity;
+
+        instrumentation.runOnMainSync(() -> {
+            host.appearanceState.showArtistName = false;
+            host.saveUiState();
+            host.playbackController.refreshArtistVisibility();
+            host.playerUiController.syncPlaybackUi();
+        });
+        InstrumentedTestSupport.waitFor("Artist remained in active Media3 item", 5000L,
+                () -> controllerValue(() -> {
+                    CharSequence artist = controller.getCurrentMediaItem().mediaMetadata.artist;
+                    return artist == null || artist.length() == 0;
+                }));
+        assertEquals(2, (int) controllerValue(controller::getMediaItemCount));
+        assertEquals(Player.REPEAT_MODE_ONE, (int) controllerValue(controller::getRepeatMode));
+        assertTrue(controllerValue(controller::isPlaying));
+        assertTrue(controllerValue(controller::getCurrentPosition) >= positionBefore - 500);
+        assertEquals(android.view.View.GONE, host.miniSub.getVisibility());
+        NotificationManager notifications = (NotificationManager)
+                context.getSystemService(Context.NOTIFICATION_SERVICE);
+        InstrumentedTestSupport.waitFor("Notification still showed an artist", 5000L,
+                () -> {
+                    for (android.service.notification.StatusBarNotification entry
+                            : notifications.getActiveNotifications()) {
+                        if (entry.getId() != 7) continue;
+                        Bundle extras = entry.getNotification().extras;
+                        CharSequence title = extras.getCharSequence(Notification.EXTRA_TITLE);
+                        CharSequence text = extras.getCharSequence(Notification.EXTRA_TEXT);
+                        if ("Instrumentation tone 1".contentEquals(title)
+                                && (text == null || text.length() == 0)) return true;
+                    }
+                    return false;
+                });
+
+        instrumentation.runOnMainSync(() -> {
+            host.appearanceState.showArtistName = true;
+            host.saveUiState();
+            host.playbackController.refreshArtistVisibility();
+        });
+        InstrumentedTestSupport.waitFor("Artist did not return to Media3 item", 5000L,
+                () -> controllerValue(() -> "Voltune tests".contentEquals(
+                        controller.getCurrentMediaItem().mediaMetadata.artist)));
+
+        MediaItemMapper hiddenMapper = new MediaItemMapper(() -> false);
+        assertEquals("", hiddenMapper.toMediaItem(firstTrack).mediaMetadata.artist);
+        assertEquals("", hiddenMapper.toLibraryItem(firstTrack,
+                context.getPackageName() + ".artwork").mediaMetadata.artist);
     }
 
     @Test

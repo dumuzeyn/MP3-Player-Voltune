@@ -11,6 +11,7 @@ import java.util.Locale
 
 internal class SettingsRenderer(private val host: MainActivityCore) {
     private var memoryButton: Button? = null
+    private var artistButton: Button? = null
     private var uninterruptedButton: Button? = null
     private var backgroundPlaybackButton: Button? = null
     private var volumeButton: Button? = null
@@ -41,6 +42,7 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
     }
 
     fun refreshDynamicLabels() {
+        artistButton?.text = artistLabel()
         memoryButton?.text = host.tr("Mini-player memory: ", "Память мини-плеера: ") +
             host.settingsController.resumeWindowText()
         uninterruptedButton?.text = host.uninterruptedPlaybackController.settingLabel()
@@ -79,6 +81,13 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         section(host.tr("General", "Основные"))
         addButton(host.tr("Language: ", "Язык: ") + host.languageName()) {
             host.settingsController.openLanguageDialog()
+        }
+        artistButton = addButton(artistLabel()) {
+            host.appearanceState.showArtistName = !host.appearanceState.showArtistName
+            host.saveUiState()
+            host.playbackController.refreshArtistVisibility()
+            host.playerUiController.syncPlaybackUi()
+            refreshDynamicLabels()
         }
         memoryButton = addButton(
             host.tr("Mini-player memory: ", "Память мини-плеера: ") +
@@ -201,6 +210,10 @@ internal class SettingsRenderer(private val host: MainActivityCore) {
         append('|').append(host.appearanceState.textOutlineEnabled)
         append('|').append(host.appearanceState.textOutlineColor)
     }
+
+    private fun artistLabel(): String =
+        host.tr("Show artist: ", "Показывать исполнителя: ") +
+            if (host.appearanceState.showArtistName) host.tr("on", "вкл") else host.tr("off", "выкл")
 
     private fun renderAdvanced() {
         section(host.tr("Advanced library", "Расширенная библиотека"))

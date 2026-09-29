@@ -27,6 +27,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
             particleCustomPath = preferences.getString(PARTICLE_CUSTOM_PATH, "")?.take(4096).orEmpty()
             fullPlayerRotationSpeed = preferences.getInt(FULL_PLAYER_ROTATION_SPEED, 100)
                 .coerceIn(25, 200)
+            showArtistName = preferences.getBoolean(SHOW_ARTIST_NAME, true)
             customTextColor = preferences.getInt(CUSTOM_TEXT_COLOR, 0)
             textOutlineEnabled = preferences.getBoolean(TEXT_OUTLINE_ENABLED, false)
             textOutlineColor = preferences.getInt(TEXT_OUTLINE_COLOR, 0)
@@ -93,6 +94,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
                 .putString(PARTICLE_SHAPE, particleShape)
                 .putString(PARTICLE_CUSTOM_PATH, particleCustomPath)
                 .putInt(FULL_PLAYER_ROTATION_SPEED, fullPlayerRotationSpeed)
+                .putBoolean(SHOW_ARTIST_NAME, showArtistName)
                 .putInt(CUSTOM_TEXT_COLOR, customTextColor)
                 .putBoolean(TEXT_OUTLINE_ENABLED, textOutlineEnabled)
                 .putInt(TEXT_OUTLINE_COLOR, textOutlineColor)
@@ -147,6 +149,7 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         private const val PARTICLE_SHAPE = "particleShape"
         private const val PARTICLE_CUSTOM_PATH = "particleCustomPath"
         private const val FULL_PLAYER_ROTATION_SPEED = "fullPlayerRotationSpeed"
+        private const val SHOW_ARTIST_NAME = "showArtistName"
         private const val CUSTOM_TEXT_COLOR = "customTextColor"
         private const val TEXT_OUTLINE_ENABLED = "textOutlineEnabled"
         private const val TEXT_OUTLINE_COLOR = "textOutlineColor"
@@ -179,6 +182,11 @@ internal class UiPreferencesStore(private val host: MainActivityCore) {
         private const val PLAYER_BACKGROUND_MEDIA_URI = "playerBackgroundMediaUri"
         private const val MAIN_BACKGROUND_BLUR = "mainBackgroundBlur"
         private const val PLAYER_BACKGROUND_BLUR = "playerBackgroundBlur"
+
+        @JvmStatic
+        fun showArtistName(context: Context): Boolean =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(SHOW_ARTIST_NAME, true)
 
         @JvmStatic
         fun readThemeMode(context: Context): String =

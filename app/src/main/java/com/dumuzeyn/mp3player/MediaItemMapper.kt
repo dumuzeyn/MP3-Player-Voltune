@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 
-class MediaItemMapper {
+class MediaItemMapper(private val showArtist: () -> Boolean = { true }) {
     fun toMediaItem(track: Track): MediaItem {
         val extras = Bundle().apply {
             putInt(EXTRA_DURATION, track.durationMs)
@@ -16,7 +16,7 @@ class MediaItemMapper {
         }
         val metadata = MediaMetadata.Builder()
             .setTitle(track.title)
-            .setArtist(track.artist)
+            .setArtist(if (showArtist()) track.artist else "")
             .setAlbumTitle(track.album)
             .setArtworkUri(track.asUri())
             .setIsBrowsable(false)
@@ -58,7 +58,7 @@ class MediaItemMapper {
             .build()
         val metadata = MediaMetadata.Builder()
             .setTitle(track.title)
-            .setArtist(track.artist)
+            .setArtist(if (showArtist()) track.artist else "")
             .setAlbumTitle(track.album)
             .setArtworkUri(artworkUri)
             .setIsBrowsable(false)

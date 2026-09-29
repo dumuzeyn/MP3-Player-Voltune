@@ -12,6 +12,7 @@ class AppearanceState {
     @JvmField var particleShape = "lightning"
     @JvmField var particleCustomPath = ""
     @JvmField var fullPlayerRotationSpeed = 100
+    @JvmField var showArtistName = true
     @JvmField var cardOpacity = 82
     @JvmField var songCardOpacity = 82
     @JvmField var favoriteCardOpacity = 82

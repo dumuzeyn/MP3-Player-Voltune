@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.2.5.2 - In development, not released
+
+- Added a saved setting to hide artist names in playback surfaces, the widget, Media3 controls, and notifications while keeping song titles visible.
+- Updated active queue metadata when the setting changes without changing track tags or playback position.
+
 ## 4.2.5 - In development, not released
 
 - Applied cover rotation speed to artwork throughout the library, including cached menus.

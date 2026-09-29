@@ -90,8 +90,11 @@ internal class FullPlayerPlaybackPage(
             )
         }
         title?.text = track.title
-        subtitle?.text = track.artist + " · " + (state.queueIndex(track) + 1) + " " +
-            host.tr3("of", "из", "/") + " " + state.activeQueue().size
+        val queuePosition = "${state.queueIndex(track) + 1} " +
+            host.tr3("of", "из", "/") + " ${state.activeQueue().size}"
+        subtitle?.text = if (host.appearanceState.showArtistName) {
+            track.artist + " · " + queuePosition
+        } else queuePosition
         timer?.let {
             host.uiFactory.setLabeledIcon(it, StrictIcon.TIMER, host.timerButtonText(), true)
             host.uiFactory.applyPlayerToolStyle(it, host.playbackUiState.sleepTimerEndsAt > 0)
